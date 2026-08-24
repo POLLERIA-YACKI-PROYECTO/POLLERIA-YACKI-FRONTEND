@@ -1,4 +1,18 @@
 <div class="login-container">
+  <!-- Mensaje de Bienvenida -->
+  @if (mostrarBienvenida()) {
+    <div class="welcome-overlay">
+      <div class="welcome-card">
+        <div class="welcome-icon">👋</div>
+        <h2 class="welcome-title">¡Bienvenido!</h2>
+        <p class="welcome-name">{{ nombreUsuario() }}</p>
+        <p class="welcome-sub">Redirigiendo al sistema...</p>
+        <div class="welcome-spinner"></div>
+      </div>
+    </div>
+  }
+
+  <!-- Login Card -->
   <div class="login-card">
     <div class="logo-container">
       <img 
@@ -7,13 +21,13 @@
         class="logo" 
         (error)="handleImageError($event)"
       >
-      <h1>Polleria Yaki</h1>
-      <p class="subtitle">Sistema de Gestión</p>
+      <h1 class="brand-title">Polleria Yaki</h1>
+      <p class="brand-subtitle">Sistema de Gestión</p>
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label for="dni">DNI</label>
+        <label for="dni">Número de DNI</label>
         <input
           type="text"
           id="dni"
@@ -46,12 +60,16 @@
         [disabled]="loginForm.invalid || isLoading()"
       >
         @if (!isLoading()) {
-          <span>Ingresar</span>
+          <span>Ingresar al Sistema</span>
         }
         @if (isLoading()) {
           <span class="spinner"></span>
         }
       </button>
+
+      <div class="login-footer">
+        <p>Sistema seguro · Todos los derechos reservados</p>
+      </div>
     </form>
   </div>
 </div>

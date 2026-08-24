@@ -5,5 +5,7 @@
   (click)="seleccionar.emit(numero)"
 >
   <span class="mesa-numero">{{ numero }}</span>
-  <span class="mesa-ocupada" *ngIf="ocupada">👥</span>
+  @if (ocupada) {
+    <span class="mesa-ocupada">●</span>
+  }
 </div>

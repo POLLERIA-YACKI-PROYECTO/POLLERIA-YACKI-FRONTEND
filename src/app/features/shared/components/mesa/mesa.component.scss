@@ -1,71 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap');
+
 .mesa {
   width: 100%;
   aspect-ratio: 1;
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 2px solid transparent;
   position: relative;
-  min-height: 60px;
+  min-height: 70px;
+  animation: fadeIn 0.3s ease both;
 }
 
+.mesa:nth-child(1) { animation-delay: 0.05s; }
+.mesa:nth-child(2) { animation-delay: 0.08s; }
+.mesa:nth-child(3) { animation-delay: 0.11s; }
+.mesa:nth-child(4) { animation-delay: 0.14s; }
+.mesa:nth-child(5) { animation-delay: 0.17s; }
+.mesa:nth-child(6) { animation-delay: 0.20s; }
+.mesa:nth-child(7) { animation-delay: 0.23s; }
+.mesa:nth-child(8) { animation-delay: 0.26s; }
+.mesa:nth-child(9) { animation-delay: 0.29s; }
+.mesa:nth-child(10) { animation-delay: 0.32s; }
+
 .mesa:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  border-color: #32CD32;
 }
 
 .mesa.seleccionada {
   background: linear-gradient(135deg, #32CD32, #228B22);
   color: white;
-  transform: scale(1.05);
-  box-shadow: 0 4px 20px rgba(50, 205, 50, 0.4);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(50, 205, 50, 0.35);
+  border-color: #1a472a;
+  animation: pulse 0.5s ease;
 }
 
 .mesa.ocupada {
-  background: #ffe6e6;
-  border: 2px solid #dc3545;
+  background: #fef2f2;
+  border-color: #fca5a5;
 }
 
 .mesa.ocupada .mesa-numero {
-  color: #dc3545;
+  color: #dc2626;
+}
+
+.mesa.ocupada.seleccionada {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #991b1b;
+}
+
+.mesa.ocupada.seleccionada .mesa-numero {
+  color: white;
 }
 
 .mesa-numero {
-  font-size: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1f2937;
+  transition: color 0.3s ease;
+}
+
+.mesa.seleccionada .mesa-numero {
+  color: white;
 }
 
 .mesa-ocupada {
-  font-size: 16px;
+  font-size: 12px;
+  color: #dc2626;
   margin-top: 2px;
+}
+
+.mesa.seleccionada .mesa-ocupada {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1.02);
+  }
 }
 
 @media (max-width: 768px) {
   .mesa {
-    font-size: 18px;
-    min-height: 50px;
+    min-height: 60px;
+    border-radius: 12px;
   }
 
   .mesa-numero {
-    font-size: 16px;
+    font-size: 22px;
   }
 }
 
 @media (max-width: 480px) {
   .mesa {
-    font-size: 14px;
-    min-height: 40px;
-    border-radius: 8px;
+    min-height: 50px;
+    border-radius: 10px;
   }
 
   .mesa-numero {
-    font-size: 14px;
+    font-size: 18px;
   }
 }

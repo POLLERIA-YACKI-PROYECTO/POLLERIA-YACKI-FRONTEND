@@ -21,6 +21,10 @@ export class DashboardComponent implements OnInit {
   mesas = signal<number[]>(Array.from({ length: 10 }, (_, i) => i + 1));
   mesaSeleccionada = signal<number | null>(null);
   usuario = signal<any>(null);
+  
+  // Control del panel desplegable
+  panelAbierto = signal<boolean>(false);
+  opcionSeleccionada = signal<string>('');
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -44,6 +48,81 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  // Toggle del panel
+  togglePanel(): void {
+    this.panelAbierto.set(!this.panelAbierto());
+  }
+
+  // Método para obtener el nombre de la opción seleccionada
+  obtenerNombreOpcion(opcion: string): string {
+    const nombres: { [key: string]: string } = {
+      'paraLlevar': 'Para Llevar',
+      'ultimas': 'Ultimas',
+      'precios': 'Precios',
+      'delivery': 'Delivery',
+      'verTickets': 'Ver Tickets',
+      'porPagar': 'Por Pagar',
+      'marcarEntrega': 'Marcar Entrega',
+      'administrar': 'Administrar',
+      'cerrarCaja': 'Cerrar Caja',
+      'cerrarCajaFinal': 'Cerrar Caja Final',
+      'otrosIngresos': 'Otros Ingresos',
+      'reservas': 'Reservas',
+      'salir': 'Salir del Sistema'
+    };
+    return nombres[opcion] || 'Seleccionar Acción';
+  }
+
+  // Seleccionar opción del panel
+  seleccionarOpcion(opcion: string): void {
+    this.opcionSeleccionada.set(opcion);
+    this.panelAbierto.set(false);
+    
+    // Ejecutar acción según opción seleccionada
+    switch(opcion) {
+      case 'paraLlevar':
+        this.paraLlevar();
+        break;
+      case 'ultimas':
+        this.ultimas();
+        break;
+      case 'precios':
+        this.precios();
+        break;
+      case 'delivery':
+        this.delivery();
+        break;
+      case 'verTickets':
+        this.verTickets();
+        break;
+      case 'porPagar':
+        this.porPagar();
+        break;
+      case 'marcarEntrega':
+        this.marcarEntrega();
+        break;
+      case 'administrar':
+        this.administrar();
+        break;
+      case 'cerrarCaja':
+        this.cerrarCajaIndividual();
+        break;
+      case 'cerrarCajaFinal':
+        this.cerrarCajaFinal();
+        break;
+      case 'otrosIngresos':
+        this.otrosIngresos();
+        break;
+      case 'reservas':
+        this.reservas();
+        break;
+      case 'salir':
+        this.salir();
+        break;
+    }
+  }
+
+  // Acciones
   solicitarGasto(): void {
     console.log('Solicitar gasto');
   }
@@ -53,7 +132,7 @@ export class DashboardComponent implements OnInit {
   }
 
   ultimas(): void {
-    console.log('Últimas');
+    console.log('Ultimas');
   }
 
   precios(): void {

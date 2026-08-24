@@ -14,10 +14,14 @@ export class AuthService {
       return throwError(() => new Error('DNI inválido'));
     }
 
+    // Simulación de usuarios con nombres
+    const nombres = ['Carlos Mendoza', 'Ana García', 'Luis Fernández', 'María Rodríguez', 'José Pérez'];
+    const nombre = nombres[parseInt(dni.slice(-1)) % nombres.length];
+
     const usuario: Usuario = {
       id: 1,
       dni: dni,
-      nombre: 'Administrador',
+      nombre: nombre,
       rol: 'admin'
     };
 
