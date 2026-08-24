@@ -1,4 +1,4 @@
-/* Reset y estilos globales */
+/* Usar fuentes del sistema en lugar de Google Fonts */
 * {
   margin: 0;
   padding: 0;
@@ -6,9 +6,11 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
   background: #f0f4f0;
-  color: #333;
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar personalizado */

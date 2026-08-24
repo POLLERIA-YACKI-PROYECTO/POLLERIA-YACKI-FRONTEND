@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -7,7 +5,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #1a472a 0%, #2d8a4e 50%, #32CD32 100%);
   padding: 20px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
   position: relative;
 }
 
@@ -19,7 +17,7 @@
   max-width: 440px;
   width: 100%;
   box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
-  animation: slideUp 0.6s ease;
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
@@ -48,7 +46,7 @@
 }
 
 .brand-title {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 32px;
   font-weight: 800;
   background: linear-gradient(135deg, #1a472a, #32CD32);
@@ -60,7 +58,7 @@
 }
 
 .brand-subtitle {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #6b7280;
@@ -81,7 +79,7 @@
 }
 
 .form-group label {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #1f2937;
   font-weight: 600;
   font-size: 14px;
@@ -93,7 +91,7 @@
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   font-size: 16px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: all 0.3s ease;
   background: #f9fafb;
   color: #1f2937;
@@ -124,7 +122,7 @@
   border: none;
   border-radius: 12px;
   font-size: 17px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -134,7 +132,7 @@
 }
 
 .btn-login:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(50, 205, 50, 0.35);
 }
 
@@ -146,7 +144,7 @@
 .error-message {
   color: #ef4444;
   font-size: 13px;
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 500;
   margin-top: 4px;
 }
@@ -157,7 +155,7 @@
 }
 
 .login-footer p {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 12px;
   color: #9ca3af;
   font-weight: 400;
@@ -173,7 +171,26 @@
   animation: spin 0.8s ease infinite;
 }
 
-/* Welcome Overlay */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .welcome-overlay {
   position: fixed;
   top: 0;
@@ -196,7 +213,7 @@
   text-align: center;
   max-width: 420px;
   width: 100%;
-  animation: scaleIn 0.5s ease;
+  animation: scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
 }
 
@@ -206,7 +223,7 @@
 }
 
 .welcome-title {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 32px;
   font-weight: 800;
   color: #1f2937;
@@ -214,7 +231,7 @@
 }
 
 .welcome-name {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 24px;
   font-weight: 600;
   color: #32CD32;
@@ -222,7 +239,7 @@
 }
 
 .welcome-sub {
-  font-family: 'Inter', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: #6b7280;
   margin: 0 0 20px 0;
@@ -236,26 +253,6 @@
   border-radius: 50%;
   border-top-color: #32CD32;
   animation: spin 0.8s ease infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 @keyframes scaleIn {
