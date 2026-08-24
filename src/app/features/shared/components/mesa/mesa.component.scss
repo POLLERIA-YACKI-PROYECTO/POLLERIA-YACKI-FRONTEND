@@ -16,19 +16,7 @@
   border: 2px solid transparent;
   position: relative;
   min-height: 70px;
-  animation: fadeIn 0.3s ease both;
 }
-
-.mesa:nth-child(1) { animation-delay: 0.05s; }
-.mesa:nth-child(2) { animation-delay: 0.08s; }
-.mesa:nth-child(3) { animation-delay: 0.11s; }
-.mesa:nth-child(4) { animation-delay: 0.14s; }
-.mesa:nth-child(5) { animation-delay: 0.17s; }
-.mesa:nth-child(6) { animation-delay: 0.20s; }
-.mesa:nth-child(7) { animation-delay: 0.23s; }
-.mesa:nth-child(8) { animation-delay: 0.26s; }
-.mesa:nth-child(9) { animation-delay: 0.29s; }
-.mesa:nth-child(10) { animation-delay: 0.32s; }
 
 .mesa:hover {
   transform: translateY(-4px) scale(1.02);
@@ -42,7 +30,6 @@
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 8px 30px rgba(50, 205, 50, 0.35);
   border-color: #1a472a;
-  animation: pulse 0.5s ease;
 }
 
 .mesa.ocupada {
@@ -83,29 +70,6 @@
 
 .mesa.seleccionada .mesa-ocupada {
   color: rgba(255, 255, 255, 0.8);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
-  }
-  100% {
-    transform: scale(1.02);
-  }
 }
 
 @media (max-width: 768px) {

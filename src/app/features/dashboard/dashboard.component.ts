@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { MesaService } from '../../core/services/mesa.service';
+
+// IMPORTACIÓN CORRECTA - Usar @ para rutas absolutas
 import { HeaderComponent } from '../shared/components/header/header.component';
 import { MesaComponent } from '../shared/components/mesa/mesa.component';
 
@@ -22,7 +24,6 @@ export class DashboardComponent implements OnInit {
   mesaSeleccionada = signal<number | null>(null);
   usuario = signal<any>(null);
   
-  // Control del panel desplegable
   panelAbierto = signal<boolean>(false);
   opcionSeleccionada = signal<string>('');
 
@@ -48,12 +49,10 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  // Toggle del panel
   togglePanel(): void {
     this.panelAbierto.set(!this.panelAbierto());
   }
 
-  // Método para obtener el nombre de la opción seleccionada
   obtenerNombreOpcion(opcion: string): string {
     const nombres: { [key: string]: string } = {
       'paraLlevar': 'Para Llevar',
@@ -73,109 +72,39 @@ export class DashboardComponent implements OnInit {
     return nombres[opcion] || 'Seleccionar Acción';
   }
 
-  // Seleccionar opción del panel
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.panelAbierto.set(false);
     
-    // Ejecutar acción según opción seleccionada
     switch(opcion) {
-      case 'paraLlevar':
-        this.paraLlevar();
-        break;
-      case 'ultimas':
-        this.ultimas();
-        break;
-      case 'precios':
-        this.precios();
-        break;
-      case 'delivery':
-        this.delivery();
-        break;
-      case 'verTickets':
-        this.verTickets();
-        break;
-      case 'porPagar':
-        this.porPagar();
-        break;
-      case 'marcarEntrega':
-        this.marcarEntrega();
-        break;
-      case 'administrar':
-        this.administrar();
-        break;
-      case 'cerrarCaja':
-        this.cerrarCajaIndividual();
-        break;
-      case 'cerrarCajaFinal':
-        this.cerrarCajaFinal();
-        break;
-      case 'otrosIngresos':
-        this.otrosIngresos();
-        break;
-      case 'reservas':
-        this.reservas();
-        break;
-      case 'salir':
-        this.salir();
-        break;
+      case 'paraLlevar': this.paraLlevar(); break;
+      case 'ultimas': this.ultimas(); break;
+      case 'precios': this.precios(); break;
+      case 'delivery': this.delivery(); break;
+      case 'verTickets': this.verTickets(); break;
+      case 'porPagar': this.porPagar(); break;
+      case 'marcarEntrega': this.marcarEntrega(); break;
+      case 'administrar': this.administrar(); break;
+      case 'cerrarCaja': this.cerrarCajaIndividual(); break;
+      case 'cerrarCajaFinal': this.cerrarCajaFinal(); break;
+      case 'otrosIngresos': this.otrosIngresos(); break;
+      case 'reservas': this.reservas(); break;
+      case 'salir': this.salir(); break;
     }
   }
 
-  // Acciones
-  solicitarGasto(): void {
-    console.log('Solicitar gasto');
-  }
-
-  paraLlevar(): void {
-    console.log('Para llevar');
-  }
-
-  ultimas(): void {
-    console.log('Ultimas');
-  }
-
-  precios(): void {
-    console.log('Precios');
-  }
-
-  delivery(): void {
-    console.log('Delivery');
-  }
-
-  verTickets(): void {
-    console.log('Ver tickets');
-  }
-
-  porPagar(): void {
-    console.log('Por pagar');
-  }
-
-  marcarEntrega(): void {
-    console.log('Marcar entrega');
-  }
-
-  salir(): void {
-    this.cerrarSesion();
-  }
-
-  cerrarCajaFinal(): void {
-    console.log('Cerrar caja final');
-  }
-
-  administrar(): void {
-    console.log('Administrar');
-  }
-
-  cerrarCajaIndividual(): void {
-    console.log('Cerrar caja individual');
-  }
-
-  otrosIngresos(): void {
-    console.log('Otros ingresos');
-  }
-
-  reservas(): void {
-    console.log('Reservas');
-  }
+  solicitarGasto(): void { console.log('Solicitar gasto'); }
+  paraLlevar(): void { console.log('Para llevar'); }
+  ultimas(): void { console.log('Ultimas'); }
+  precios(): void { console.log('Precios'); }
+  delivery(): void { console.log('Delivery'); }
+  verTickets(): void { console.log('Ver tickets'); }
+  porPagar(): void { console.log('Por pagar'); }
+  marcarEntrega(): void { console.log('Marcar entrega'); }
+  salir(): void { this.cerrarSesion(); }
+  cerrarCajaFinal(): void { console.log('Cerrar caja final'); }
+  administrar(): void { console.log('Administrar'); }
+  cerrarCajaIndividual(): void { console.log('Cerrar caja individual'); }
+  otrosIngresos(): void { console.log('Otros ingresos'); }
+  reservas(): void { console.log('Reservas'); }
 }
