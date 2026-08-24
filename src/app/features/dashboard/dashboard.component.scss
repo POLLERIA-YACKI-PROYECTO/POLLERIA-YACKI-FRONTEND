@@ -1,0 +1,159 @@
+.dashboard-container {
+  min-height: 100vh;
+  background: #f5f7f5;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mesas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.acciones-container {
+  margin: 24px 0;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-accion {
+  padding: 16px 32px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-gasto {
+  background: linear-gradient(135deg, #f5a623, #f7c948);
+  color: #2d2d2d;
+}
+
+.btn-accion:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.botones-inferiores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btn-inferior {
+  padding: 14px 18px;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-inferior:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  background: #f8faf8;
+}
+
+.btn-inferior .icon {
+  flex-shrink: 0;
+  color: #228B22;
+}
+
+.btn-salir {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-salir:hover {
+  background: #c82333;
+}
+
+.btn-salir .icon {
+  color: white;
+}
+
+.btn-cerrar {
+  background: #28a745;
+  color: white;
+}
+
+.btn-cerrar:hover {
+  background: #1e7e34;
+}
+
+.btn-cerrar .icon {
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .mesas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 10px;
+  }
+
+  .botones-inferiores {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+
+  .btn-accion {
+    min-width: 100%;
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+
+  .btn-inferior {
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mesas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 8px;
+  }
+
+  .dashboard-content {
+    padding: 12px;
+  }
+
+  .btn-inferior {
+    font-size: 11px;
+    padding: 10px 12px;
+  }
+
+  .btn-inferior .icon {
+    width: 14px;
+    height: 14px;
+  }
+}

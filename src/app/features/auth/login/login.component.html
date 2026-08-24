@@ -1,0 +1,57 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="logo-container">
+      <img 
+        [src]="logoUrl" 
+        alt="Polleria Yaki" 
+        class="logo" 
+        (error)="handleImageError($event)"
+      >
+      <h1>Polleria Yaki</h1>
+      <p class="subtitle">Sistema de Gestión</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-group">
+        <label for="dni">DNI</label>
+        <input
+          type="text"
+          id="dni"
+          formControlName="dni"
+          placeholder="Ingrese su DNI (8 dígitos)"
+          maxlength="8"
+          [class.error]="loginForm.get('dni')?.invalid && loginForm.get('dni')?.touched"
+        >
+        @if (loginForm.get('dni')?.invalid && loginForm.get('dni')?.touched) {
+          <div class="error-message">
+            @if (loginForm.get('dni')?.errors?.['required']) {
+              <span>El DNI es obligatorio</span>
+            }
+            @if (loginForm.get('dni')?.errors?.['pattern']) {
+              <span>Ingrese 8 dígitos válidos</span>
+            }
+          </div>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-message">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <button
+        type="submit"
+        class="btn-login"
+        [disabled]="loginForm.invalid || isLoading()"
+      >
+        @if (!isLoading()) {
+          <span>Ingresar</span>
+        }
+        @if (isLoading()) {
+          <span class="spinner"></span>
+        }
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+.mesa {
+  width: 100%;
+  aspect-ratio: 1;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  min-height: 60px;
+}
+
+.mesa:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.mesa.seleccionada {
+  background: linear-gradient(135deg, #32CD32, #228B22);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(50, 205, 50, 0.4);
+}
+
+.mesa.ocupada {
+  background: #ffe6e6;
+  border: 2px solid #dc3545;
+}
+
+.mesa.ocupada .mesa-numero {
+  color: #dc3545;
+}
+
+.mesa-numero {
+  font-size: 20px;
+}
+
+.mesa-ocupada {
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .mesa {
+    font-size: 18px;
+    min-height: 50px;
+  }
+
+  .mesa-numero {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mesa {
+    font-size: 14px;
+    min-height: 40px;
+    border-radius: 8px;
+  }
+
+  .mesa-numero {
+    font-size: 14px;
+  }
+}

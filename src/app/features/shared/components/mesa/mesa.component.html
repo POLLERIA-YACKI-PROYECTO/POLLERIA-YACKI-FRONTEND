@@ -1,0 +1,9 @@
+<div 
+  class="mesa"
+  [class.seleccionada]="seleccionada"
+  [class.ocupada]="ocupada"
+  (click)="seleccionar.emit(numero)"
+>
+  <span class="mesa-numero">{{ numero }}</span>
+  <span class="mesa-ocupada" *ngIf="ocupada">👥</span>
+</div>
