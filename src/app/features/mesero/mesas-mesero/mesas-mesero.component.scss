@@ -1,0 +1,629 @@
+/* ============================================
+   BASE - TEMA OSCURO
+   ============================================ */
+.mesas-mesero-container {
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #ffffda;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: all 0.3s ease;
+}
+
+.mesas-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px;
+}
+
+/* ============================================
+   TEMA CLARO
+   ============================================ */
+.mesas-mesero-container.tema-claro {
+  background: #f5f0e8;
+  color: #2e2e2e;
+}
+
+.mesas-mesero-container.tema-claro .mesas-header {
+  border-bottom-color: #ce8329;
+}
+
+.mesas-mesero-container.tema-claro .mesas-header h1 {
+  color: #5e412f;
+}
+
+.mesas-mesero-container.tema-claro .subtitle {
+  color: #666;
+}
+
+.mesas-mesero-container.tema-claro .menu-toggle {
+  background: #ffffff;
+  border-color: #d4c8b8;
+  color: #2e2e2e;
+}
+
+.mesas-mesero-container.tema-claro .menu-toggle:hover {
+  border-color: #ce8329;
+}
+
+.mesas-mesero-container.tema-claro .menu-dropdown {
+  background: #ffffff;
+  border-color: #d4c8b8;
+}
+
+.mesas-mesero-container.tema-claro .menu-item {
+  color: #2e2e2e;
+}
+
+.mesas-mesero-container.tema-claro .menu-item:hover {
+  background: #e9bd6e;
+  color: #5e412f;
+}
+
+.mesas-mesero-container.tema-claro .btn-tema {
+  border-color: #d4c8b8;
+  color: #5e412f;
+}
+
+.mesas-mesero-container.tema-claro .btn-tema:hover {
+  background: rgba(206, 131, 41, 0.1);
+}
+
+.mesas-mesero-container.tema-claro .mesa-item {
+  background: #ffffff;
+  border-color: #d4c8b8;
+}
+
+.mesas-mesero-container.tema-claro .mesa-item.seleccionada {
+  border-color: #ce8329;
+  background: #ce8329;
+}
+
+.mesas-mesero-container.tema-claro .mesa-item.ocupada {
+  border-color: #dc2f2b;
+  background: rgba(220, 47, 43, 0.05);
+}
+
+.mesas-mesero-container.tema-claro .mesa-item.ocupada .mesa-numero {
+  color: #dc2f2b;
+}
+
+.mesas-mesero-container.tema-claro .btn-ocupar {
+  background: #32CD32;
+  color: #ffffff;
+}
+
+.mesas-mesero-container.tema-claro .btn-ocupar:hover:not(:disabled) {
+  background: #28a428;
+}
+
+.mesas-mesero-container.tema-claro .btn-liberar {
+  background: #dc2f2b;
+  color: #ffffff;
+}
+
+.mesas-mesero-container.tema-claro .btn-liberar:hover:not(:disabled) {
+  background: #921a17;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.mesas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 2px solid #f31730;
+  margin-bottom: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.mesas-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.header-icon {
+  width: 24px;
+  height: 24px;
+  stroke: #f31730;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #888;
+  margin: 2px 0 0;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================
+   MENÚ DESPLEGABLE
+   ============================================ */
+.menu-container {
+  position: relative;
+}
+
+.menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #ffffda;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  min-width: 140px;
+}
+
+.menu-toggle:hover {
+  border-color: #f31730;
+}
+
+.menu-toggle-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-toggle-text svg {
+  stroke: currentColor;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-arrow {
+  transition: transform 0.3s ease;
+  stroke: currentColor;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-arrow.rotated {
+  transform: rotate(180deg);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  overflow: hidden;
+  z-index: 100;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.2s ease;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: transparent;
+  color: #ffffda;
+}
+
+.menu-item:hover {
+  background: #f31730;
+  color: #ffffda;
+}
+
+.menu-item svg {
+  stroke: currentColor;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   BOTÓN TEMA
+   ============================================ */
+.btn-tema {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #ffffda;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.btn-tema:hover {
+  background: rgba(243, 23, 48, 0.08);
+}
+
+.btn-tema svg {
+  stroke: currentColor;
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   MESAS GRID
+   ============================================ */
+.mesas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mesa-item {
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 16px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  aspect-ratio: 1/1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.mesa-item:hover {
+  transform: translateY(-2px);
+  border-color: #f31730;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.mesa-item.seleccionada {
+  border-color: #f31730;
+  background: #f31730;
+}
+
+.mesa-item.seleccionada .mesa-numero {
+  color: #ffffda;
+}
+
+.mesa-item.ocupada {
+  border-color: #f31730;
+  background: rgba(243, 23, 48, 0.08);
+}
+
+.mesa-item.ocupada .mesa-numero {
+  color: #f31730;
+}
+
+.mesa-numero {
+  font-size: 24px;
+  font-weight: 700;
+  transition: color 0.3s ease;
+}
+
+.mesa-cliente {
+  font-size: 10px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* ============================================
+   ACCIONES
+   ============================================ */
+.mesa-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.btn-ocupar,
+.btn-liberar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.btn-ocupar {
+  background: #32CD32;
+  color: #ffffda;
+}
+
+.btn-ocupar:hover:not(:disabled) {
+  background: #28a428;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(50, 205, 50, 0.3);
+}
+
+.btn-ocupar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-liberar {
+  background: #f31730;
+  color: #ffffda;
+}
+
+.btn-liberar:hover:not(:disabled) {
+  background: #cc1228;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(243, 23, 48, 0.3);
+}
+
+.btn-liberar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ocupar svg,
+.btn-liberar svg {
+  stroke: currentColor;
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .mesas-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .mesa-numero {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mesas-content {
+    padding: 12px;
+  }
+
+  .mesas-header h1 {
+    font-size: 17px;
+  }
+
+  .header-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .subtitle {
+    font-size: 11px;
+  }
+
+  .menu-toggle {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 100px;
+  }
+
+  .menu-toggle-text svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .menu-arrow {
+    width: 14px;
+    height: 14px;
+  }
+
+  .menu-dropdown {
+    min-width: 150px;
+  }
+
+  .menu-item {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .menu-item svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .btn-tema span {
+    display: none;
+  }
+
+  .btn-tema {
+    padding: 6px 12px;
+  }
+
+  .mesas-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .mesa-item {
+    padding: 12px 6px;
+  }
+
+  .mesa-numero {
+    font-size: 20px;
+  }
+
+  .btn-ocupar,
+  .btn-liberar {
+    font-size: 12px;
+    padding: 8px 18px;
+  }
+
+  .btn-ocupar svg,
+  .btn-liberar svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mesas-content {
+    padding: 8px;
+  }
+
+  .mesas-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .mesas-header h1 {
+    font-size: 15px;
+    justify-content: center;
+  }
+
+  .subtitle {
+    text-align: center;
+  }
+
+  .header-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .menu-toggle {
+    min-width: 120px;
+    font-size: 11px;
+  }
+
+  .menu-dropdown {
+    min-width: 160px;
+  }
+
+  .mesas-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .mesa-item {
+    padding: 10px 4px;
+    border-radius: 8px;
+  }
+
+  .mesa-numero {
+    font-size: 18px;
+  }
+
+  .mesa-cliente {
+    font-size: 8px;
+  }
+
+  .btn-ocupar,
+  .btn-liberar {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+
+  .btn-ocupar svg,
+  .btn-liberar svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .mesas-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+  }
+
+  .mesa-item {
+    padding: 8px 2px;
+  }
+
+  .mesa-numero {
+    font-size: 15px;
+  }
+
+  .mesa-cliente {
+    font-size: 7px;
+  }
+
+  .menu-toggle {
+    min-width: 100px;
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  .menu-toggle-text svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .menu-arrow {
+    width: 12px;
+    height: 12px;
+  }
+
+  .menu-dropdown {
+    min-width: 130px;
+  }
+
+  .menu-item {
+    font-size: 10px;
+    padding: 5px 10px;
+  }
+
+  .menu-item svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .btn-ocupar,
+  .btn-liberar {
+    font-size: 10px;
+    padding: 5px 12px;
+  }
+
+  .btn-ocupar svg,
+  .btn-liberar svg {
+    width: 12px;
+    height: 12px;
+  }
+}

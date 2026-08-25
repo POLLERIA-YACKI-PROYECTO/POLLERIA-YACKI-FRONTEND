@@ -6,20 +6,23 @@
         routerLinkActive="active"
         class="sidebar-item"
       >
-        <span class="sidebar-icon">{{ item.icon }}</span>
+        <span class="sidebar-icon" [innerHTML]="getIconSvg(item.icon)"></span>
         <span class="sidebar-label">{{ item.label }}</span>
       </a>
     }
   </div>
   
   <div class="sidebar-footer">
-    <a routerLink="/carta" class="sidebar-item ventas-link">
-      <span class="sidebar-icon">📋</span>
-      <span class="sidebar-label">Ver Carta</span>
-    </a>
-    <a routerLink="/ventas" class="sidebar-item ventas-link">
-      <span class="sidebar-icon">🍽️</span>
-      <span class="sidebar-label">Ir a Ventas</span>
+    <a routerLink="/login-mesero" class="sidebar-item mesero-link">
+      <span class="sidebar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          <circle cx="9" cy="9" r="1" fill="currentColor"/>
+          <circle cx="15" cy="9" r="1" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="sidebar-label">Ir a Mesero</span>
     </a>
   </div>
 </aside>

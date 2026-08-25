@@ -1,11 +1,20 @@
 <div class="login-container">
+  <!-- Mensaje de Bienvenida Profesional -->
   @if (mostrarBienvenida()) {
     <div class="welcome-overlay">
       <div class="welcome-card">
-        <div class="welcome-icon">🍽️</div>
-        <h2 class="welcome-title">¡Bienvenido!</h2>
+        <div class="welcome-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#f31730" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+            <path d="M12 3v2"/>
+            <path d="M12 9v2"/>
+            <path d="M9 6h6"/>
+          </svg>
+        </div>
+        <h2 class="welcome-title">Inicio de Sesión Exitoso</h2>
         <p class="welcome-name">{{ nombreUsuario() }}</p>
-        <p class="welcome-sub">Redirigiendo a la carta...</p>
+        <p class="welcome-sub">Bienvenido al sistema de gestión</p>
         <div class="welcome-spinner"></div>
       </div>
     </div>
@@ -59,7 +68,7 @@
         [disabled]="loginForm.invalid || isLoading()"
       >
         @if (!isLoading()) {
-          <span>Ingresar a la Carta</span>
+          <span>Ingresar al Sistema</span>
         }
         @if (isLoading()) {
           <span class="spinner"></span>

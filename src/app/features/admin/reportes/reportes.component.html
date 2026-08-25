@@ -1,6 +1,17 @@
 <div class="reportes-container">
   <div class="page-header">
-    <h2>Reportes</h2>
+    <h2>
+      <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 4h16v16H4z"/>
+        <path d="M8 8h8v8H8z"/>
+        <path d="M8 12h8"/>
+        <path d="M4 4L8 8"/>
+        <path d="M20 4L16 8"/>
+        <path d="M4 20L8 16"/>
+        <path d="M20 20L16 16"/>
+      </svg>
+      Reportes
+    </h2>
   </div>
 
   <div class="reportes-grid">
@@ -8,75 +19,173 @@
     <div class="config-panel">
       <h3>Configurar Reporte</h3>
       
-      <div class="form-group">
-        <label>Tipo de Reporte</label>
-        <select [(ngModel)]="reporteSeleccionado" (change)="generarReporte()">
-          @for (reporte of reportes(); track reporte.id) {
-            <option [value]="reporte.id">
-              {{ reporte.icono }} {{ reporte.nombre }}
-            </option>
-          }
-        </select>
+      <!-- MENÚ DESPLEGABLE -->
+      <div class="menu-container">
+        <button class="menu-toggle" (click)="toggleMenu()">
+          <span class="menu-toggle-text">
+            <span class="menu-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="9" y1="9" x2="15" y2="9"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+                <line x1="12" y1="9" x2="12" y2="15"/>
+              </svg>
+            </span>
+            {{ nombreReporte() }}
+          </span>
+          <svg class="menu-arrow" [class.rotated]="menuAbierto()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        @if (menuAbierto()) {
+          <div class="menu-dropdown">
+            @for (reporte of reportes(); track reporte.id) {
+              <button class="menu-item" (click)="seleccionarReporte(reporte.id)">
+                <span class="menu-item-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+                  </svg>
+                </span>
+                {{ reporte.nombre }}
+              </button>
+            }
+          </div>
+        }
       </div>
 
-      <div class="form-row">
+      <!-- FECHAS - CORREGIDO PARA QUE NO SE SALGAN -->
+      <div class="form-fechas">
         <div class="form-group">
           <label>Fecha Inicio</label>
-          <input type="date" [(ngModel)]="fechaInicio">
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <input type="date" [(ngModel)]="fechaInicio">
+          </div>
         </div>
         <div class="form-group">
           <label>Fecha Fin</label>
-          <input type="date" [(ngModel)]="fechaFin">
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <input type="date" [(ngModel)]="fechaFin">
+          </div>
         </div>
       </div>
 
+      <button class="btn-generar" (click)="generarReporte()" [disabled]="loading()">
+        @if (loading()) {
+          <span class="spinner-small"></span>
+        }
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Generar
+      </button>
+
       <div class="btn-group">
-        <button class="btn-primary" (click)="generarReporte()">Generar</button>
-        <button class="btn-excel" (click)="exportarExcel()">📊 Excel</button>
-        <button class="btn-pdf" (click)="exportarPDF()">📄 PDF</button>
+        <button class="btn-excel" (click)="exportarExcel()" [disabled]="datosReporte().length === 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16v16H4z"/>
+            <path d="M8 8h8v8H8z"/>
+            <path d="M8 12h8"/>
+            <path d="M4 4L8 8"/>
+            <path d="M20 4L16 8"/>
+          </svg>
+          Excel
+        </button>
+        <button class="btn-pdf" (click)="exportarPDF()" [disabled]="datosReporte().length === 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16v16H4z"/>
+            <path d="M4 4L8 8"/>
+            <path d="M20 4L16 8"/>
+            <path d="M4 20L8 16"/>
+            <path d="M20 20L16 16"/>
+          </svg>
+          PDF
+        </button>
       </div>
     </div>
 
     <!-- Resultados -->
     <div class="resultados-panel">
       <div class="resultados-header">
-        <h3>{{ nombreReporte() }}</h3>
-        <span class="total-items">{{ datosReporte().length }} registros</span>
+        <div class="resultados-title">
+          <h3>{{ nombreReporte() }}</h3>
+          <span class="total-items">{{ datosReporte().length }} registros</span>
+        </div>
+        <div class="resultados-resumen">
+          <div class="resumen-item">
+            <span class="resumen-label">Total</span>
+            <span class="resumen-valor">S/ {{ calcularTotal() | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Items</span>
+            <span class="resumen-valor">{{ calcularItems() }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="tabla-container">
-        <table class="tabla-reportes">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Fecha</th>
-              <th>Total</th>
-              <th>Items</th>
-              <th>Cliente</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (dato of datosReporte(); track dato.id) {
-              <tr>
-                <td>{{ dato.id }}</td>
-                <td>{{ dato.fecha }}</td>
-                <td>S/ {{ dato.total | number:'1.2-2' }}</td>
-                <td>{{ dato.items }}</td>
-                <td>{{ dato.cliente }}</td>
-              </tr>
-            }
-            @empty {
-              <tr><td colspan="5" class="text-center">No hay datos disponibles</td></tr>
-            }
-          </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td colspan="2"><strong>Total General</strong></td>
-              <td><strong>S/ {{ calcularTotal() | number:'1.2-2' }}</strong></td>
-              <td colspan="2"></td>
-            </tr>
-          </tfoot>
-        </table>
+      <div class="tabla-wrapper">
+        @if (loading()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando datos...</p>
+          </div>
+        } @else if (datosReporte().length === 0) {
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>No hay datos disponibles</p>
+          </div>
+        } @else {
+          <div class="tabla-container">
+            <table class="tabla-reportes">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Items</th>
+                  <th>Usuario</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (dato of datosReporte(); track dato.id) {
+                  <tr>
+                    <td>#{{ dato.id }}</td>
+                    <td>{{ dato.fecha }}</td>
+                    <td>{{ dato.cliente }}</td>
+                    <td>{{ dato.items || 0 }}</td>
+                    <td>{{ dato.usuario || '-' }}</td>
+                    <td class="total-col">S/ {{ dato.total | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="5"><strong>Total General</strong></td>
+                  <td><strong>S/ {{ calcularTotal() | number:'1.2-2' }}</strong></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
       </div>
     </div>
   </div>

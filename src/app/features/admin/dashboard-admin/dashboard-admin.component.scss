@@ -1,0 +1,316 @@
+.dashboard-admin-container {
+  animation: fadeIn 0.3s ease;
+}
+
+.dashboard-header {
+  margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #5e412f;
+  margin: 0;
+}
+
+.header-icon {
+  width: 28px;
+  height: 28px;
+  stroke: #ce8329;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+/* LOADING */
+.loading-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e8e0d6;
+  border-top-color: #ce8329;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-container p {
+  margin-top: 12px;
+  color: #888;
+  font-size: 14px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #ce8329;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.stat-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: #5e412f;
+  stroke-width: 2;
+  fill: none;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #5e412f;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #888;
+}
+
+/* TABLA */
+.tabla-container {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8e0d6;
+}
+
+.tabla-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8e0d6;
+  background: #faf8f5;
+}
+
+.tabla-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #5e412f;
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+}
+
+.total-items {
+  font-size: 13px;
+  color: #888;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+  padding: 0 20px 20px 20px;
+}
+
+.tabla-ventas {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabla-ventas th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5e412f;
+  border-bottom: 2px solid #e8e0d6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabla-ventas td {
+  padding: 12px 14px;
+  color: #2e2e2e;
+  border-bottom: 1px solid #f0ece4;
+}
+
+.tabla-ventas tr:hover td {
+  background: #faf8f5;
+}
+
+.id-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f5f0e8;
+  color: #5e412f;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.total-col {
+  font-weight: 700;
+  color: #5e412f;
+}
+
+.estado {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.estado-completada {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.estado-pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.estado-cancelada {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.text-center {
+  text-align: center;
+  color: #888;
+  padding: 30px !important;
+}
+
+.text-center svg {
+  width: 40px;
+  height: 40px;
+  stroke: #ccc;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .dashboard-header h1 {
+    font-size: 20px;
+  }
+
+  .header-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .tabla-scroll {
+    padding: 0 12px 12px 12px;
+  }
+
+  .tabla-ventas {
+    font-size: 12px;
+  }
+
+  .tabla-ventas th,
+  .tabla-ventas td {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header h1 {
+    font-size: 17px;
+  }
+
+  .header-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .tabla-ventas {
+    font-size: 11px;
+  }
+
+  .tabla-ventas th,
+  .tabla-ventas td {
+    padding: 6px 8px;
+  }
+
+  .id-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .estado {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+}

@@ -1,40 +1,126 @@
-<div class="carta-admin-container">
+<div class="carta-admin-container" [class.tema-oscuro]="temaOscuro()">
   <div class="page-header">
     <div class="header-left">
-      <h2>Gestión de Carta</h2>
-      <button class="btn-ver-carta" (click)="irCarta()">📋 Ver Carta</button>
+      <h2>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16v16H4z"/>
+          <path d="M8 8h8v8H8z"/>
+          <path d="M8 12h8"/>
+          <path d="M12 4v4"/>
+          <path d="M12 16v4"/>
+        </svg>
+        Gestión de Carta
+      </h2>
+      <button class="btn-ver-carta" (click)="irCartaMesero()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Ver como Mesero
+      </button>
     </div>
-    <button class="btn-primary" (click)="toggleFormulario()">
-      {{ mostrarFormulario() ? 'Cancelar' : '+ Nuevo Producto' }}
-    </button>
+    <div class="header-actions">
+      <button class="btn-tema" (click)="toggleTema()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        {{ temaOscuro() ? 'Claro' : 'Oscuro' }}
+      </button>
+      <button class="btn-primary" (click)="toggleFormulario()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        {{ mostrarFormulario() ? 'Cancelar' : 'Nuevo Producto' }}
+      </button>
+    </div>
   </div>
 
   @if (mostrarFormulario()) {
     <div class="formulario-card">
-      <h3>{{ editando() ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        {{ editando() ? 'Editar Producto' : 'Nuevo Producto' }}
+      </h3>
       <div class="form-grid">
         <div class="form-group">
           <label>Categoría</label>
-          <select [(ngModel)]="nuevoProducto().categoria_id">
-            @for (cat of categorias(); track cat.id) {
-              <option [value]="cat.id">{{ cat.nombre }}</option>
-            }
-          </select>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v4"/>
+              <path d="M12 14v4"/>
+              <line x1="6" y1="12" x2="10" y2="12"/>
+              <line x1="14" y1="12" x2="18" y2="12"/>
+            </svg>
+            <select [(ngModel)]="nuevoProducto().categoria_id">
+              @for (cat of categorias(); track cat.id) {
+                <option [value]="cat.id">{{ cat.nombre }}</option>
+              }
+            </select>
+          </div>
         </div>
         <div class="form-group">
           <label>Nombre</label>
-          <input type="text" [(ngModel)]="nuevoProducto().nombre" placeholder="Nombre del producto">
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16v16H4z"/>
+              <path d="M8 8h8v8H8z"/>
+              <path d="M8 12h8"/>
+            </svg>
+            <input type="text" [(ngModel)]="nuevoProducto().nombre" placeholder="Nombre del producto">
+          </div>
         </div>
         <div class="form-group">
           <label>Precio</label>
-          <input type="number" [(ngModel)]="nuevoProducto().precio" placeholder="0.00" step="0.01">
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+            </svg>
+            <input type="number" [(ngModel)]="nuevoProducto().precio" placeholder="0.00" step="0.01">
+          </div>
         </div>
         <div class="form-group">
           <label>Descripción</label>
-          <input type="text" [(ngModel)]="nuevoProducto().descripcion" placeholder="Descripción (opcional)">
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16v16H4z"/>
+              <path d="M8 8h8v8H8z"/>
+              <path d="M8 12h8"/>
+              <path d="M12 4v4"/>
+              <path d="M12 16v4"/>
+            </svg>
+            <input type="text" [(ngModel)]="nuevoProducto().descripcion" placeholder="Descripción">
+          </div>
         </div>
         <div class="form-group">
-          <button class="btn-success" (click)="guardarProducto()">Guardar</button>
+          <label>Stock</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+            </svg>
+            <input type="number" [(ngModel)]="nuevoProducto().stock" placeholder="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn-success" (click)="guardarProducto()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Guardar
+          </button>
         </div>
       </div>
     </div>
@@ -42,52 +128,112 @@
 
   <div class="tabla-container">
     <div class="tabla-header">
-      <span>Productos ({{ productos().length }})</span>
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+        </svg>
+        Productos ({{ productos().length }})
+      </span>
       <span class="filtro-ayuda">Click en "Agotado/Disponible" para cambiar estado</span>
     </div>
-    <table class="tabla-productos">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Categoría</th>
-          <th>Precio</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (producto of productos(); track producto.id) {
-          <tr [class.agotado]="producto.agotado">
-            <td>{{ producto.id }}</td>
-            <td>{{ producto.nombre }}</td>
-            <td>{{ getNombreCategoria(producto.categoria_id) }}</td>
-            <td>S/ {{ producto.precio | number:'1.2-2' }}</td>
-            <td>
-              <button 
-                class="btn-estado"
-                [class.agotado]="producto.agotado"
-                [class.disponible]="!producto.agotado"
-                (click)="toggleAgotado(producto)"
-              >
-                {{ producto.agotado ? 'Agotado' : 'Disponible' }}
-              </button>
-            </td>
-            <td>
-              <button class="btn-edit" (click)="editarProducto(producto)">✏️</button>
-              <button class="btn-delete" (click)="eliminarProducto(producto.id)">🗑️</button>
-            </td>
+    <div class="tabla-scroll">
+      <table class="tabla-productos">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Estado</th>
+            <th>Acciones</th>
           </tr>
-        }
-        @empty {
-          <tr><td colspan="6" class="text-center">No hay productos registrados</td></tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (producto of productos(); track producto.id) {
+            <tr [class.agotado]="producto.agotado">
+              <td><span class="id-badge">#{{ producto.id }}</span></td>
+              <td>
+                <span class="producto-nombre">{{ producto.nombre }}</span>
+              </td>
+              <td>
+                <span class="categoria-badge">{{ getNombreCategoria(producto.categoria_id) }}</span>
+              </td>
+              <td class="precio-col">S/ {{ producto.precio | number:'1.2-2' }}</td>
+              <td>{{ producto.stock || 0 }}</td>
+              <td>
+                <button 
+                  class="btn-estado"
+                  [class.agotado]="producto.agotado"
+                  [class.disponible]="!producto.agotado"
+                  (click)="toggleAgotado(producto)"
+                >
+                  {{ producto.agotado ? 'Agotado' : 'Disponible' }}
+                </button>
+              </td>
+              <td>
+                <button class="btn-edit" (click)="editarProducto(producto)" title="Editar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-delete" (click)="eliminarProducto(producto.id)" title="Eliminar">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          }
+          @empty {
+            <tr>
+              <td colspan="7" class="text-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                No hay productos registrados
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="admin-notes">
-    <p>💡 Los meseros también pueden marcar productos como "Agotado" desde la carta.</p>
-    <p>🔒 Solo los administradores pueden crear, editar o eliminar productos.</p>
+    <p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Los meseros pueden ver la carta y marcar productos como "Agotado"
+    </p>
+    <p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="9" y1="9" x2="15" y2="9"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+        <line x1="12" y1="9" x2="12" y2="15"/>
+      </svg>
+      Solo los administradores pueden crear, editar o eliminar productos
+    </p>
+    <p>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 4h16v16H4z"/>
+        <path d="M8 8h8v8H8z"/>
+        <path d="M8 12h8"/>
+        <path d="M4 4L8 8"/>
+        <path d="M20 4L16 8"/>
+      </svg>
+      Los productos se sincronizan automáticamente con la base de datos
+    </p>
   </div>
 </div>

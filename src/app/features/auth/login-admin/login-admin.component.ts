@@ -22,7 +22,6 @@ export class LoginAdminComponent implements OnInit {
   mostrarBienvenida = signal<boolean>(false);
   nombreUsuario = signal<string>('');
 
-  // Logo específico para administrador
   logoUrl = 'assets/images/logoadmin.png';
 
   constructor() {
@@ -71,6 +70,7 @@ export class LoginAdminComponent implements OnInit {
     });
   }
 
+  // ✅ MÉTODO CORREGIDO - Redirige al login de mesero
   irLoginMesero(): void {
     this.router.navigate(['/login-mesero']);
   }

@@ -23,6 +23,7 @@ export class CartaAdminComponent implements OnInit {
   categorias = signal<any[]>([]);
   loading = signal(true);
   usuario = signal<any>(null);
+  temaOscuro = signal<boolean>(false);
   
   mostrarFormulario = signal(false);
   productoEdit = signal<any>(null);
@@ -32,16 +33,21 @@ export class CartaAdminComponent implements OnInit {
     categoria_id: 0,
     nombre: '',
     precio: 0,
-    descripcion: ''
+    descripcion: '',
+    stock: 0
   });
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
     if (this.usuario()?.rol !== 'admin') {
-      this.router.navigate(['/carta']);
+      this.router.navigate(['/carta-mesero']);
       return;
     }
     this.cargarDatos();
+  }
+
+  toggleTema(): void {
+    this.temaOscuro.set(!this.temaOscuro());
   }
 
   cargarDatos(): void {
@@ -74,7 +80,7 @@ export class CartaAdminComponent implements OnInit {
     if (!this.mostrarFormulario()) {
       this.editando.set(false);
       this.productoEdit.set(null);
-      this.nuevoProducto.set({ categoria_id: this.categorias()[0]?.id || 0, nombre: '', precio: 0, descripcion: '' });
+      this.nuevoProducto.set({ categoria_id: this.categorias()[0]?.id || 0, nombre: '', precio: 0, descripcion: '', stock: 0 });
     }
   }
 
@@ -85,27 +91,41 @@ export class CartaAdminComponent implements OnInit {
       categoria_id: producto.categoria_id,
       nombre: producto.nombre,
       precio: producto.precio,
-      descripcion: producto.descripcion || ''
+      descripcion: producto.descripcion || '',
+      stock: producto.stock || 0
     });
     this.mostrarFormulario.set(true);
   }
 
   guardarProducto(): void {
+    if (!this.nuevoProducto().nombre || this.nuevoProducto().precio <= 0) {
+      alert('Por favor complete todos los campos correctamente');
+      return;
+    }
+
     if (this.editando()) {
       this.productoService.actualizarProducto(this.productoEdit().id, this.nuevoProducto()).subscribe({
         next: () => {
+          alert('Producto actualizado correctamente');
           this.cargarDatos();
           this.toggleFormulario();
         },
-        error: (err) => console.error('Error al actualizar producto:', err)
+        error: (err) => {
+          console.error('Error al actualizar producto:', err);
+          alert('Error al actualizar producto');
+        }
       });
     } else {
       this.productoService.crearProducto(this.nuevoProducto()).subscribe({
         next: () => {
+          alert('Producto creado correctamente');
           this.cargarDatos();
           this.toggleFormulario();
         },
-        error: (err) => console.error('Error al crear producto:', err)
+        error: (err) => {
+          console.error('Error al crear producto:', err);
+          alert('Error al crear producto');
+        }
       });
     }
   }
@@ -124,8 +144,14 @@ export class CartaAdminComponent implements OnInit {
   eliminarProducto(id: number): void {
     if (confirm('¿Está seguro de eliminar este producto?')) {
       this.productoService.eliminarProducto(id).subscribe({
-        next: () => this.cargarDatos(),
-        error: (err) => console.error('Error al eliminar producto:', err)
+        next: () => {
+          alert('Producto eliminado correctamente');
+          this.cargarDatos();
+        },
+        error: (err) => {
+          console.error('Error al eliminar producto:', err);
+          alert('Error al eliminar producto');
+        }
       });
     }
   }
@@ -135,7 +161,16 @@ export class CartaAdminComponent implements OnInit {
     return cat ? cat.nombre : 'Sin categoría';
   }
 
-  irCarta(): void {
-    this.router.navigate(['/carta']);
+  irCartaMesero(): void {
+    this.router.navigate(['/carta-mesero']);
+  }
+
+  irDashboard(): void {
+    this.router.navigate(['/admin/dashboard-admin']);
+  }
+
+  cerrarSesion(): void {
+    this.authService.logout();
+    this.router.navigate(['/login-admin']);
   }
 }
