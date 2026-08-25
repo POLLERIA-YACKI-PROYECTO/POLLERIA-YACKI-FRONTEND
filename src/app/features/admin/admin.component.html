@@ -1,0 +1,11 @@
+<div class="admin-container">
+  <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
+  
+  <div class="admin-layout">
+    <app-sidebar></app-sidebar>
+    
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

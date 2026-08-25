@@ -1,0 +1,25 @@
+<aside class="sidebar">
+  <div class="sidebar-menu">
+    @for (item of menuItems(); track item.route) {
+      <a 
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="sidebar-item"
+      >
+        <span class="sidebar-icon">{{ item.icon }}</span>
+        <span class="sidebar-label">{{ item.label }}</span>
+      </a>
+    }
+  </div>
+  
+  <div class="sidebar-footer">
+    <a routerLink="/carta" class="sidebar-item ventas-link">
+      <span class="sidebar-icon">📋</span>
+      <span class="sidebar-label">Ver Carta</span>
+    </a>
+    <a routerLink="/ventas" class="sidebar-item ventas-link">
+      <span class="sidebar-icon">🍽️</span>
+      <span class="sidebar-label">Ir a Ventas</span>
+    </a>
+  </div>
+</aside>

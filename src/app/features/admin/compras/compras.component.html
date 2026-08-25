@@ -1,0 +1,71 @@
+<div class="compras-container">
+  <div class="page-header">
+    <h2>Registro de Compras</h2>
+    <button class="btn-primary" (click)="toggleFormulario()">
+      {{ mostrarFormulario() ? 'Cancelar' : '+ Nueva Compra' }}
+    </button>
+  </div>
+
+  @if (mostrarFormulario()) {
+    <div class="formulario-card">
+      <h3>Nueva Compra</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Proveedor</label>
+          <input type="text" [(ngModel)]="nuevaCompra().proveedor" placeholder="Nombre del proveedor">
+        </div>
+        <div class="form-group">
+          <label>Producto</label>
+          <input type="text" [(ngModel)]="nuevaCompra().producto" placeholder="Producto">
+        </div>
+        <div class="form-group">
+          <label>Cantidad</label>
+          <input type="number" [(ngModel)]="nuevaCompra().cantidad" placeholder="Cantidad">
+        </div>
+        <div class="form-group">
+          <label>Precio Unitario</label>
+          <input type="number" [(ngModel)]="nuevaCompra().precio" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <button class="btn-success" (click)="guardarCompra()">Guardar Compra</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="tabla-container">
+    <table class="tabla-compras">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Proveedor</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio Unit.</th>
+          <th>Total</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (compra of compras(); track compra.id) {
+          <tr>
+            <td>{{ compra.id }}</td>
+            <td>{{ compra.proveedor }}</td>
+            <td>{{ compra.producto }}</td>
+            <td>{{ compra.cantidad }}</td>
+            <td>S/ {{ compra.precio | number:'1.2-2' }}</td>
+            <td>S/ {{ (compra.cantidad * compra.precio) | number:'1.2-2' }}</td>
+            <td>{{ compra.fecha }}</td>
+            <td>
+              <button class="btn-delete" (click)="eliminarCompra(compra.id)">🗑️</button>
+            </td>
+          </tr>
+        }
+        @empty {
+          <tr><td colspan="8" class="text-center">No hay compras registradas</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,10 +1,49 @@
 .header {
-  background: white;
   padding: 16px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;
   z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+/* Estilos para admin */
+:host-context(.admin-mode) .header {
+  background: #5e412f;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+:host-context(.admin-mode) .header-title {
+  color: #e9bd6e;
+}
+
+:host-context(.admin-mode) .btn-logout {
+  border-color: #ce8329;
+  color: #e9bd6e;
+}
+
+:host-context(.admin-mode) .btn-logout:hover {
+  background: #ce8329;
+  color: #5e412f;
+}
+
+/* Estilos para mesero */
+:host-context(.mesero-mode) .header {
+  background: #000000;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+:host-context(.mesero-mode) .header-title {
+  color: #ffffda;
+}
+
+:host-context(.mesero-mode) .btn-logout {
+  border-color: #f31730;
+  color: #ffffda;
+}
+
+:host-context(.mesero-mode) .btn-logout:hover {
+  background: #f31730;
+  color: #000000;
 }
 
 .header-content {
@@ -27,14 +66,14 @@
   width: 48px;
   height: 48px;
   object-fit: contain;
+  border-radius: 50%;
 }
 
 .header-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 24px;
   font-weight: 700;
-  color: #228B22;
   letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
 }
 
 .header-right {
@@ -47,39 +86,38 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-weight: 500;
-  color: #333;
   font-size: 14px;
+  color: #ffffda;
 }
 
 .icon-user {
-  color: #228B22;
+  color: #ce8329;
 }
 
 .btn-logout {
   padding: 8px 20px;
   background: transparent;
-  color: #dc3545;
-  border: 1.5px solid #dc3545;
+  border: 1.5px solid;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.btn-logout:hover {
-  background: #dc3545;
-  color: white;
+  font-family: 'Inter', sans-serif;
 }
 
 .btn-logout:hover svg {
-  stroke: white;
+  stroke: currentColor;
+}
+
+.btn-logout svg {
+  stroke: currentColor;
+  width: 18px;
+  height: 18px;
 }
 
 @media (max-width: 768px) {
@@ -103,5 +141,30 @@
 
   .header-title {
     font-size: 20px;
+  }
+
+  .btn-logout {
+    font-size: 13px;
+    padding: 6px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 17px;
+  }
+
+  .header-logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .usuario-info {
+    font-size: 12px;
+  }
+
+  .btn-logout {
+    font-size: 12px;
+    padding: 5px 12px;
   }
 }

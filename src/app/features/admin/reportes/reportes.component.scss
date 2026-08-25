@@ -1,0 +1,222 @@
+.reportes-container {
+  animation: fadeIn 0.3s ease;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a472a;
+  margin: 0;
+}
+
+.reportes-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.config-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 100px;
+}
+
+.config-panel h3 {
+  margin: 0 0 20px 0;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.form-group select,
+.form-group input {
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: #32CD32;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  background: #228B22;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.btn-primary:hover {
+  background: #1a6e1a;
+  transform: translateY(-2px);
+}
+
+.btn-excel {
+  padding: 10px 16px;
+  background: #217346;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-excel:hover {
+  background: #1a5c38;
+}
+
+.btn-pdf {
+  padding: 10px 16px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-pdf:hover {
+  background: #b91c1c;
+}
+
+.resultados-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.resultados-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.resultados-header h3 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.total-items {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.tabla-container {
+  overflow-x: auto;
+}
+
+.tabla-reportes {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-reportes th {
+  background: #f8faf8;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tabla-reportes td {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #1f2937;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.tabla-reportes tr:hover td {
+  background: #fafdfa;
+}
+
+.total-row {
+  background: #f8faf8 !important;
+  font-weight: 600;
+}
+
+.text-center {
+  text-align: center;
+  color: #6b7280;
+  padding: 24px !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 1024px) {
+  .reportes-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .config-panel {
+    position: relative;
+    top: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .btn-group {
+    flex-direction: column;
+  }
+  
+  .btn-excel,
+  .btn-pdf {
+    width: 100%;
+  }
+}

@@ -1,0 +1,76 @@
+<div class="ventas-container">
+  <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
+  
+  <main class="ventas-content">
+    <div class="ventas-layout">
+      <!-- Panel de Acciones -->
+      <aside class="panel-sidebar">
+        <div class="panel-container">
+          <button class="panel-toggle" (click)="togglePanel()">
+            <span class="panel-toggle-text">
+              @if (opcionSeleccionada()) {
+                {{ obtenerNombreOpcion(opcionSeleccionada()) }}
+              } @else {
+                📋 Acciones
+              }
+            </span>
+            <svg class="panel-arrow" [class.rotated]="panelAbierto()" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          @if (panelAbierto()) {
+            <div class="panel-dropdown">
+              <div class="panel-grid">
+                <button class="panel-item" (click)="seleccionarOpcion('solicitarGasto')">💰 Solicitar Gasto</button>
+                <button class="panel-item" (click)="seleccionarOpcion('paraLlevar')">🛍️ Para Llevar</button>
+                <button class="panel-item" (click)="seleccionarOpcion('ultimas')">📋 Ultimas</button>
+                <button class="panel-item" (click)="seleccionarOpcion('precios')">💰 Precios</button>
+                <button class="panel-item" (click)="seleccionarOpcion('delivery')">🚚 Delivery</button>
+                <button class="panel-item" (click)="seleccionarOpcion('verTickets')">🎫 Ver Tickets</button>
+                <button class="panel-item" (click)="seleccionarOpcion('porPagar')">💳 Por Pagar</button>
+                <button class="panel-item" (click)="seleccionarOpcion('marcarEntrega')">✅ Marcar Entrega</button>
+                <button class="panel-item" (click)="seleccionarOpcion('cerrarCaja')">🔐 Cerrar Caja</button>
+                <button class="panel-item" (click)="seleccionarOpcion('cerrarCajaFinal')">🔒 Cerrar Caja Final</button>
+                <button class="panel-item" (click)="seleccionarOpcion('otrosIngresos')">📊 Otros Ingresos</button>
+                <button class="panel-item" (click)="seleccionarOpcion('reservas')">📅 Reservas</button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Botón Administrar -->
+        <button class="btn-admin" (click)="irAdmin()">
+          ⚙️ Administrar
+        </button>
+      </aside>
+
+      <!-- Contenido Principal -->
+      <div class="main-content">
+        <div class="section-header">
+          <h2>Mesas Disponibles</h2>
+          <p>Seleccione una mesa para gestionar</p>
+        </div>
+
+        <div class="mesas-grid">
+          @for (numero of mesas(); track numero) {
+            <div 
+              class="mesa"
+              [class.seleccionada]="mesaSeleccionada() === numero"
+              (click)="seleccionarMesa(numero)"
+            >
+              <span class="mesa-numero">{{ numero }}</span>
+            </div>
+          }
+        </div>
+
+        @if (mesaSeleccionada()) {
+          <div class="mesa-info">
+            <h3>Mesa {{ mesaSeleccionada() }} Seleccionada</h3>
+            <p>Agregue productos al pedido</p>
+          </div>
+        }
+      </div>
+    </div>
+  </main>
+</div>

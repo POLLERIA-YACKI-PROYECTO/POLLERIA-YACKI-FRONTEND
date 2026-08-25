@@ -1,0 +1,374 @@
+.carta-container {
+  min-height: 100vh;
+  background: #ffffda;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.carta-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.carta-header {
+  padding: 20px 0;
+  border-bottom: 2px solid #2e2e2e;
+  margin-bottom: 24px;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.header-top h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 4px 0;
+}
+
+.header-top .subtitle {
+  font-size: 16px;
+  color: #2e2e2e;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-admin-header {
+  padding: 8px 16px;
+  background: #5e412f;
+  color: #e9bd6e;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-admin-header:hover {
+  background: #921a17;
+  transform: translateY(-2px);
+}
+
+.badge-modificar {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f31730;
+  background: rgba(243, 23, 48, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #f31730;
+}
+
+.contact-info {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #2e2e2e;
+}
+
+.contact-info span {
+  background: rgba(255, 255, 218, 0.8);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #2e2e2e;
+}
+
+.categorias-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0 16px;
+  scrollbar-width: thin;
+}
+
+.categorias-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.categorias-scroll::-webkit-scrollbar-thumb {
+  background: #f31730;
+  border-radius: 4px;
+}
+
+.categoria-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 2px solid #2e2e2e;
+  border-radius: 12px;
+  background: #ffffda;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  flex-shrink: 0;
+}
+
+.categoria-btn:hover {
+  border-color: #f31730;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(243, 23, 48, 0.15);
+}
+
+.categoria-btn.active {
+  border-color: #f31730;
+  background: rgba(243, 23, 48, 0.1);
+  color: #f31730;
+}
+
+.categoria-icon {
+  font-size: 20px;
+}
+
+.productos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.producto-card {
+  background: rgba(255, 255, 218, 0.9);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  border: 1px solid #2e2e2e;
+}
+
+.producto-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.producto-card.agotado {
+  opacity: 0.6;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.producto-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.producto-nombre {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.producto-precio {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f31730;
+}
+
+.producto-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.badge-agotado {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f31730;
+  background: rgba(243, 23, 48, 0.1);
+  padding: 2px 10px;
+  border-radius: 20px;
+  border: 1px solid #f31730;
+}
+
+.btn-toggle {
+  padding: 4px 12px;
+  border: none;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-toggle.disponible-btn {
+  background: #2e2e2e;
+  color: #ffffda;
+}
+
+.btn-toggle.disponible-btn:hover {
+  background: #000000;
+}
+
+.btn-toggle.agotado-btn {
+  background: #f31730;
+  color: #ffffda;
+}
+
+.btn-toggle.agotado-btn:hover {
+  background: #cc1228;
+}
+
+.btn-agregar {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #000000;
+  color: #ffffda;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-agregar:hover:not(:disabled) {
+  background: #f31730;
+  transform: scale(1.05);
+}
+
+.btn-agregar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+  color: #2e2e2e;
+  font-size: 16px;
+  grid-column: 1 / -1;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 40px;
+  color: #2e2e2e;
+  grid-column: 1 / -1;
+}
+
+.leyenda {
+  margin-top: 24px;
+  padding: 12px 20px;
+  background: rgba(243, 23, 48, 0.05);
+  border-radius: 12px;
+  border: 1px solid #f31730;
+}
+
+.leyenda-texto {
+  font-size: 13px;
+  color: #000000;
+  margin: 0;
+  text-align: center;
+}
+
+.leyenda-disponible {
+  background: #2e2e2e;
+  padding: 1px 8px;
+  border-radius: 4px;
+  color: #ffffda;
+  font-weight: 600;
+}
+
+.leyenda-agotado {
+  background: #f31730;
+  padding: 1px 8px;
+  border-radius: 4px;
+  color: #ffffda;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .carta-content {
+    padding: 12px;
+  }
+
+  .header-top {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .header-top h1 {
+    font-size: 24px;
+  }
+
+  .contact-info {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .categoria-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .productos-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .producto-card {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .producto-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-top h1 {
+    font-size: 20px;
+  }
+  
+  .categoria-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .producto-nombre {
+    font-size: 14px;
+  }
+
+  .btn-toggle {
+    font-size: 10px;
+    padding: 3px 10px;
+  }
+
+  .btn-agregar {
+    font-size: 12px;
+    padding: 5px 12px;
+  }
+}

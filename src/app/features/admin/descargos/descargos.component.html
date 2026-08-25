@@ -1,0 +1,63 @@
+<div class="descargos-container">
+  <div class="page-header">
+    <h2>Registro de Descargos</h2>
+    <button class="btn-primary" (click)="toggleFormulario()">
+      {{ mostrarFormulario() ? 'Cancelar' : '+ Nuevo Descargo' }}
+    </button>
+  </div>
+
+  @if (mostrarFormulario()) {
+    <div class="formulario-card">
+      <h3>Nuevo Descargo</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Producto</label>
+          <input type="text" [(ngModel)]="nuevoDescargo().producto" placeholder="Producto">
+        </div>
+        <div class="form-group">
+          <label>Cantidad</label>
+          <input type="number" [(ngModel)]="nuevoDescargo().cantidad" placeholder="Cantidad">
+        </div>
+        <div class="form-group">
+          <label>Motivo</label>
+          <input type="text" [(ngModel)]="nuevoDescargo().motivo" placeholder="Motivo del descargo">
+        </div>
+        <div class="form-group">
+          <button class="btn-success" (click)="guardarDescargo()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="tabla-container">
+    <table class="tabla-descargos">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Motivo</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (descargo of descargos(); track descargo.id) {
+          <tr>
+            <td>{{ descargo.id }}</td>
+            <td>{{ descargo.producto }}</td>
+            <td>{{ descargo.cantidad }}</td>
+            <td>{{ descargo.motivo }}</td>
+            <td>{{ descargo.fecha }}</td>
+            <td>
+              <button class="btn-delete" (click)="eliminarDescargo(descargo.id)">🗑️</button>
+            </td>
+          </tr>
+        }
+        @empty {
+          <tr><td colspan="6" class="text-center">No hay descargos registrados</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

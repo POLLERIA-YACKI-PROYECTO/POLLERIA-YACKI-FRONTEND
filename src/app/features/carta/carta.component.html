@@ -1,0 +1,97 @@
+<div class="carta-container">
+  <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
+  
+  <div class="carta-content">
+    <!-- Header de la carta -->
+    <div class="carta-header">
+      <div class="header-top">
+        <div>
+          <h1>Polleria Yacky</h1>
+          <p class="subtitle">Nuestra Carta</p>
+        </div>
+        <div class="header-actions">
+          @if (esAdmin() && !modoAdmin) {
+            <button class="btn-admin-header" (click)="irAdmin()">
+              ⚙️ Administrar
+            </button>
+          }
+          @if (puedeModificar()) {
+            <span class="badge-modificar">✏️ Puedes marcar agotados</span>
+          }
+        </div>
+      </div>
+      
+      <div class="contact-info">
+        <span>📱 {{ configuracion().telefono || '902458936' }}</span>
+        <span>📷 {{ configuracion().instagram || '@donayacki_oficial' }}</span>
+        <span>📘 {{ configuracion().facebook || '@donayacki' }}</span>
+      </div>
+    </div>
+
+    <!-- Categorías -->
+    <div class="categorias-scroll">
+      @for (cat of categorias(); track cat.id) {
+        <button 
+          class="categoria-btn"
+          [class.active]="categoriaSeleccionada() === cat.id"
+          (click)="seleccionarCategoria(cat.id)"
+        >
+          <span class="categoria-icon">{{ cat.icono || '📋' }}</span>
+          <span class="categoria-nombre">{{ cat.nombre }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Productos -->
+    <div class="productos-grid">
+      @if (loading()) {
+        <div class="loading-spinner">Cargando productos...</div>
+      } @else {
+        @for (producto of productosFiltrados(); track producto.id) {
+          <div class="producto-card" [class.agotado]="producto.agotado">
+            <div class="producto-info">
+              <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+              <span class="producto-precio">S/ {{ producto.precio | number:'1.2-2' }}</span>
+            </div>
+            <div class="producto-actions">
+              @if (producto.agotado) {
+                <span class="badge-agotado">Agotado</span>
+              }
+              @if (puedeModificar()) {
+                <button 
+                  class="btn-toggle"
+                  [class.agotado-btn]="producto.agotado"
+                  [class.disponible-btn]="!producto.agotado"
+                  (click)="toggleAgotado(producto.id)"
+                  title="Marcar como {{ producto.agotado ? 'disponible' : 'agotado' }}"
+                >
+                  {{ producto.agotado ? '✓ Disponible' : '✕ Agotado' }}
+                </button>
+              }
+              <button 
+                class="btn-agregar"
+                [disabled]="producto.agotado"
+                (click)="agregarAlPedido(producto)"
+              >
+                Agregar
+              </button>
+            </div>
+          </div>
+        }
+        @empty {
+          <div class="empty-message">No hay productos disponibles en esta categoría</div>
+        }
+      }
+    </div>
+
+    <!-- Leyenda para meseros -->
+    @if (puedeModificar()) {
+      <div class="leyenda">
+        <p class="leyenda-texto">
+          💡 Los botones <span class="leyenda-disponible">Disponible</span> y 
+          <span class="leyenda-agotado">Agotado</span> te permiten actualizar el estado de los productos en tiempo real.
+        </p>
+      </div>
+    }
+  </div>
+</div>

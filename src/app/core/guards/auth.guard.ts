@@ -10,5 +10,15 @@ export const AuthGuard = () => {
     return true;
   }
 
-  return router.parseUrl('/login');
+  // Redirigir según el rol que intentaba acceder
+  const usuario = authService.getUsuarioActual();
+  if (usuario) {
+    if (usuario.rol === 'admin' || usuario.rol === 'cajero') {
+      return router.parseUrl('/login-admin');
+    } else if (usuario.rol === 'mesero') {
+      return router.parseUrl('/login-mesero');
+    }
+  }
+
+  return router.parseUrl('/login-admin');
 };
