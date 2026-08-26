@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+// carta-mesero.component.ts
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProductoService } from '../../../core/services/producto.service';
@@ -24,6 +25,7 @@ export class CartaMeseroComponent implements OnInit {
 
   temaOscuro = signal<boolean>(true);
   menuAbierto = signal<boolean>(false);
+  categoriaMenuAbierto = signal<boolean>(false);
   opcionSeleccionada = signal<string>('');
 
   categorias = signal<any[]>([]);
@@ -33,6 +35,12 @@ export class CartaMeseroComponent implements OnInit {
   configuracion = signal<any>({});
   loading = signal(true);
   usuario = signal<any>(null);
+
+  // Computed para el nombre de la categoría seleccionada
+  categoriaSeleccionadaNombre = computed(() => {
+    const cat = this.categorias().find(c => c.id === this.categoriaSeleccionada());
+    return cat ? cat.nombre : 'Seleccionar categoría';
+  });
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -51,18 +59,27 @@ export class CartaMeseroComponent implements OnInit {
     this.menuAbierto.set(!this.menuAbierto());
   }
 
+  toggleCategoriaMenu(): void {
+    this.categoriaMenuAbierto.set(!this.categoriaMenuAbierto());
+  }
+
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
     
-    switch(opcion) {
-      case 'carta': this.irCarta(); break;
-      case 'mesas': this.irMesas(); break;
-      case 'pedidos': this.irPedidos(); break;
-      case 'precios': this.irPrecios(); break;
-      case 'ventas': this.irVentas(); break;
-      case 'tickets': this.irTicket(); break;
-      case 'dashboard': this.irDashboard(); break;
+    const rutas: { [key: string]: string } = {
+      'carta': '/mesero/carta',
+      'mesas': '/mesero/mesas',
+      'pedidos': '/mesero/pedidos',
+      'precios': '/mesero/precios',
+      'ventas': '/mesero/ventas',
+      'tickets': '/mesero/tickets',
+      'dashboard': '/mesero/dashboard'
+    };
+    
+    const ruta = rutas[opcion];
+    if (ruta) {
+      this.router.navigate([ruta]);
     }
   }
 
@@ -92,6 +109,7 @@ export class CartaMeseroComponent implements OnInit {
   cargarProductos(categoriaId: number): void {
     this.loading.set(true);
     this.categoriaSeleccionada.set(categoriaId);
+    this.categoriaMenuAbierto.set(false);
     
     this.productoService.obtenerPorCategoria(categoriaId).subscribe({
       next: (productos) => {
@@ -107,8 +125,15 @@ export class CartaMeseroComponent implements OnInit {
   }
 
   seleccionarCategoria(categoriaId: number): void {
-    if (this.categoriaSeleccionada() === categoriaId) return;
+    if (this.categoriaSeleccionada() === categoriaId) {
+      this.categoriaMenuAbierto.set(false);
+      return;
+    }
     this.cargarProductos(categoriaId);
+  }
+
+  contarProductosPorCategoria(categoriaId: number): number {
+    return this.productos().filter(p => p.categoria_id === categoriaId).length;
   }
 
   agregarAlPedido(producto: any): void {
@@ -116,31 +141,31 @@ export class CartaMeseroComponent implements OnInit {
   }
 
   irCarta(): void {
-    this.router.navigate(['/carta-mesero']);
+    this.router.navigate(['/mesero/carta']);
   }
 
   irMesas(): void {
-    this.router.navigate(['/mesas-mesero']);
+    this.router.navigate(['/mesero/mesas']);
   }
 
   irPedidos(): void {
-    this.router.navigate(['/pedidos-mesero']);
+    this.router.navigate(['/mesero/pedidos']);
   }
 
   irPrecios(): void {
-    this.router.navigate(['/precios-carta-mesero']);
+    this.router.navigate(['/mesero/precios']);
   }
 
   irVentas(): void {
-    this.router.navigate(['/ventas-mesero']);
+    this.router.navigate(['/mesero/ventas']);
   }
 
   irTicket(): void {
-    this.router.navigate(['/ticket']);
+    this.router.navigate(['/mesero/tickets']);
   }
 
   irDashboard(): void {
-    this.router.navigate(['/dashboard-mesero']);
+    this.router.navigate(['/mesero/dashboard']);
   }
 
   cerrarSesion(): void {

@@ -1,3 +1,4 @@
+<!-- mantenimiento.component.html -->
 <div class="mantenimiento-container" [class.tema-oscuro]="temaOscuro()">
   <div class="page-header">
     <div class="header-left">
@@ -26,14 +27,51 @@
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        {{ temaOscuro() ? 'Claro' : 'Oscuro' }}
+        <span>{{ temaOscuro() ? 'Claro' : 'Oscuro' }}</span>
       </button>
       <button class="btn-primary" (click)="toggleFormulario()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14M5 12h14"/>
         </svg>
-        {{ mostrarFormulario() ? 'Cancelar' : 'Nuevo Producto' }}
+        <span>{{ mostrarFormulario() ? 'Cancelar' : 'Nuevo Producto' }}</span>
       </button>
+    </div>
+  </div>
+
+  <!-- BUSCADOR -->
+  <div class="buscador-container">
+    <div class="buscador-wrapper">
+      <svg class="buscador-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input 
+        type="text" 
+        class="buscador-input"
+        placeholder="Buscar productos por nombre, categoría o precio..."
+        [(ngModel)]="terminoBusqueda"
+        (input)="filtrarProductos()"
+        (keyup.escape)="limpiarBusqueda()"
+      >
+      @if (terminoBusqueda().length > 0) {
+        <button class="buscador-clear" (click)="limpiarBusqueda()" title="Limpiar búsqueda">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      }
+    </div>
+    <div class="buscador-info">
+      <span class="resultados-count">
+        {{ productosFiltrados().length }} {{ productosFiltrados().length === 1 ? 'producto' : 'productos' }}
+        @if (terminoBusqueda().length > 0) {
+          <span class="filtro-activo">· Filtrando por "{{ terminoBusqueda() }}"</span>
+        }
+      </span>
+      @if (terminoBusqueda().length > 0 && productosFiltrados().length === 0) {
+        <span class="sin-resultados">Sin resultados</span>
+      }
     </div>
   </div>
 
@@ -129,9 +167,9 @@
           <rect x="2" y="7" width="20" height="14" rx="2"/>
           <line x1="2" y1="12" x2="22" y2="12"/>
         </svg>
-        <span>Productos ({{ productos().length }})</span>
+        <span>Productos</span>
       </div>
-      <span class="total-items">{{ productos().length }} registros</span>
+      <span class="total-items">{{ productosFiltrados().length }} registros</span>
     </div>
     <div class="tabla-scroll">
       <table class="tabla-productos">
@@ -146,7 +184,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (producto of productos(); track producto.id) {
+          @for (producto of productosFiltrados(); track producto.id) {
             <tr>
               <td><span class="id-badge">#{{ producto.id }}</span></td>
               <td class="nombre-col">
@@ -184,7 +222,11 @@
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                No hay productos registrados
+                @if (terminoBusqueda().length > 0) {
+                  <p>No se encontraron productos para "{{ terminoBusqueda() }}"</p>
+                } @else {
+                  <p>No hay productos registrados</p>
+                }
               </td>
             </tr>
           }

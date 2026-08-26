@@ -1,4 +1,4 @@
-// pedido.service.ts
+// core/services/cliente.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -8,10 +8,10 @@ import { AuthService } from './auth.service';
 @Injectable({
   providedIn: 'root'
 })
-export class PedidoService {
+export class ClienteService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private apiUrl = `${environment.apiUrl}/pedidos`;
+  private apiUrl = `${environment.apiUrl}/clientes`;
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
@@ -21,31 +21,27 @@ export class PedidoService {
     });
   }
 
-  obtenerPedidos(): Observable<any[]> {
+  obtenerClientes(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
-  obtenerPedidosPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/pendientes`, { headers: this.getHeaders() });
-  }
-
-  obtenerPedido(id: number): Observable<any> {
+  obtenerCliente(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
-  crearPedido(pedido: any): Observable<any> {
-    return this.http.post(this.apiUrl, pedido, { headers: this.getHeaders() });
+  buscarClientes(termino: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/buscar?q=${termino}`, { headers: this.getHeaders() });
   }
 
-  cambiarEstado(id: number, estado: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
+  crearCliente(cliente: any): Observable<any> {
+    return this.http.post(this.apiUrl, cliente, { headers: this.getHeaders() });
   }
 
-  marcarPagado(id: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}/pagar`, {}, { headers: this.getHeaders() });
+  actualizarCliente(id: number, cliente: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, cliente, { headers: this.getHeaders() });
   }
 
-  eliminarPedido(id: number): Observable<any> {
+  eliminarCliente(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 }

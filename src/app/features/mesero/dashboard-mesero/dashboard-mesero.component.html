@@ -1,9 +1,9 @@
+<!-- dashboard-mesero.component.html -->
 <div class="dashboard-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
-  <!-- MENSAJE DE BIENVENIDA FLOTANTE -->
   @if (mostrarBienvenida()) {
-    <div class="welcome-toast" [class.fade-out]="!mostrarBienvenida()">
+    <div class="welcome-toast">
       <div class="welcome-toast-content">
         <div class="welcome-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -13,11 +13,7 @@
         </div>
         <div class="welcome-text">
           <span class="welcome-message">{{ mensajeBienvenida() }}</span>
-          @if (esPrimeraVez()) {
-            <span class="welcome-sub">Que tengas un excelente día</span>
-          } @else {
-            <span class="welcome-sub">Esperamos que tengas una buena jornada</span>
-          }
+          <span class="welcome-sub">Que tengas un excelente día de trabajo</span>
         </div>
       </div>
     </div>
@@ -38,133 +34,183 @@
         </h1>
         <p class="subtitle">Bienvenido {{ usuario()?.nombre }}</p>
       </div>
-      <button class="btn-tema" (click)="toggleTema()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="5"/>
-          <line x1="12" y1="1" x2="12" y2="3"/>
-          <line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/>
-          <line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-        {{ temaOscuro() ? 'Claro' : 'Oscuro' }}
-      </button>
+      <div class="header-buttons">
+        <button class="btn-ir-mesas" (click)="irMesas()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span>Gestionar Mesas</span>
+        </button>
+        <button class="btn-tema" (click)="toggleTema()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <span>{{ temaOscuro() ? 'Claro' : 'Oscuro' }}</span>
+        </button>
+      </div>
     </div>
 
-    <!-- LAYOUT: MESAS (IZQUIERDA) + MENÚ (DERECHA) -->
-    <div class="dashboard-layout">
-      <!-- MARCO IZQUIERDO: MESAS -->
-      <div class="mesas-marco">
-        <div class="mesas-header">
-          <h2>Mesas Disponibles</h2>
-          <span class="mesas-total">16 mesas</span>
-        </div>
-        <div class="mesas-grid">
-          @for (mesa of mesas(); track mesa.numero) {
-            <div 
-              class="mesa-item"
-              [class.seleccionada]="mesaSeleccionada() === mesa.numero"
-              [class.ocupada]="mesa.ocupada"
-              (click)="seleccionarMesa(mesa.numero)"
-            >
-              <span class="mesa-numero">{{ mesa.numero }}</span>
-              <span class="mesa-estado">{{ mesa.ocupada ? 'Ocupada' : 'Libre' }}</span>
-              @if (mesaSeleccionada() === mesa.numero) {
-                <button class="btn-toggle" (click)="$event.stopPropagation(); toggleOcupada(mesa.numero)">
-                  {{ mesa.ocupada ? 'Liberar' : 'Ocupar' }}
-                </button>
-              }
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- MARCO DERECHO: MENÚ DESPLEGABLE -->
-      <div class="menu-marco">
-        <div class="menu-header">
+    <!-- Resumen de mesas -->
+    <div class="resumen-mesas">
+      <div class="resumen-item total">
+        <span class="resumen-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <line x1="9" y1="9" x2="15" y2="9"/>
-            <line x1="9" y1="15" x2="15" y2="15"/>
-            <line x1="12" y1="9" x2="12" y2="15"/>
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
           </svg>
-          <span>Seleccionar</span>
-        </div>
+        </span>
+        <span class="resumen-label">Total Mesas</span>
+        <span class="resumen-valor">{{ totalMesas() }}</span>
+      </div>
+      <div class="resumen-item ocupadas">
+        <span class="resumen-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v4"/>
+            <path d="M12 14v4"/>
+            <line x1="6" y1="12" x2="10" y2="12"/>
+            <line x1="14" y1="12" x2="18" y2="12"/>
+          </svg>
+        </span>
+        <span class="resumen-label">Ocupadas</span>
+        <span class="resumen-valor">{{ mesasOcupadas() }}</span>
+      </div>
+      <div class="resumen-item libres">
+        <span class="resumen-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+          </svg>
+        </span>
+        <span class="resumen-label">Libres</span>
+        <span class="resumen-valor">{{ mesasLibres() }}</span>
+      </div>
+    </div>
 
-        <div class="menu-container">
-          <button class="menu-toggle" (click)="toggleMenu()">
-            <span class="menu-toggle-text">
-              {{ opcionSeleccionada() || 'Opciones' }}
-            </span>
-            <svg class="menu-arrow" [class.rotated]="menuAbierto()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
+    <!-- MESAS -->
+    <div class="mesas-marco">
+      <div class="mesas-header">
+        <h2>Estado de Mesas</h2>
+        <div class="mesas-actions">
+          <span class="mesas-total">{{ totalMesas() }} mesas disponibles</span>
+          <button class="btn-ver-todas" (click)="irMesas()">
+            Ver todas
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
             </svg>
           </button>
-
-          @if (menuAbierto()) {
-            <div class="menu-dropdown">
-              <button class="menu-item" (click)="seleccionarOpcion('carta')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16v16H4z"/>
-                  <path d="M8 8h8v8H8z"/>
-                  <path d="M8 12h8"/>
-                  <path d="M12 4v4"/>
-                  <path d="M12 16v4"/>
-                </svg>
-                Carta
-              </button>
-              <button class="menu-item" (click)="seleccionarOpcion('mesas')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2"/>
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                </svg>
-                Mesas
-              </button>
-              <button class="menu-item" (click)="seleccionarOpcion('pedidos')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2"/>
-                  <line x1="2" y1="12" x2="22" y2="12"/>
-                  <circle cx="16" cy="15" r="1"/>
-                  <circle cx="8" cy="15" r="1"/>
-                </svg>
-                Pedidos
-              </button>
-              <button class="menu-item" (click)="seleccionarOpcion('precios')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
-                </svg>
-                Precios
-              </button>
-              <button class="menu-item" (click)="seleccionarOpcion('ventas')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2"/>
-                  <line x1="2" y1="11" x2="22" y2="11"/>
-                  <line x1="2" y1="16" x2="22" y2="16"/>
-                  <circle cx="16" cy="13" r="1"/>
-                  <circle cx="8" cy="18" r="1"/>
-                </svg>
-                Ventas
-              </button>
-              <button class="menu-item" (click)="seleccionarOpcion('tickets')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16v16H4z"/>
-                  <path d="M8 8h8v8H8z"/>
-                  <path d="M8 12h8"/>
-                  <path d="M4 4L8 8"/>
-                  <path d="M20 4L16 8"/>
-                  <path d="M4 20L8 16"/>
-                  <path d="M20 20L16 16"/>
-                </svg>
-                Tickets
-              </button>
-            </div>
-          }
         </div>
       </div>
+      
+      <div class="mesas-grid">
+        @for (mesa of mesas(); track mesa.numero) {
+          <div 
+            class="mesa-item"
+            [class.ocupada]="mesa.ocupada"
+            (click)="seleccionarMesa(mesa.numero)"
+            [class.seleccionada]="mesaSeleccionada() === mesa.numero"
+          >
+            <span class="mesa-numero">{{ mesa.numero }}</span>
+            @if (mesa.ocupada) {
+              <span class="mesa-cliente">{{ mesa.cliente || 'Ocupada' }}</span>
+              <span class="mesa-badge ocupado">Ocupada</span>
+            } @else {
+              <span class="mesa-badge libre">Libre</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="acciones-rapidas">
+      <button class="accion-btn" (click)="irCarta()">
+        <div class="accion-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16v16H4z"/>
+            <path d="M8 8h8v8H8z"/>
+            <path d="M8 12h8"/>
+            <path d="M12 4v4"/>
+            <path d="M12 16v4"/>
+          </svg>
+        </div>
+        <span class="accion-label">Carta</span>
+        <span class="accion-desc">Ver productos</span>
+      </button>
+      
+      <button class="accion-btn" (click)="irMesas()">
+        <div class="accion-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+        </div>
+        <span class="accion-label">Mesas</span>
+        <span class="accion-desc">Gestionar mesas</span>
+      </button>
+      
+      <button class="accion-btn" (click)="irPedidos()">
+        <div class="accion-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <circle cx="16" cy="15" r="1"/>
+            <circle cx="8" cy="15" r="1"/>
+          </svg>
+        </div>
+        <span class="accion-label">Pedidos</span>
+        <span class="accion-desc">Ver pedidos</span>
+      </button>
+      
+      <button class="accion-btn" (click)="irPrecios()">
+        <div class="accion-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+          </svg>
+        </div>
+        <span class="accion-label">Precios</span>
+        <span class="accion-desc">Lista de precios</span>
+      </button>
+      
+      <button class="accion-btn" (click)="irVentas()">
+        <div class="accion-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <line x1="2" y1="11" x2="22" y2="11"/>
+            <line x1="2" y1="16" x2="22" y2="16"/>
+            <circle cx="16" cy="13" r="1"/>
+            <circle cx="8" cy="18" r="1"/>
+          </svg>
+        </div>
+        <span class="accion-label">Ventas</span>
+        <span class="accion-desc">Historial de ventas</span>
+      </button>
+      
+      <button class="accion-btn" (click)="irTicket()">
+        <div class="accion-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16v16H4z"/>
+            <path d="M8 8h8v8H8z"/>
+            <path d="M8 12h8"/>
+            <path d="M4 4L8 8"/>
+            <path d="M20 4L16 8"/>
+            <path d="M4 20L8 16"/>
+            <path d="M20 20L16 16"/>
+          </svg>
+        </div>
+        <span class="accion-label">Tickets</span>
+        <span class="accion-desc">Ver tickets</span>
+      </button>
     </div>
   </div>
 </div>

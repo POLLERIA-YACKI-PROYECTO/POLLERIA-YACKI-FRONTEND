@@ -1,3 +1,4 @@
+// core/guards/auth.guard.ts
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -6,19 +7,35 @@ export const AuthGuard = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
+  const usuario = authService.getUsuarioActual();
+  const token = authService.getToken();
+  
+  console.log('AuthGuard - Usuario:', usuario);
+  console.log('AuthGuard - Token:', token);
+
+  // Si tiene usuario y token, está autenticado
+  if (usuario && token) {
+    console.log('AuthGuard - Autenticado correctamente');
     return true;
   }
 
-  // Redirigir según el rol que intentaba acceder
-  const usuario = authService.getUsuarioActual();
-  if (usuario) {
-    if (usuario.rol === 'admin' || usuario.rol === 'cajero') {
-      return router.parseUrl('/login-admin');
-    } else if (usuario.rol === 'mesero') {
+  // Si no está autenticado, redirigir al login según el rol
+  console.log('AuthGuard - No autenticado, redirigiendo');
+  
+  // Verificar si hay un usuario en localStorage pero no token
+  const storedUser = localStorage.getItem('usuario');
+  if (storedUser) {
+    try {
+      const user = JSON.parse(storedUser);
+      if (user.rol === 'mesero') {
+        return router.parseUrl('/login-mesero');
+      } else {
+        return router.parseUrl('/login-admin');
+      }
+    } catch {
       return router.parseUrl('/login-mesero');
     }
   }
 
-  return router.parseUrl('/login-admin');
+  return router.parseUrl('/login-mesero');
 };

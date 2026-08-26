@@ -1,17 +1,45 @@
+// dashboard-admin.component.scss
+
+/* ============================================
+   BASE
+   ============================================ */
 .dashboard-admin-container {
-  animation: fadeIn 0.3s ease;
+  min-height: 100vh;
+  background: #f5f0e8;
+  color: #2e2e2e;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+.dashboard-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
 .dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 0 20px 0;
+  border-bottom: 2px solid #ce8329;
   margin-bottom: 24px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .dashboard-header h1 {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Playfair Display', serif;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: #5e412f;
   margin: 0;
@@ -26,12 +54,70 @@
 .subtitle {
   font-size: 14px;
   color: #888;
-  margin: 4px 0 0;
+  margin: 0;
 }
 
-/* LOADING */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fecha-hora {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.fecha {
+  font-size: 14px;
+  color: #5e412f;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.hora {
+  font-size: 12px;
+  color: #888;
+}
+
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border: 1px solid #d4c8b8;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-refresh:hover {
+  background: #5e412f;
+  border-color: #5e412f;
+}
+
+.btn-refresh:hover svg {
+  stroke: #e9bd6e;
+}
+
+.btn-refresh svg {
+  stroke: #5e412f;
+  width: 20px;
+  height: 20px;
+}
+
+/* ============================================
+   LOADING
+   ============================================ */
 .loading-container {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 60px 20px;
 }
 
@@ -39,14 +125,14 @@
   display: inline-block;
   width: 40px;
   height: 40px;
-  border: 4px solid #e8e0d6;
+  border: 3px solid #d4c8b8;
   border-top-color: #ce8329;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 .loading-container p {
-  margin-top: 12px;
+  margin-top: 16px;
   color: #888;
   font-size: 14px;
 }
@@ -55,41 +141,58 @@
   to { transform: rotate(360deg); }
 }
 
-/* STATS */
+/* ============================================
+   STATS GRID
+   ============================================ */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .stat-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  border-left: 4px solid #ce8329;
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 20px 24px;
+  background: #ffffff;
+  border-left: 4px solid #ce8329;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .stat-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
 }
 
 .stat-icon svg {
-  width: 32px;
-  height: 32px;
-  stroke: #5e412f;
-  stroke-width: 2;
-  fill: none;
+  width: 24px;
+  height: 24px;
 }
+
+.stat-card:nth-child(1) .stat-icon svg { stroke: #ce8329; }
+.stat-card:nth-child(2) .stat-icon svg { stroke: #5e412f; }
+.stat-card:nth-child(3) .stat-icon svg { stroke: #2e7d32; }
+.stat-card:nth-child(4) .stat-icon svg { stroke: #1565c0; }
 
 .stat-info {
   display: flex;
@@ -99,21 +202,25 @@
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #5e412f;
+  color: #2e2e2e;
+  line-height: 1.2;
 }
 
 .stat-label {
   font-size: 13px;
   color: #888;
+  font-weight: 500;
 }
 
-/* TABLA */
+/* ============================================
+   TABLA
+   ============================================ */
 .tabla-container {
   background: #ffffff;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e8e0d6;
+  overflow: hidden;
 }
 
 .tabla-header {
@@ -121,21 +228,35 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e8e0d6;
   background: #faf8f5;
+  border-bottom: 1px solid #e8e0d6;
 }
 
-.tabla-header h3 {
+.tabla-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tabla-title svg {
+  stroke: #ce8329;
+  width: 20px;
+  height: 20px;
+}
+
+.tabla-title h3 {
   font-size: 16px;
   font-weight: 600;
   color: #5e412f;
   margin: 0;
-  font-family: 'Playfair Display', serif;
 }
 
 .total-items {
-  font-size: 13px;
+  font-size: 12px;
   color: #888;
+  background: #f5f0e8;
+  padding: 4px 12px;
+  border-radius: 12px;
 }
 
 .tabla-scroll {
@@ -149,7 +270,7 @@
   font-size: 13px;
 }
 
-.tabla-ventas th {
+.tabla-ventas thead th {
   padding: 12px 14px;
   text-align: left;
   font-size: 11px;
@@ -160,19 +281,24 @@
   letter-spacing: 0.5px;
 }
 
-.tabla-ventas td {
+.tabla-ventas tbody td {
   padding: 12px 14px;
   color: #2e2e2e;
   border-bottom: 1px solid #f0ece4;
+  vertical-align: middle;
 }
 
-.tabla-ventas tr:hover td {
+.tabla-ventas tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla-ventas tbody tr:hover td {
   background: #faf8f5;
 }
 
 .id-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 10px;
   background: #f5f0e8;
   color: #5e412f;
   border-radius: 12px;
@@ -180,17 +306,22 @@
   font-weight: 600;
 }
 
-.total-col {
-  font-weight: 700;
-  color: #5e412f;
+.cliente-nombre {
+  font-weight: 500;
 }
 
-.estado {
+.total-col {
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.estado-badge {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 11px;
   font-weight: 600;
+  text-transform: uppercase;
 }
 
 .estado-completada {
@@ -204,33 +335,61 @@
 }
 
 .estado-cancelada {
-  background: #fecaca;
+  background: #fee2e2;
   color: #991b1b;
 }
 
 .text-center {
   text-align: center;
+  padding: 40px 20px !important;
   color: #888;
-  padding: 30px !important;
 }
 
 .text-center svg {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   stroke: #ccc;
   display: block;
-  margin: 0 auto 8px;
+  margin: 0 auto 12px;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.text-center p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-/* RESPONSIVE */
+.empty-sub {
+  font-size: 12px;
+  color: #aaa;
+  display: block;
+  margin-top: 4px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
+  .dashboard-content {
+    padding: 0;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 0 16px 0;
+  }
+
   .dashboard-header h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .header-icon {
@@ -238,16 +397,43 @@
     height: 22px;
   }
 
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .header-actions {
+    justify-content: space-between;
+  }
+
+  .fecha {
+    font-size: 12px;
+  }
+
+  .hora {
+    font-size: 11px;
+  }
+
   .stats-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .stat-card {
-    padding: 16px;
+    padding: 16px 18px;
   }
 
   .stat-value {
     font-size: 20px;
+  }
+
+  .stat-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
   .tabla-scroll {
@@ -258,15 +444,19 @@
     font-size: 12px;
   }
 
-  .tabla-ventas th,
-  .tabla-ventas td {
+  .tabla-ventas thead th,
+  .tabla-ventas tbody td {
     padding: 8px 10px;
   }
 }
 
 @media (max-width: 480px) {
+  .dashboard-content {
+    padding: 0;
+  }
+
   .dashboard-header h1 {
-    font-size: 17px;
+    font-size: 16px;
   }
 
   .header-icon {
@@ -274,33 +464,40 @@
     height: 18px;
   }
 
-  .subtitle {
-    font-size: 12px;
-  }
-
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .stat-card {
-    padding: 14px;
-  }
-
-  .stat-icon svg {
-    width: 24px;
-    height: 24px;
+    padding: 12px 14px;
+    gap: 10px;
   }
 
   .stat-value {
-    font-size: 18px;
+    font-size: 17px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .stat-icon-wrapper {
+    width: 34px;
+    height: 34px;
+  }
+
+  .stat-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   .tabla-ventas {
     font-size: 11px;
   }
 
-  .tabla-ventas th,
-  .tabla-ventas td {
+  .tabla-ventas thead th,
+  .tabla-ventas tbody td {
     padding: 6px 8px;
   }
 
@@ -309,8 +506,73 @@
     padding: 1px 6px;
   }
 
-  .estado {
+  .estado-badge {
     font-size: 10px;
     padding: 2px 8px;
+  }
+
+  .total-items {
+    font-size: 10px;
+  }
+
+  .btn-refresh {
+    width: 34px;
+    height: 34px;
+  }
+
+  .btn-refresh svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .text-center svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .text-center p {
+    font-size: 12px;
+  }
+
+  .empty-sub {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .stat-card {
+    padding: 10px 10px;
+    gap: 8px;
+  }
+
+  .stat-value {
+    font-size: 15px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-icon-wrapper {
+    width: 28px;
+    height: 28px;
+  }
+
+  .stat-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .fecha {
+    font-size: 11px;
+  }
+
+  .hora {
+    font-size: 10px;
   }
 }

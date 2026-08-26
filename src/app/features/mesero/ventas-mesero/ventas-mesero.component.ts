@@ -1,3 +1,4 @@
+// ventas-mesero.component.ts (COMPLETO Y CORREGIDO)
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -61,14 +62,19 @@ export class VentasMeseroComponent implements OnInit {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
     
-    switch(opcion) {
-      case 'carta': this.irCarta(); break;
-      case 'mesas': this.irMesas(); break;
-      case 'pedidos': this.irPedidos(); break;
-      case 'precios': this.irPrecios(); break;
-      case 'ventas': this.irVentas(); break;
-      case 'tickets': this.irTicket(); break;
-      case 'dashboard': this.irDashboard(); break;
+    const rutas: { [key: string]: string } = {
+      'carta': '/mesero/carta',
+      'mesas': '/mesero/mesas',
+      'pedidos': '/mesero/pedidos',
+      'precios': '/mesero/precios',
+      'ventas': '/mesero/ventas',
+      'tickets': '/mesero/tickets',
+      'dashboard': '/mesero/dashboard'
+    };
+    
+    const ruta = rutas[opcion];
+    if (ruta) {
+      this.router.navigate([ruta]);
     }
   }
 
@@ -131,40 +137,45 @@ export class VentasMeseroComponent implements OnInit {
     return Object.values(resumen);
   }
 
+  // ✅ MÉTODO AGREGADO - Ver detalle de venta
+  verDetalle(id: number): void {
+    console.log(`📋 Ver detalle de venta #${id}`);
+    // Aquí puedes agregar la navegación a la página de detalle
+    // this.router.navigate(['/mesero/venta-detalle', id]);
+    alert(`📋 Ver detalle de venta #${id}`);
+  }
+
   nuevaVenta(): void {
     alert('🆕 Abrir formulario de nueva venta');
   }
 
-  verDetalle(id: number): void {
-    alert(`📋 Ver detalle de venta #${id}`);
-  }
-
+  // ✅ NAVEGACIÓN CORREGIDA
   irCarta(): void {
-    this.router.navigate(['/carta-mesero']);
+    this.router.navigate(['/mesero/carta']);
   }
 
   irMesas(): void {
-    this.router.navigate(['/mesas-mesero']);
+    this.router.navigate(['/mesero/mesas']);
   }
 
   irPedidos(): void {
-    this.router.navigate(['/pedidos-mesero']);
+    this.router.navigate(['/mesero/pedidos']);
   }
 
   irPrecios(): void {
-    this.router.navigate(['/precios-carta-mesero']);
+    this.router.navigate(['/mesero/precios']);
   }
 
   irVentas(): void {
-    this.router.navigate(['/ventas-mesero']);
+    this.router.navigate(['/mesero/ventas']);
   }
 
   irTicket(): void {
-    this.router.navigate(['/ticket']);
+    this.router.navigate(['/mesero/tickets']);
   }
 
   irDashboard(): void {
-    this.router.navigate(['/dashboard-mesero']);
+    this.router.navigate(['/mesero/dashboard']);
   }
 
   cerrarSesion(): void {

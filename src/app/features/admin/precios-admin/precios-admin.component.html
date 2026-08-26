@@ -1,3 +1,4 @@
+<!-- precios-admin.component.html -->
 <div class="precios-admin-container" [class.tema-oscuro]="temaOscuro()">
   <div class="precios-content">
     <div class="precios-header">
@@ -20,7 +21,7 @@
             <line x1="9" y1="21" x2="9" y2="9"/>
             <line x1="15" y1="21" x2="15" y2="9"/>
           </svg>
-          Dashboard
+          <span>Dashboard</span>
         </button>
         <button class="btn-tema" (click)="toggleTema()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -34,23 +35,40 @@
             <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
-          {{ temaOscuro() ? 'Claro' : 'Oscuro' }}
+          <span>{{ temaOscuro() ? 'Claro' : 'Oscuro' }}</span>
         </button>
       </div>
     </div>
 
-    <!-- Categorías -->
-    <div class="categorias-scroll">
-      @for (cat of categorias(); track cat.id) {
-        <button 
-          class="categoria-btn"
-          [class.active]="categoriaSeleccionada() === cat.id"
-          (click)="seleccionarCategoria(cat.id)"
-        >
-          <span class="categoria-icon" [innerHTML]="getIconSvg(cat.id)"></span>
-          <span class="categoria-nombre">{{ cat.nombre }}</span>
+    <!-- SELECTOR DE CATEGORÍAS - VERSIÓN DESPLEGABLE -->
+    <div class="categoria-selector">
+      <div class="categoria-dropdown">
+        <button class="categoria-dropdown-btn" (click)="toggleCategoriaMenu()">
+          <span class="dropdown-label">{{ categoriaSeleccionadaNombre() }}</span>
+          <svg class="dropdown-arrow" [class.rotated]="categoriaMenuAbierto()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
         </button>
-      }
+        
+        @if (categoriaMenuAbierto()) {
+          <div class="categoria-dropdown-menu">
+            @for (cat of categorias(); track cat.id) {
+              <button 
+                class="categoria-dropdown-item"
+                [class.active]="categoriaSeleccionada() === cat.id"
+                (click)="seleccionarCategoria(cat.id)"
+              >
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+                </svg>
+                <span class="item-nombre">{{ cat.nombre }}</span>
+                <span class="item-count">{{ contarProductosPorCategoria(cat.id) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
     </div>
 
     <!-- Productos con precios editables -->
@@ -63,7 +81,6 @@
       <div class="productos-grid">
         @for (producto of productosFiltrados(); track producto.id) {
           <div class="producto-card">
-            <div class="producto-icon" [innerHTML]="getIconSvg(producto.categoria_id)"></div>
             <div class="producto-info">
               <h3 class="producto-nombre">{{ producto.nombre }}</h3>
               <p class="producto-descripcion">{{ producto.descripcion || 'Sin descripción' }}</p>
@@ -71,19 +88,24 @@
             <div class="producto-precio-edit">
               @if (editando() === producto.id) {
                 <div class="edit-group">
-                  <input 
-                    type="number" 
-                    class="precio-input"
-                    [(ngModel)]="precioEdit" 
-                    step="0.01"
-                    (keyup.enter)="guardarPrecio(producto.id)"
-                  >
-                  <button class="btn-guardar" (click)="guardarPrecio(producto.id)" title="Guardar">
+                  <div class="precio-input-wrapper">
+                    <span class="precio-simbolo">S/</span>
+                    <input 
+                      type="number" 
+                      class="precio-input"
+                      [(ngModel)]="precioEdit" 
+                      step="0.01"
+                      min="0"
+                      (keyup.enter)="guardarPrecio(producto.id)"
+                      autofocus
+                    >
+                  </div>
+                  <button class="btn-guardar" (click)="guardarPrecio(producto.id)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M20 6L9 17l-5-5"/>
                     </svg>
                   </button>
-                  <button class="btn-cancelar" (click)="cancelarEdicion()" title="Cancelar">
+                  <button class="btn-cancelar" (click)="cancelarEdicion()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <line x1="18" y1="6" x2="6" y2="18"/>
                       <line x1="6" y1="6" x2="18" y2="18"/>
@@ -93,7 +115,7 @@
               } @else {
                 <div class="precio-display">
                   <span class="producto-precio">S/ {{ producto.precio | number:'1.2-2' }}</span>
-                  <button class="btn-editar" (click)="editarPrecio(producto)" title="Editar precio">
+                  <button class="btn-editar" (click)="editarPrecio(producto)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>

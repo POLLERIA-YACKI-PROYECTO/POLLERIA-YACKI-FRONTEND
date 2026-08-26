@@ -1,3 +1,4 @@
+<!-- pedidos-mesero.component.html -->
 <div class="pedidos-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -16,7 +17,6 @@
         <p class="subtitle">Todos los pedidos en curso</p>
       </div>
       <div class="header-buttons">
-        <!-- MENÚ DESPLEGABLE -->
         <div class="menu-container">
           <button class="menu-toggle" (click)="toggleMenu()">
             <span class="menu-toggle-text">
@@ -104,7 +104,13 @@
           }
         </div>
 
-        <!-- Botón Tema -->
+        <button class="btn-nuevo-pedido" (click)="abrirModalNuevoPedido()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Nuevo Pedido
+        </button>
+
         <button class="btn-tema" (click)="toggleTema()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/>
@@ -122,7 +128,6 @@
       </div>
     </div>
 
-    <!-- LOADING -->
     @if (loading()) {
       <div class="loading-spinner">
         <div class="spinner"></div>
@@ -130,7 +135,6 @@
       </div>
     }
 
-    <!-- PEDIDOS -->
     @if (!loading()) {
       <div class="pedidos-grid">
         @for (pedido of pedidos(); track pedido.id) {
@@ -197,3 +201,223 @@
     }
   </div>
 </div>
+
+<!-- MODAL NUEVO PEDIDO -->
+@if (mostrarModalPedido()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Nuevo Pedido</h2>
+        <button class="modal-close" (click)="cerrarModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- SECCIÓN CLIENTE -->
+        <div class="cliente-section">
+          <h3>Cliente</h3>
+          
+          <div class="form-group">
+            <label>Buscar cliente</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="12" r="4"/>
+              </svg>
+              <input 
+                type="text" 
+                [(ngModel)]="busquedaCliente"
+                (input)="buscarClientes()"
+                placeholder="Buscar cliente por nombre o DNI..."
+              >
+            </div>
+            
+            @if (clientesEncontrados().length > 0) {
+              <div class="clientes-sugerencias">
+                @for (cliente of clientesEncontrados(); track cliente.id) {
+                  <button class="cliente-sugerencia" (click)="seleccionarCliente(cliente)">
+                    <span class="cliente-nombre">{{ cliente.nombre }} {{ cliente.apellido || '' }}</span>
+                    <span class="cliente-dni">{{ cliente.dni }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          @if (clienteSeleccionado()) {
+            <div class="cliente-seleccionado">
+              <span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Cliente: <strong>{{ clienteSeleccionado()?.nombre }} {{ clienteSeleccionado()?.apellido || '' }}</strong>
+                <span class="cliente-dni-badge">DNI: {{ clienteSeleccionado()?.dni || 'N/A' }}</span>
+              </span>
+              <button class="btn-cambiar-cliente" (click)="limpiarCliente()">Cambiar</button>
+            </div>
+          } @else {
+            <div class="nuevo-cliente-section">
+              <p class="nuevo-cliente-label">O crea un nuevo cliente <span class="opcional">(opcional)</span>:</p>
+              <div class="input-row">
+                <div class="input-wrapper">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <input type="text" [(ngModel)]="nuevoCliente.nombre" placeholder="Nombre *">
+                </div>
+                <div class="input-wrapper">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <line x1="2" y1="9" x2="22" y2="9"/>
+                  </svg>
+                  <input type="text" [(ngModel)]="nuevoCliente.dni" placeholder="DNI (opcional)" maxlength="8">
+                </div>
+              </div>
+              <div class="input-row" style="margin-top: 8px;">
+                <div class="input-wrapper">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  <input type="text" [(ngModel)]="nuevoCliente.telefono" placeholder="Teléfono (opcional)">
+                </div>
+                <div class="input-wrapper">
+                  <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  <input type="email" [(ngModel)]="nuevoCliente.email" placeholder="Email (opcional)">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- SECCIÓN PRODUCTOS -->
+        <div class="productos-seccion">
+          <div class="seccion-header">
+            <h3>Productos del Pedido</h3>
+            <button class="btn-agregar-producto" (click)="abrirModalProductos()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Agregar Producto
+            </button>
+          </div>
+
+          @if (itemsPedido().length === 0) {
+            <p class="sin-items">No hay productos agregados</p>
+          } @else {
+            <div class="items-lista">
+              @for (item of itemsPedido(); track $index) {
+                <div class="item-pedido">
+                  <span class="item-nombre">{{ item.nombre }}</span>
+                  <div class="item-controls">
+                    <button class="btn-cantidad" (click)="actualizarCantidad($index, item.cantidad - 1)">-</button>
+                    <span class="item-cantidad">{{ item.cantidad }}</span>
+                    <button class="btn-cantidad" (click)="actualizarCantidad($index, item.cantidad + 1)">+</button>
+                    <span class="item-precio">S/ {{ item.subtotal | number:'1.2-2' }}</span>
+                    <button class="btn-eliminar-item" (click)="eliminarItemPedido($index)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              }
+              <div class="total-pedido">
+                <span>Total:</span>
+                <span class="total-monto">S/ {{ totalPedido() | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-guardar-pedido" (click)="guardarPedido()" [disabled]="itemsPedido().length === 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Crear Pedido
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL AGREGAR PRODUCTO -->
+@if (mostrarModalProductos()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-content modal-productos" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Agregar Producto</h2>
+        <button class="modal-close" (click)="cerrarModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="categorias-scroll">
+          @for (cat of categorias(); track cat.id) {
+            <button 
+              class="categoria-btn"
+              [class.active]="categoriaSeleccionada() === cat.id"
+              (click)="seleccionarCategoria(cat.id)"
+            >
+              {{ cat.nombre }}
+            </button>
+          }
+        </div>
+
+        @if (cargandoProductos()) {
+          <div class="loading-productos">Cargando productos...</div>
+        } @else {
+          <div class="productos-grid-modal">
+            @for (producto of productos(); track producto.id) {
+              <button 
+                class="producto-btn"
+                [class.selected]="productoSeleccionado()?.id === producto.id"
+                (click)="seleccionarProducto(producto)"
+                [disabled]="producto.agotado"
+              >
+                <span class="producto-nombre">{{ producto.nombre }}</span>
+                <span class="producto-precio">S/ {{ producto.precio | number:'1.2-2' }}</span>
+                @if (producto.agotado) {
+                  <span class="producto-agotado">Agotado</span>
+                }
+              </button>
+            }
+            @empty {
+              <p class="sin-productos">No hay productos en esta categoría</p>
+            }
+          </div>
+        }
+
+        @if (productoSeleccionado()) {
+          <div class="cantidad-selector">
+            <label>Cantidad</label>
+            <div class="cantidad-controls">
+              <button (click)="cantidadProducto.set(cantidadProducto() - 1)" [disabled]="cantidadProducto() <= 1">-</button>
+              <span>{{ cantidadProducto() }}</span>
+              <button (click)="cantidadProducto.set(cantidadProducto() + 1)">+</button>
+              <button class="btn-agregar" (click)="agregarProductoAlPedido()">
+                Agregar
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

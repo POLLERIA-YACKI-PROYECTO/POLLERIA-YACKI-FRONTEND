@@ -1,8 +1,9 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+// mesas-mesero.component.ts
+import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { MesaService } from '../../../core/services/mesa.service';
+import { MesaService, Mesa } from '../../../core/services/mesa.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 
 @Component({
@@ -23,9 +24,21 @@ export class MesasMeseroComponent implements OnInit {
   menuAbierto = signal<boolean>(false);
   opcionSeleccionada = signal<string>('');
 
-  mesas = signal<number[]>(Array.from({ length: 16 }, (_, i) => i + 1));
-  mesaSeleccionada = signal<number | null>(null);
-  mesasEstado = signal<{ [key: number]: { ocupada: boolean; cliente: string } }>({});
+  mesas = this.mesaService.getMesasSignal();
+  mesaSeleccionada = this.mesaService.getMesaSeleccionadaSignal();
+  selectedMesa = signal<Mesa | null>(null);
+
+  totalMesas = signal<number>(16);
+  mesasOcupadas = signal<number>(0);
+  mesasLibres = signal<number>(0);
+
+  constructor() {
+    effect(() => {
+      const mesas = this.mesas();
+      this.mesasOcupadas.set(mesas.filter(m => m.ocupada).length);
+      this.mesasLibres.set(mesas.filter(m => !m.ocupada).length);
+    });
+  }
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -33,15 +46,10 @@ export class MesasMeseroComponent implements OnInit {
       this.router.navigate(['/login-mesero']);
       return;
     }
+  }
 
-    const estadoInicial: any = {};
-    this.mesas().forEach(num => {
-      estadoInicial[num] = {
-        ocupada: [4, 7, 9, 12, 15].includes(num),
-        cliente: [4, 7, 9, 12, 15].includes(num) ? `Cliente ${num}` : ''
-      };
-    });
-    this.mesasEstado.set(estadoInicial);
+  getMesaByNumero(numero: number): Mesa | undefined {
+    return this.mesas().find(m => m.numero === numero);
   }
 
   toggleTema(): void {
@@ -56,23 +64,26 @@ export class MesasMeseroComponent implements OnInit {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
     
-    switch(opcion) {
-      case 'carta': this.irCarta(); break;
-      case 'mesas': this.irMesas(); break;
-      case 'pedidos': this.irPedidos(); break;
-      case 'precios': this.irPrecios(); break;
-      case 'ventas': this.irVentas(); break;
-      case 'tickets': this.irTicket(); break;
-      case 'dashboard': this.irDashboard(); break;
+    const rutas: { [key: string]: string } = {
+      'carta': '/mesero/carta',
+      'mesas': '/mesero/mesas',
+      'pedidos': '/mesero/pedidos',
+      'precios': '/mesero/precios',
+      'ventas': '/mesero/ventas',
+      'tickets': '/mesero/tickets',
+      'dashboard': '/mesero/dashboard'
+    };
+    
+    const ruta = rutas[opcion];
+    if (ruta) {
+      this.router.navigate([ruta]);
     }
   }
 
   seleccionarMesa(numero: number): void {
-    if (this.mesaSeleccionada() === numero) {
-      this.mesaSeleccionada.set(null);
-    } else {
-      this.mesaSeleccionada.set(numero);
-    }
+    this.mesaService.seleccionarMesa(numero);
+    const mesa = this.mesas().find(m => m.numero === numero);
+    this.selectedMesa.set(mesa || null);
   }
 
   ocuparMesa(): void {
@@ -82,22 +93,15 @@ export class MesasMeseroComponent implements OnInit {
       return;
     }
     
-    const estadoActual = this.mesasEstado();
-    if (!estadoActual[num]) {
-      estadoActual[num] = { ocupada: false, cliente: '' };
-    }
-    
-    if (estadoActual[num].ocupada) {
+    const mesa = this.mesas().find(m => m.numero === num);
+    if (mesa?.ocupada) {
       alert(`La mesa ${num} ya está ocupada`);
       return;
     }
     
     const cliente = prompt('Ingrese nombre del cliente:') || `Mesa ${num}`;
-    this.mesasEstado.update(estado => ({
-      ...estado,
-      [num]: { ocupada: true, cliente }
-    }));
-    this.mesaSeleccionada.set(null);
+    this.mesaService.ocuparMesa(num, cliente);
+    this.mesaService.seleccionarMesa(num);
   }
 
   liberarMesa(): void {
@@ -107,47 +111,44 @@ export class MesasMeseroComponent implements OnInit {
       return;
     }
     
-    const estadoActual = this.mesasEstado();
-    if (!estadoActual[num] || !estadoActual[num].ocupada) {
+    const mesa = this.mesas().find(m => m.numero === num);
+    if (!mesa?.ocupada) {
       alert(`La mesa ${num} ya está libre`);
       return;
     }
     
-    if (confirm(`¿Liberar mesa ${num} - Cliente: ${estadoActual[num].cliente}?`)) {
-      this.mesasEstado.update(estado => ({
-        ...estado,
-        [num]: { ocupada: false, cliente: '' }
-      }));
-      this.mesaSeleccionada.set(null);
+    if (confirm(`¿Liberar mesa ${num} - Cliente: ${mesa.cliente}?`)) {
+      this.mesaService.liberarMesa(num);
+      this.mesaService.seleccionarMesa(num);
     }
   }
 
   irCarta(): void {
-    this.router.navigate(['/carta-mesero']);
+    this.router.navigate(['/mesero/carta']);
   }
 
   irMesas(): void {
-    this.router.navigate(['/mesas-mesero']);
+    this.router.navigate(['/mesero/mesas']);
   }
 
   irPedidos(): void {
-    this.router.navigate(['/pedidos-mesero']);
+    this.router.navigate(['/mesero/pedidos']);
   }
 
   irPrecios(): void {
-    this.router.navigate(['/precios-carta-mesero']);
+    this.router.navigate(['/mesero/precios']);
   }
 
   irVentas(): void {
-    this.router.navigate(['/ventas-mesero']);
+    this.router.navigate(['/mesero/ventas']);
   }
 
   irTicket(): void {
-    this.router.navigate(['/ticket']);
+    this.router.navigate(['/mesero/tickets']);
   }
 
   irDashboard(): void {
-    this.router.navigate(['/dashboard-mesero']);
+    this.router.navigate(['/mesero/dashboard']);
   }
 
   cerrarSesion(): void {

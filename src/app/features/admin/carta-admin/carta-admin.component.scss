@@ -736,3 +736,254 @@
     height: 32px;
   }
 }
+// Agregar al final del archivo carta-admin.component.scss
+
+/* ============================================
+   BUSCADOR - PROFESIONAL CON SVG
+   ============================================ */
+.buscador-container {
+  margin-bottom: 20px;
+}
+
+.buscador-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 2px solid #d4c8b8;
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.buscador-wrapper:focus-within {
+  border-color: #ce8329;
+  box-shadow: 0 0 0 4px rgba(206, 131, 41, 0.1);
+}
+
+.buscador-icon {
+  width: 20px;
+  height: 20px;
+  stroke: #888;
+  flex-shrink: 0;
+  margin: 0 12px;
+}
+
+.buscador-input {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: #2e2e2e;
+  outline: none;
+  min-width: 0;
+}
+
+.buscador-input::placeholder {
+  color: #aaa;
+}
+
+.buscador-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.buscador-clear:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.buscador-clear svg {
+  width: 18px;
+  height: 18px;
+  stroke: #888;
+  transition: stroke 0.3s ease;
+}
+
+.buscador-clear:hover svg {
+  stroke: #dc2626;
+}
+
+.buscador-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: #888;
+}
+
+.resultados-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.filtro-activo {
+  color: #ce8329;
+  font-weight: 400;
+}
+
+.sin-resultados {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* ============================================
+   TEMA OSCURO - BUSCADOR
+   ============================================ */
+.carta-admin-container.tema-oscuro .buscador-wrapper {
+  background: #151515;
+  border-color: #2a2a2a;
+}
+
+.carta-admin-container.tema-oscuro .buscador-wrapper:focus-within {
+  border-color: #ce8329;
+  box-shadow: 0 0 0 4px rgba(206, 131, 41, 0.15);
+}
+
+.carta-admin-container.tema-oscuro .buscador-input {
+  color: #ffffda;
+}
+
+.carta-admin-container.tema-oscuro .buscador-input::placeholder {
+  color: #666;
+}
+
+.carta-admin-container.tema-oscuro .buscador-icon {
+  stroke: #666;
+}
+
+.carta-admin-container.tema-oscuro .buscador-clear svg {
+  stroke: #666;
+}
+
+.carta-admin-container.tema-oscuro .buscador-clear:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
+
+.carta-admin-container.tema-oscuro .buscador-clear:hover svg {
+  stroke: #dc2626;
+}
+
+.carta-admin-container.tema-oscuro .buscador-info {
+  color: #888;
+}
+
+.carta-admin-container.tema-oscuro .filtro-activo {
+  color: #e9bd6e;
+}
+
+.carta-admin-container.tema-oscuro .sin-resultados {
+  color: #ef4444;
+}
+
+/* ============================================
+   RESPONSIVE - BUSCADOR
+   ============================================ */
+@media (max-width: 768px) {
+  .buscador-input {
+    padding: 10px 0;
+    font-size: 13px;
+  }
+
+  .buscador-icon {
+    width: 18px;
+    height: 18px;
+    margin: 0 10px;
+  }
+
+  .buscador-clear {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+  }
+
+  .buscador-clear svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .buscador-info {
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .resultados-count {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .buscador-wrapper {
+    border-radius: 8px;
+  }
+
+  .buscador-input {
+    padding: 8px 0;
+    font-size: 12px;
+  }
+
+  .buscador-icon {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px;
+  }
+
+  .buscador-clear {
+    width: 28px;
+    height: 28px;
+    margin-right: 4px;
+  }
+
+  .buscador-clear svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .buscador-info {
+    font-size: 11px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .filtro-activo {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .buscador-input {
+    font-size: 11px;
+  }
+
+  .buscador-icon {
+    width: 14px;
+    height: 14px;
+    margin: 0 6px;
+  }
+
+  .buscador-clear {
+    width: 24px;
+    height: 24px;
+  }
+
+  .buscador-clear svg {
+    width: 12px;
+    height: 12px;
+  }
+}

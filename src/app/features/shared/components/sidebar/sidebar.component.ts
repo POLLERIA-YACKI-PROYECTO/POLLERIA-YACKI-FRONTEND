@@ -1,3 +1,4 @@
+// shared/components/sidebar/sidebar.component.ts
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -30,16 +31,6 @@ export class SidebarComponent {
       icon: 'mantenimiento',
       label: 'Mantenimiento', 
       route: '/admin/mantenimiento'
-    },
-    { 
-      icon: 'compras',
-      label: 'Compras', 
-      route: '/admin/compras'
-    },
-    { 
-      icon: 'descargos',
-      label: 'Descargos', 
-      route: '/admin/descargos'
     },
     { 
       icon: 'personal',
@@ -85,18 +76,6 @@ export class SidebarComponent {
           <line x1="16" y1="13" x2="8" y2="13"/>
           <line x1="16" y1="17" x2="8" y2="17"/>
           <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      `,
-      'compras': `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="9" cy="21" r="1"/>
-          <circle cx="20" cy="21" r="1"/>
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-        </svg>
-      `,
-      'descargos': `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 5v14M5 12h14"/>
         </svg>
       `,
       'personal': `

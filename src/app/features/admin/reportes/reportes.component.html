@@ -1,17 +1,29 @@
+<!-- reportes.component.html -->
 <div class="reportes-container">
   <div class="page-header">
-    <h2>
-      <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 4h16v16H4z"/>
-        <path d="M8 8h8v8H8z"/>
-        <path d="M8 12h8"/>
-        <path d="M4 4L8 8"/>
-        <path d="M20 4L16 8"/>
-        <path d="M4 20L8 16"/>
-        <path d="M20 20L16 16"/>
-      </svg>
-      Reportes
-    </h2>
+    <div class="header-left">
+      <h2>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16v16H4z"/>
+          <path d="M8 8h8v8H8z"/>
+          <path d="M8 12h8"/>
+          <path d="M4 4L8 8"/>
+          <path d="M20 4L16 8"/>
+          <path d="M4 20L8 16"/>
+          <path d="M20 20L16 16"/>
+        </svg>
+        Reportes
+      </h2>
+      <p class="subtitle">Gestiona todos los reportes del sistema</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-refresh" (click)="cargarPedidos()" title="Actualizar datos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="reportes-grid">
@@ -55,7 +67,7 @@
         }
       </div>
 
-      <!-- FECHAS - CORREGIDO PARA QUE NO SE SALGAN -->
+      <!-- FECHAS -->
       <div class="form-fechas">
         <div class="form-group">
           <label>Fecha Inicio</label>
@@ -66,7 +78,7 @@
               <line x1="8" y1="2" x2="8" y2="6"/>
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            <input type="date" [(ngModel)]="fechaInicio">
+            <input type="date" [(ngModel)]="fechaInicio" (change)="generarReporte()">
           </div>
         </div>
         <div class="form-group">
@@ -78,7 +90,7 @@
               <line x1="8" y1="2" x2="8" y2="6"/>
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            <input type="date" [(ngModel)]="fechaFin">
+            <input type="date" [(ngModel)]="fechaFin" (change)="generarReporte()">
           </div>
         </div>
       </div>
@@ -127,12 +139,16 @@
         </div>
         <div class="resultados-resumen">
           <div class="resumen-item">
-            <span class="resumen-label">Total</span>
-            <span class="resumen-valor">S/ {{ calcularTotal() | number:'1.2-2' }}</span>
+            <span class="resumen-label">Total Ventas</span>
+            <span class="resumen-valor">{{ resumenReporte().totalVentas || 0 }}</span>
           </div>
           <div class="resumen-item">
-            <span class="resumen-label">Items</span>
-            <span class="resumen-valor">{{ calcularItems() }}</span>
+            <span class="resumen-label">Total Recaudado</span>
+            <span class="resumen-valor">S/ {{ (resumenReporte().totalRecaudado || 0) | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Promedio</span>
+            <span class="resumen-valor">S/ {{ (resumenReporte().promedio || 0) | number:'1.2-2' }}</span>
           </div>
         </div>
       </div>
@@ -150,7 +166,7 @@
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p>No hay datos disponibles</p>
+            <p>No hay datos disponibles para el período seleccionado</p>
           </div>
         } @else {
           <div class="tabla-container">
@@ -163,24 +179,36 @@
                   <th>Items</th>
                   <th>Usuario</th>
                   <th>Total</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
                 @for (dato of datosReporte(); track dato.id) {
                   <tr>
-                    <td>#{{ dato.id }}</td>
+                    <td><span class="id-badge">#{{ dato.id }}</span></td>
                     <td>{{ dato.fecha }}</td>
-                    <td>{{ dato.cliente }}</td>
+                    <td>
+                      <span class="cliente-nombre">{{ dato.cliente || 'Consumidor Final' }}</span>
+                    </td>
                     <td>{{ dato.items || 0 }}</td>
                     <td>{{ dato.usuario || '-' }}</td>
                     <td class="total-col">S/ {{ dato.total | number:'1.2-2' }}</td>
+                    <td>
+                      @if (dato.estado) {
+                        <span class="estado-badge {{ getEstadoClass(dato.estado) }}">
+                          {{ getEstadoTexto(dato.estado) }}
+                        </span>
+                      } @else {
+                        <span class="estado-badge estado-pendiente">Pendiente</span>
+                      }
+                    </td>
                   </tr>
                 }
               </tbody>
               <tfoot>
                 <tr class="total-row">
                   <td colspan="5"><strong>Total General</strong></td>
-                  <td><strong>S/ {{ calcularTotal() | number:'1.2-2' }}</strong></td>
+                  <td colspan="2"><strong>S/ {{ calcularTotal() | number:'1.2-2' }}</strong></td>
                 </tr>
               </tfoot>
             </table>

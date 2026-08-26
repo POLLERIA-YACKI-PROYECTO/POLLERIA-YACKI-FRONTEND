@@ -1,3 +1,5 @@
+// mesas-mesero.component.scss (completo actualizado)
+
 /* ============================================
    BASE - TEMA OSCURO
    ============================================ */
@@ -23,40 +25,16 @@
   color: #2e2e2e;
 }
 
-.mesas-mesero-container.tema-claro .mesas-header {
+.mesas-mesero-container.tema-claro .mesas-header-principal {
   border-bottom-color: #ce8329;
 }
 
-.mesas-mesero-container.tema-claro .mesas-header h1 {
+.mesas-mesero-container.tema-claro .mesas-header-principal h1 {
   color: #5e412f;
 }
 
 .mesas-mesero-container.tema-claro .subtitle {
   color: #666;
-}
-
-.mesas-mesero-container.tema-claro .menu-toggle {
-  background: #ffffff;
-  border-color: #d4c8b8;
-  color: #2e2e2e;
-}
-
-.mesas-mesero-container.tema-claro .menu-toggle:hover {
-  border-color: #ce8329;
-}
-
-.mesas-mesero-container.tema-claro .menu-dropdown {
-  background: #ffffff;
-  border-color: #d4c8b8;
-}
-
-.mesas-mesero-container.tema-claro .menu-item {
-  color: #2e2e2e;
-}
-
-.mesas-mesero-container.tema-claro .menu-item:hover {
-  background: #e9bd6e;
-  color: #5e412f;
 }
 
 .mesas-mesero-container.tema-claro .btn-tema {
@@ -68,14 +46,18 @@
   background: rgba(206, 131, 41, 0.1);
 }
 
+.mesas-mesero-container.tema-claro .btn-volver {
+  background: #5e412f;
+  color: #e9bd6e;
+}
+
+.mesas-mesero-container.tema-claro .btn-volver:hover {
+  background: #4a3425;
+}
+
 .mesas-mesero-container.tema-claro .mesa-item {
   background: #ffffff;
   border-color: #d4c8b8;
-}
-
-.mesas-mesero-container.tema-claro .mesa-item.seleccionada {
-  border-color: #ce8329;
-  background: #ce8329;
 }
 
 .mesas-mesero-container.tema-claro .mesa-item.ocupada {
@@ -87,39 +69,54 @@
   color: #dc2f2b;
 }
 
-.mesas-mesero-container.tema-claro .btn-ocupar {
-  background: #32CD32;
-  color: #ffffff;
-}
-
-.mesas-mesero-container.tema-claro .btn-ocupar:hover:not(:disabled) {
-  background: #28a428;
-}
-
-.mesas-mesero-container.tema-claro .btn-liberar {
+.mesas-mesero-container.tema-claro .mesa-badge.ocupado {
   background: #dc2f2b;
   color: #ffffff;
 }
 
-.mesas-mesero-container.tema-claro .btn-liberar:hover:not(:disabled) {
-  background: #921a17;
+.mesas-mesero-container.tema-claro .mesa-badge.libre {
+  background: #32CD32;
+  color: #ffffff;
+}
+
+.mesas-mesero-container.tema-claro .mesa-item:hover {
+  border-color: #ce8329;
+}
+
+.mesas-mesero-container.tema-claro .mesa-item.seleccionada {
+  border-color: #ce8329;
+  background: #ce8329;
+}
+
+.mesas-mesero-container.tema-claro .mesa-item.seleccionada .mesa-numero {
+  color: #ffffff;
+}
+
+.mesas-mesero-container.tema-claro .resumen-item {
+  background: #ffffff;
+  border-color: #d4c8b8;
+}
+
+.mesas-mesero-container.tema-claro .mesa-actions-panel {
+  background: #ffffff;
+  border-color: #d4c8b8;
 }
 
 /* ============================================
-   HEADER
+   HEADER PRINCIPAL
    ============================================ */
-.mesas-header {
+.mesas-header-principal {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   padding: 12px 0;
   border-bottom: 2px solid #f31730;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   transition: border-color 0.3s ease;
 }
 
-.mesas-header h1 {
+.mesas-header-principal h1 {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -143,112 +140,39 @@
 .header-buttons {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* ============================================
-   MENÚ DESPLEGABLE
+   BOTÓN VOLVER
    ============================================ */
-.menu-container {
-  position: relative;
-}
-
-.menu-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 14px;
-  background: #151515;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #ffffda;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  min-width: 140px;
-}
-
-.menu-toggle:hover {
-  border-color: #f31730;
-}
-
-.menu-toggle-text {
+.btn-volver {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.menu-toggle-text svg {
-  stroke: currentColor;
-  width: 16px;
-  height: 16px;
-}
-
-.menu-arrow {
-  transition: transform 0.3s ease;
-  stroke: currentColor;
-  width: 16px;
-  height: 16px;
-}
-
-.menu-arrow.rotated {
-  transform: rotate(180deg);
-}
-
-.menu-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 180px;
-  background: #151515;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  overflow: hidden;
-  z-index: 100;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  animation: slideDown 0.2s ease;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  width: 100%;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  background: transparent;
-  color: #ffffda;
-}
-
-.menu-item:hover {
+  padding: 10px 20px;
   background: #f31730;
   color: #ffffda;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
 }
 
-.menu-item svg {
-  stroke: currentColor;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
+.btn-volver:hover {
+  background: #cc1428;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(243, 23, 48, 0.3);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.btn-volver svg {
+  stroke: #ffffda;
+  width: 18px;
+  height: 18px;
 }
 
 /* ============================================
@@ -257,11 +181,11 @@
 .btn-tema {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 10px 16px;
   background: transparent;
   border: 1px solid #2a2a2a;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #ffffda;
   cursor: pointer;
   font-size: 12px;
@@ -272,6 +196,7 @@
 
 .btn-tema:hover {
   background: rgba(243, 23, 48, 0.08);
+  border-color: #f31730;
 }
 
 .btn-tema svg {
@@ -281,74 +206,249 @@
 }
 
 /* ============================================
+   RESUMEN DE MESAS
+   ============================================ */
+.resumen-mesas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.resumen-item:hover {
+  transform: translateY(-3px);
+}
+
+.resumen-item.total:hover {
+  border-color: #e9bd6e;
+}
+
+.resumen-item.ocupadas:hover {
+  border-color: #f31730;
+}
+
+.resumen-item.libres:hover {
+  border-color: #32CD32;
+}
+
+.resumen-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(243, 23, 48, 0.08);
+  margin-bottom: 8px;
+}
+
+.resumen-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: #f31730;
+}
+
+.resumen-item.total .resumen-icon {
+  background: rgba(233, 189, 110, 0.15);
+}
+
+.resumen-item.total .resumen-icon svg {
+  stroke: #e9bd6e;
+}
+
+.resumen-item.ocupadas .resumen-icon {
+  background: rgba(243, 23, 48, 0.15);
+}
+
+.resumen-item.ocupadas .resumen-icon svg {
+  stroke: #f31730;
+}
+
+.resumen-item.libres .resumen-icon {
+  background: rgba(50, 205, 50, 0.15);
+}
+
+.resumen-item.libres .resumen-icon svg {
+  stroke: #32CD32;
+}
+
+.resumen-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.resumen-valor {
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.resumen-item.total .resumen-valor {
+  color: #e9bd6e;
+}
+
+.resumen-item.ocupadas .resumen-valor {
+  color: #f31730;
+}
+
+.resumen-item.libres .resumen-valor {
+  color: #32CD32;
+}
+
+/* ============================================
    MESAS GRID
    ============================================ */
 .mesas-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .mesa-item {
-  background: #151515;
-  border: 2px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 16px 8px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  aspect-ratio: 1/1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 20px 10px;
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  aspect-ratio: 1/1;
+  position: relative;
 }
 
 .mesa-item:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   border-color: #f31730;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.mesa-item.seleccionada {
-  border-color: #f31730;
-  background: #f31730;
-}
-
-.mesa-item.seleccionada .mesa-numero {
-  color: #ffffda;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 .mesa-item.ocupada {
   border-color: #f31730;
-  background: rgba(243, 23, 48, 0.08);
+  background: rgba(243, 23, 48, 0.05);
 }
 
 .mesa-item.ocupada .mesa-numero {
   color: #f31730;
 }
 
+.mesa-item.seleccionada {
+  border-color: #e9bd6e;
+  background: rgba(233, 189, 110, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(233, 189, 110, 0.15);
+}
+
+.mesa-item.seleccionada .mesa-numero {
+  color: #e9bd6e;
+}
+
 .mesa-numero {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   transition: color 0.3s ease;
 }
 
 .mesa-cliente {
-  font-size: 10px;
+  font-size: 11px;
   color: #888;
   margin-top: 4px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mesa-badge {
+  font-size: 10px;
+  padding: 3px 12px;
+  border-radius: 12px;
+  margin-top: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mesa-badge.ocupado {
+  background: rgba(243, 23, 48, 0.2);
+  color: #f31730;
+}
+
+.mesa-badge.libre {
+  background: rgba(50, 205, 50, 0.2);
+  color: #32CD32;
 }
 
 /* ============================================
-   ACCIONES
+   PANEL DE ACCIONES DE MESA
    ============================================ */
-.mesa-actions {
+.mesa-actions-panel {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  flex-wrap: wrap;
   gap: 12px;
-  justify-content: center;
-  padding: 12px 0;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mesa-actions-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mesa-actions-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffda;
+}
+
+.mesa-actions-estado {
+  font-size: 13px;
+  color: #888;
+}
+
+.mesa-actions-cliente {
+  color: #e9bd6e;
+  font-weight: 500;
+}
+
+.mesa-actions-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 .btn-ocupar,
@@ -358,9 +458,9 @@
   gap: 8px;
   padding: 10px 24px;
   border: none;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 8px;
   font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: inherit;
@@ -371,15 +471,10 @@
   color: #ffffda;
 }
 
-.btn-ocupar:hover:not(:disabled) {
+.btn-ocupar:hover {
   background: #28a428;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(50, 205, 50, 0.3);
-}
-
-.btn-ocupar:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  box-shadow: 0 4px 15px rgba(50, 205, 50, 0.3);
 }
 
 .btn-liberar {
@@ -387,20 +482,15 @@
   color: #ffffda;
 }
 
-.btn-liberar:hover:not(:disabled) {
-  background: #cc1228;
+.btn-liberar:hover {
+  background: #cc1428;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(243, 23, 48, 0.3);
-}
-
-.btn-liberar:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  box-shadow: 0 4px 15px rgba(243, 23, 48, 0.3);
 }
 
 .btn-ocupar svg,
 .btn-liberar svg {
-  stroke: currentColor;
+  stroke: #ffffda;
   width: 18px;
   height: 18px;
 }
@@ -408,15 +498,9 @@
 /* ============================================
    RESPONSIVE
    ============================================ */
-
 @media (max-width: 1024px) {
   .mesas-grid {
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
-
-  .mesa-numero {
-    font-size: 20px;
   }
 }
 
@@ -425,59 +509,59 @@
     padding: 12px;
   }
 
-  .mesas-header h1 {
+  .mesas-header-principal {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .mesas-header-principal h1 {
     font-size: 17px;
+    justify-content: center;
   }
 
-  .header-icon {
-    width: 20px;
-    height: 20px;
+  .header-buttons {
+    justify-content: center;
   }
 
-  .subtitle {
-    font-size: 11px;
+  .btn-volver {
+    font-size: 12px;
+    padding: 8px 16px;
   }
 
-  .menu-toggle {
-    padding: 6px 12px;
-    font-size: 11px;
-    min-width: 100px;
-  }
-
-  .menu-toggle-text svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .menu-arrow {
-    width: 14px;
-    height: 14px;
-  }
-
-  .menu-dropdown {
-    min-width: 150px;
-  }
-
-  .menu-item {
-    font-size: 11px;
-    padding: 6px 12px;
-  }
-
-  .menu-item svg {
-    width: 14px;
-    height: 14px;
+  .btn-volver span {
+    display: inline;
   }
 
   .btn-tema span {
     display: none;
   }
 
-  .btn-tema {
-    padding: 6px 12px;
+  .resumen-mesas {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .resumen-valor {
+    font-size: 22px;
+  }
+
+  .resumen-item {
+    padding: 12px;
+  }
+
+  .resumen-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .resumen-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   .mesas-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
 
@@ -486,19 +570,24 @@
   }
 
   .mesa-numero {
-    font-size: 20px;
+    font-size: 24px;
+  }
+
+  .mesa-actions-panel {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 14px 16px;
+  }
+
+  .mesa-actions-buttons {
+    justify-content: center;
   }
 
   .btn-ocupar,
   .btn-liberar {
-    font-size: 12px;
     padding: 8px 18px;
-  }
-
-  .btn-ocupar svg,
-  .btn-liberar svg {
-    width: 16px;
-    height: 16px;
+    font-size: 12px;
   }
 }
 
@@ -507,33 +596,51 @@
     padding: 8px;
   }
 
-  .mesas-header {
-    flex-direction: column;
-    align-items: stretch;
+  .mesas-header-principal h1 {
+    font-size: 15px;
+  }
+
+  .btn-volver {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .btn-volver svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .btn-volver span {
+    display: none;
+  }
+
+  .resumen-mesas {
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 6px;
   }
 
-  .mesas-header h1 {
-    font-size: 15px;
-    justify-content: center;
+  .resumen-valor {
+    font-size: 18px;
   }
 
-  .subtitle {
-    text-align: center;
+  .resumen-label {
+    font-size: 9px;
   }
 
-  .header-buttons {
-    justify-content: center;
-    flex-wrap: wrap;
+  .resumen-item {
+    padding: 8px 4px;
+    border-radius: 8px;
   }
 
-  .menu-toggle {
-    min-width: 120px;
-    font-size: 11px;
+  .resumen-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 4px;
   }
 
-  .menu-dropdown {
-    min-width: 160px;
+  .resumen-icon svg {
+    width: 14px;
+    height: 14px;
   }
 
   .mesas-grid {
@@ -547,11 +654,28 @@
   }
 
   .mesa-numero {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .mesa-cliente {
+    font-size: 9px;
+  }
+
+  .mesa-badge {
     font-size: 8px;
+    padding: 2px 8px;
+  }
+
+  .mesa-actions-panel {
+    padding: 12px 14px;
+  }
+
+  .mesa-actions-title {
+    font-size: 16px;
+  }
+
+  .mesa-actions-estado {
+    font-size: 12px;
   }
 
   .btn-ocupar,
@@ -562,8 +686,8 @@
 
   .btn-ocupar svg,
   .btn-liberar svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -574,56 +698,38 @@
   }
 
   .mesa-item {
-    padding: 8px 2px;
+    padding: 6px 2px;
   }
 
   .mesa-numero {
+    font-size: 16px;
+  }
+
+  .resumen-valor {
     font-size: 15px;
   }
 
-  .mesa-cliente {
-    font-size: 7px;
+  .resumen-label {
+    font-size: 8px;
   }
 
-  .menu-toggle {
-    min-width: 100px;
-    font-size: 10px;
-    padding: 5px 10px;
+  .mesa-actions-panel {
+    padding: 10px 12px;
   }
 
-  .menu-toggle-text svg {
-    width: 12px;
-    height: 12px;
-  }
-
-  .menu-arrow {
-    width: 12px;
-    height: 12px;
-  }
-
-  .menu-dropdown {
-    min-width: 130px;
-  }
-
-  .menu-item {
-    font-size: 10px;
-    padding: 5px 10px;
-  }
-
-  .menu-item svg {
-    width: 12px;
-    height: 12px;
+  .mesa-actions-title {
+    font-size: 14px;
   }
 
   .btn-ocupar,
   .btn-liberar {
     font-size: 10px;
-    padding: 5px 12px;
+    padding: 5px 10px;
   }
 
   .btn-ocupar svg,
   .btn-liberar svg {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
   }
 }

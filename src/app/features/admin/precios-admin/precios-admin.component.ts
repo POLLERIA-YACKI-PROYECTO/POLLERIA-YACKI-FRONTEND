@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+// precios-admin.component.ts
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -29,9 +30,16 @@ export class PreciosAdminComponent implements OnInit {
   productos = signal<any[]>([]);
   productosFiltrados = signal<any[]>([]);
   categoriaSeleccionada = signal<number | null>(null);
+  categoriaMenuAbierto = signal<boolean>(false);
 
   // Para editar precio
   precioEdit = signal<number>(0);
+
+  // Computed para el nombre de la categoría seleccionada
+  categoriaSeleccionadaNombre = computed(() => {
+    const cat = this.categorias().find(c => c.id === this.categoriaSeleccionada());
+    return cat ? cat.nombre : 'Seleccionar categoría';
+  });
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -46,6 +54,10 @@ export class PreciosAdminComponent implements OnInit {
     this.temaOscuro.set(!this.temaOscuro());
   }
 
+  toggleCategoriaMenu(): void {
+    this.categoriaMenuAbierto.set(!this.categoriaMenuAbierto());
+  }
+
   cargarDatos(): void {
     this.loading.set(true);
     
@@ -56,6 +68,7 @@ export class PreciosAdminComponent implements OnInit {
           this.categoriaSeleccionada.set(categorias[0].id);
           this.cargarProductos(categorias[0].id);
         }
+        this.loading.set(false);
       },
       error: (err) => {
         console.error('Error al cargar categorías:', err);
@@ -67,6 +80,7 @@ export class PreciosAdminComponent implements OnInit {
   cargarProductos(categoriaId: number): void {
     this.loading.set(true);
     this.categoriaSeleccionada.set(categoriaId);
+    this.categoriaMenuAbierto.set(false);
     
     this.productoService.obtenerPorCategoria(categoriaId).subscribe({
       next: (productos) => {
@@ -82,8 +96,17 @@ export class PreciosAdminComponent implements OnInit {
   }
 
   seleccionarCategoria(categoriaId: number): void {
-    if (this.categoriaSeleccionada() === categoriaId) return;
+    if (this.categoriaSeleccionada() === categoriaId) {
+      this.categoriaMenuAbierto.set(false);
+      return;
+    }
     this.cargarProductos(categoriaId);
+  }
+
+  contarProductosPorCategoria(categoriaId: number): number {
+    // Aquí deberías tener un conteo real de productos por categoría
+    // Si no lo tienes, puedes calcularlo desde tu servicio
+    return 0;
   }
 
   editarPrecio(producto: any): void {
@@ -120,42 +143,8 @@ export class PreciosAdminComponent implements OnInit {
     return cat?.icono || '🍗';
   }
 
-  getIconSvg(categoriaId: number): string {
-    const icons: any = {
-      1: `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v4"/>
-          <path d="M12 14v4"/>
-          <line x1="6" y1="12" x2="10" y2="12"/>
-          <line x1="14" y1="12" x2="18" y2="12"/>
-        </svg>
-      `,
-      2: `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 4h16v16H4z"/>
-          <path d="M8 8h8v8H8z"/>
-          <path d="M8 12h8"/>
-          <path d="M12 4v4"/>
-          <path d="M12 16v4"/>
-        </svg>
-      `,
-      3: `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
-        </svg>
-      `
-    };
-    return icons[categoriaId] || icons[1];
-  }
-
   irDashboard(): void {
     this.router.navigate(['/admin/dashboard-admin']);
-  }
-
-  irCartaAdmin(): void {
-    this.router.navigate(['/admin/carta-admin']);
   }
 
   cerrarSesion(): void {

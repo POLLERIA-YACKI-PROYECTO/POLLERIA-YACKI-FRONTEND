@@ -1,14 +1,19 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+// pedidos-mesero.component.ts
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { PedidoService } from '../../../core/services/pedido.service';
+import { ProductoService } from '../../../core/services/producto.service';
+import { ClienteService } from '../../../core/services/cliente.service';
+import { CategoriaService } from '../../../core/services/categoria.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 
 @Component({
   selector: 'app-pedidos-mesero',
   standalone: true,
-  imports: [CommonModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent],
   templateUrl: './pedidos-mesero.component.html',
   styleUrls: ['./pedidos-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
@@ -16,15 +21,52 @@ import { HeaderComponent } from '../../shared/components/header/header.component
 export class PedidosMeseroComponent implements OnInit {
   private authService = inject(AuthService);
   private pedidoService = inject(PedidoService);
+  private productoService = inject(ProductoService);
+  private clienteService = inject(ClienteService);
+  private categoriaService = inject(CategoriaService);
   private router = inject(Router);
 
+  // Estados
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
   menuAbierto = signal<boolean>(false);
   opcionSeleccionada = signal<string>('');
   loading = signal<boolean>(true);
+  cargandoProductos = signal<boolean>(false);
 
+  // Datos
   pedidos = signal<any[]>([]);
+  pedidosFiltrados = signal<any[]>([]);
+  categorias = signal<any[]>([]);
+  productos = signal<any[]>([]);
+  productosFiltrados = signal<any[]>([]);
+  clientes = signal<any[]>([]);
+  clientesEncontrados = signal<any[]>([]);
+  categoriaSeleccionada = signal<number | null>(null);
+
+  // Estado del pedido actual
+  itemsPedido = signal<any[]>([]);
+  clienteSeleccionado = signal<any>(null);
+  busquedaCliente = signal<string>('');
+  mostrarModalPedido = signal<boolean>(false);
+  mostrarModalProductos = signal<boolean>(false);
+  
+  totalPedido = computed(() => {
+    return this.itemsPedido().reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+  });
+
+  // Nuevo cliente
+  nuevoCliente = {
+    nombre: '',
+    apellido: '',
+    dni: '',
+    telefono: '',
+    email: ''
+  };
+
+  // Para seleccionar producto
+  cantidadProducto = signal<number>(1);
+  productoSeleccionado = signal<any>(null);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -32,46 +74,71 @@ export class PedidosMeseroComponent implements OnInit {
       this.router.navigate(['/login-mesero']);
       return;
     }
-    this.cargarPedidos();
+    this.cargarDatos();
   }
 
-  cargarPedidos(): void {
+  // ============================================
+  // CARGA DE DATOS
+  // ============================================
+  cargarDatos(): void {
     this.loading.set(true);
+    
+    this.categoriaService.obtenerCategorias().subscribe({
+      next: (categorias: any[]) => {
+        this.categorias.set(categorias);
+        if (categorias.length > 0) {
+          this.categoriaSeleccionada.set(categorias[0].id);
+          this.cargarProductos(categorias[0].id);
+        }
+      },
+      error: (err: any) => console.error('Error al cargar categorías:', err)
+    });
+
     this.pedidoService.obtenerPedidos().subscribe({
-      next: (pedidos) => {
+      next: (pedidos: any[]) => {
         this.pedidos.set(pedidos);
+        this.pedidosFiltrados.set(pedidos);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error al cargar pedidos:', err);
         this.loading.set(false);
       }
     });
+
+    this.clienteService.obtenerClientes().subscribe({
+      next: (clientes: any[]) => {
+        this.clientes.set(clientes);
+      },
+      error: (err: any) => console.error('Error al cargar clientes:', err)
+    });
   }
 
-  toggleTema(): void {
-    this.temaOscuro.set(!this.temaOscuro());
-  }
-
-  toggleMenu(): void {
-    this.menuAbierto.set(!this.menuAbierto());
-  }
-
-  seleccionarOpcion(opcion: string): void {
-    this.opcionSeleccionada.set(opcion);
-    this.menuAbierto.set(false);
+  cargarProductos(categoriaId: number): void {
+    this.cargandoProductos.set(true);
+    this.categoriaSeleccionada.set(categoriaId);
     
-    switch(opcion) {
-      case 'carta': this.irCarta(); break;
-      case 'mesas': this.irMesas(); break;
-      case 'pedidos': this.irPedidos(); break;
-      case 'precios': this.irPrecios(); break;
-      case 'ventas': this.irVentas(); break;
-      case 'tickets': this.irTicket(); break;
-      case 'dashboard': this.irDashboard(); break;
-    }
+    this.productoService.obtenerPorCategoria(categoriaId).subscribe({
+      next: (productos: any[]) => {
+        this.productos.set(productos);
+        this.productosFiltrados.set(productos);
+        this.cargandoProductos.set(false);
+      },
+      error: (err: any) => {
+        console.error('Error al cargar productos:', err);
+        this.cargandoProductos.set(false);
+      }
+    });
   }
 
+  seleccionarCategoria(categoriaId: number): void {
+    if (this.categoriaSeleccionada() === categoriaId) return;
+    this.cargarProductos(categoriaId);
+  }
+
+  // ============================================
+  // MÉTODOS PARA ESTADOS DE PEDIDOS
+  // ============================================
   getEstadoClass(estado: string): string {
     const clases: any = {
       'pendiente': 'estado-pendiente',
@@ -106,35 +173,258 @@ export class PedidosMeseroComponent implements OnInit {
   }
 
   verDetalle(id: number): void {
-    console.log('Ver detalle del pedido:', id);
+    console.log(`📋 Ver detalle del pedido #${id}`);
+    alert(`📋 Ver detalle del pedido #${id}`);
   }
 
+  // ============================================
+  // MENÚ Y NAVEGACIÓN
+  // ============================================
+  toggleTema(): void {
+    this.temaOscuro.set(!this.temaOscuro());
+  }
+
+  toggleMenu(): void {
+    this.menuAbierto.set(!this.menuAbierto());
+  }
+
+  seleccionarOpcion(opcion: string): void {
+    this.opcionSeleccionada.set(opcion);
+    this.menuAbierto.set(false);
+    
+    const rutas: { [key: string]: string } = {
+      'carta': '/mesero/carta',
+      'mesas': '/mesero/mesas',
+      'pedidos': '/mesero/pedidos',
+      'precios': '/mesero/precios',
+      'ventas': '/mesero/ventas',
+      'tickets': '/mesero/tickets',
+      'dashboard': '/mesero/dashboard'
+    };
+    
+    const ruta = rutas[opcion];
+    if (ruta) {
+      this.router.navigate([ruta]);
+    }
+  }
+
+  // ============================================
+  // MODALES
+  // ============================================
+  abrirModalNuevoPedido(): void {
+    this.itemsPedido.set([]);
+    this.clienteSeleccionado.set(null);
+    this.busquedaCliente.set('');
+    this.nuevoCliente = { nombre: '', apellido: '', dni: '', telefono: '', email: '' };
+    this.clientesEncontrados.set([]);
+    this.mostrarModalPedido.set(true);
+  }
+
+  cerrarModal(): void {
+    this.mostrarModalPedido.set(false);
+    this.mostrarModalProductos.set(false);
+  }
+
+  // ============================================
+  // CLIENTES
+  // ============================================
+  buscarClientes(): void {
+    const termino = this.busquedaCliente().toLowerCase().trim();
+    if (!termino) {
+      this.clientesEncontrados.set([]);
+      return;
+    }
+
+    const encontrados = this.clientes().filter((c: any) => 
+      c.nombre.toLowerCase().includes(termino) || 
+      (c.dni && c.dni.includes(termino))
+    );
+    this.clientesEncontrados.set(encontrados.slice(0, 5));
+  }
+
+  seleccionarCliente(cliente: any): void {
+    this.clienteSeleccionado.set(cliente);
+    this.busquedaCliente.set(cliente.nombre + ' ' + (cliente.apellido || ''));
+    this.clientesEncontrados.set([]);
+  }
+
+  limpiarCliente(): void {
+    this.clienteSeleccionado.set(null);
+    this.busquedaCliente.set('');
+  }
+
+  // ============================================
+  // AGREGAR PRODUCTOS
+  // ============================================
+  abrirModalProductos(): void {
+    if (!this.clienteSeleccionado() && !this.nuevoCliente.nombre) {
+      alert('Primero seleccione o agregue un cliente');
+      return;
+    }
+    this.productoSeleccionado.set(null);
+    this.cantidadProducto.set(1);
+    this.mostrarModalProductos.set(true);
+  }
+
+  seleccionarProducto(producto: any): void {
+    this.productoSeleccionado.set(producto);
+    this.cantidadProducto.set(1);
+  }
+
+  agregarProductoAlPedido(): void {
+    const producto = this.productoSeleccionado();
+    if (!producto) return;
+
+    const cantidad = this.cantidadProducto();
+    const itemsActuales = this.itemsPedido();
+    const itemExistente = itemsActuales.find((i: any) => i.id === producto.id);
+
+    if (itemExistente) {
+      itemExistente.cantidad += cantidad;
+      itemExistente.subtotal = itemExistente.precio * itemExistente.cantidad;
+      this.itemsPedido.set([...itemsActuales]);
+    } else {
+      this.itemsPedido.update((items: any[]) => [...items, {
+        id: producto.id,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        cantidad: cantidad,
+        subtotal: producto.precio * cantidad
+      }]);
+    }
+
+    this.productoSeleccionado.set(null);
+    this.cantidadProducto.set(1);
+    this.mostrarModalProductos.set(false);
+  }
+
+  eliminarItemPedido(index: number): void {
+    this.itemsPedido.update((items: any[]) => items.filter((_: any, i: number) => i !== index));
+  }
+
+  actualizarCantidad(index: number, cantidad: number): void {
+    if (cantidad < 1) {
+      this.eliminarItemPedido(index);
+      return;
+    }
+    const items = this.itemsPedido();
+    items[index].cantidad = cantidad;
+    items[index].subtotal = items[index].precio * cantidad;
+    this.itemsPedido.set([...items]);
+  }
+
+  // ============================================
+  // GUARDAR PEDIDO
+  // ============================================
+  // En el método guardarPedido() de pedidos-mesero.component.ts
+guardarPedido(): void {
+  if (this.itemsPedido().length === 0) {
+    alert('Agregue al menos un producto al pedido');
+    return;
+  }
+
+  const nombreCliente = this.clienteSeleccionado()?.nombre || this.nuevoCliente.nombre;
+  if (!nombreCliente) {
+    alert('Por favor seleccione o agregue un cliente');
+    return;
+  }
+
+  // Calcular subtotal
+  let subtotal = 0;
+  const itemsConPrecio = this.itemsPedido().map((item: any) => {
+    const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : item.precio;
+    const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : item.cantidad;
+    subtotal += precio * cantidad;
+    return {
+      id: item.id,
+      nombre: item.nombre,
+      precio: precio,
+      cantidad: cantidad,
+      subtotal: precio * cantidad
+    };
+  });
+
+  const igv = subtotal * 0.18;
+  const total = subtotal + igv;
+
+  const pedidoData: any = {
+    mesa_id: null,
+    usuario_id: this.usuario().id,
+    cliente_id: this.clienteSeleccionado()?.id || null,
+    cliente_nombre: nombreCliente,
+    items: itemsConPrecio,
+    subtotal: subtotal,
+    igv: igv,
+    total: total,
+    tipo: 'local',
+    observaciones: ''
+  };
+
+  // Si hay nuevo cliente, crearlo primero
+  if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
+    const nuevoClienteData = {
+      nombre: this.nuevoCliente.nombre,
+      apellido: this.nuevoCliente.apellido,
+      dni: this.nuevoCliente.dni,
+      telefono: this.nuevoCliente.telefono,
+      email: this.nuevoCliente.email
+    };
+
+    this.clienteService.crearCliente(nuevoClienteData).subscribe({
+      next: (clienteCreado: any) => {
+        pedidoData.cliente_id = clienteCreado.id;
+        pedidoData.cliente_nombre = clienteCreado.nombre;
+        this.crearPedido(pedidoData);
+      },
+      error: (err: any) => {
+        console.error('Error al crear cliente:', err);
+        alert('Error al crear cliente');
+      }
+    });
+  } else {
+    this.crearPedido(pedidoData);
+  }
+}
+
+crearPedido(pedidoData: any): void {
+  this.pedidoService.crearPedido(pedidoData).subscribe({
+    next: (response: any) => {
+      alert('Pedido creado correctamente');
+      this.cerrarModal();
+      this.cargarDatos();
+    },
+    error: (err: any) => {
+      console.error('Error al crear pedido:', err);
+      alert('Error al crear pedido: ' + (err.error?.detalle || err.message));
+    }
+  });
+}
+
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irCarta(): void {
-    this.router.navigate(['/carta-mesero']);
+    this.router.navigate(['/mesero/carta']);
   }
 
   irMesas(): void {
-    this.router.navigate(['/mesas-mesero']);
-  }
-
-  irPedidos(): void {
-    this.router.navigate(['/pedidos-mesero']);
+    this.router.navigate(['/mesero/mesas']);
   }
 
   irPrecios(): void {
-    this.router.navigate(['/precios-carta-mesero']);
+    this.router.navigate(['/mesero/precios']);
   }
 
   irVentas(): void {
-    this.router.navigate(['/ventas-mesero']);
+    this.router.navigate(['/mesero/ventas']);
   }
 
   irTicket(): void {
-    this.router.navigate(['/ticket']);
+    this.router.navigate(['/mesero/tickets']);
   }
 
   irDashboard(): void {
-    this.router.navigate(['/dashboard-mesero']);
+    this.router.navigate(['/mesero/dashboard']);
   }
 
   cerrarSesion(): void {

@@ -1,3 +1,4 @@
+// features/auth/login-admin/login-admin.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -33,7 +34,8 @@ export class LoginAdminComponent implements OnInit {
   ngOnInit(): void {
     const usuario = this.authService.getUsuarioActual();
     if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
-      this.router.navigate(['/admin']);
+      // ✅ CORREGIDO: Redirigir a /admin/dashboard-admin
+      this.router.navigate(['/admin/dashboard-admin']);
     }
   }
 
@@ -60,7 +62,8 @@ export class LoginAdminComponent implements OnInit {
         this.mostrarBienvenida.set(true);
         
         setTimeout(() => {
-          this.router.navigate(['/admin']);
+          // ✅ CORREGIDO: Redirigir a /admin/dashboard-admin
+          this.router.navigate(['/admin/dashboard-admin']);
         }, 1500);
       },
       error: (error) => {
@@ -70,7 +73,6 @@ export class LoginAdminComponent implements OnInit {
     });
   }
 
-  // ✅ MÉTODO CORREGIDO - Redirige al login de mesero
   irLoginMesero(): void {
     this.router.navigate(['/login-mesero']);
   }

@@ -1,5 +1,6 @@
+// producto.service.ts (agregar método)
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -25,9 +26,20 @@ export class ProductoService {
     return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
+  // Buscar productos por término
+  buscarProductos(termino: string): Observable<any[]> {
+    const params = new HttpParams().set('q', termino);
+    return this.http.get<any[]>(`${this.apiUrl}/buscar`, { 
+      headers: this.getHeaders(),
+      params 
+    });
+  }
+
   // Obtener productos por categoría
   obtenerPorCategoria(categoriaId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/categoria/${categoriaId}`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.apiUrl}/categoria/${categoriaId}`, { 
+      headers: this.getHeaders() 
+    });
   }
 
   // Obtener producto por ID

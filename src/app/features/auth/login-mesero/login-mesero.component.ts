@@ -1,3 +1,4 @@
+// features/auth/login-mesero/login-mesero.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -33,7 +34,8 @@ export class LoginMeseroComponent implements OnInit {
   ngOnInit(): void {
     const usuario = this.authService.getUsuarioActual();
     if (usuario && usuario.rol === 'mesero') {
-      this.router.navigate(['/dashboard-mesero']);
+      // ✅ CORREGIDO: Redirigir a /mesero/dashboard
+      this.router.navigate(['/mesero/dashboard']);
     }
   }
 
@@ -60,7 +62,8 @@ export class LoginMeseroComponent implements OnInit {
         this.mostrarBienvenida.set(true);
         
         setTimeout(() => {
-          this.router.navigate(['/dashboard-mesero']);
+          // ✅ CORREGIDO: Redirigir a /mesero/dashboard
+          this.router.navigate(['/mesero/dashboard']);
         }, 2000);
       },
       error: (error) => {

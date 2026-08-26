@@ -1,3 +1,4 @@
+<!-- ticket.component.html -->
 <div class="ticket-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -19,7 +20,6 @@
         <p class="subtitle">Historial de tickets</p>
       </div>
       <div class="header-buttons">
-        <!-- MENÚ DESPLEGABLE -->
         <div class="menu-container">
           <button class="menu-toggle" (click)="toggleMenu()">
             <span class="menu-toggle-text">
@@ -107,7 +107,6 @@
           }
         </div>
 
-        <!-- Botón Tema -->
         <button class="btn-tema" (click)="toggleTema()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/>
@@ -125,7 +124,6 @@
       </div>
     </div>
 
-    <!-- LOADING -->
     @if (loading()) {
       <div class="loading-spinner">
         <div class="spinner"></div>
@@ -133,7 +131,6 @@
       </div>
     }
 
-    <!-- TICKETS -->
     @if (!loading()) {
       <div class="tickets-grid">
         @for (ticket of tickets(); track ticket.id) {

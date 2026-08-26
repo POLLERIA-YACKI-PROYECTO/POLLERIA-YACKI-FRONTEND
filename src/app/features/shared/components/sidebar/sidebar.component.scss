@@ -1,3 +1,4 @@
+// shared/components/sidebar/sidebar.component.scss
 .sidebar {
   width: 250px;
   min-height: calc(100vh - 80px);
@@ -9,6 +10,8 @@
   position: sticky;
   top: 80px;
   overflow-y: auto;
+  flex-shrink: 0;
+  transition: width 0.3s ease;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -23,7 +26,7 @@
 .sidebar-menu {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   padding: 0 12px;
 }
 
@@ -40,18 +43,30 @@
   font-weight: 500;
   transition: all 0.3s ease;
   cursor: pointer;
+  position: relative;
 }
 
 .sidebar-item:hover {
   background: rgba(233, 189, 110, 0.12);
   color: #e9bd6e;
+  transform: translateX(4px);
 }
 
 .sidebar-item.active {
   background: rgba(233, 189, 110, 0.18);
   color: #e9bd6e;
   font-weight: 600;
-  border-left: 3px solid #e9bd6e;
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 3px;
+  background: #e9bd6e;
+  border-radius: 0 4px 4px 0;
 }
 
 .sidebar-icon {
@@ -78,6 +93,7 @@
 .sidebar-label {
   flex: 1;
   font-size: 13px;
+  letter-spacing: 0.3px;
 }
 
 .sidebar-footer {
@@ -106,6 +122,7 @@
   fill: #e9bd6e;
 }
 
+/* RESPONSIVE */
 @media (max-width: 1024px) {
   .sidebar {
     width: 220px;
@@ -122,6 +139,7 @@
     padding: 6px 12px;
     overflow-x: auto;
     overflow-y: hidden;
+    border-bottom: 1px solid rgba(233, 189, 110, 0.15);
   }
 
   .sidebar::-webkit-scrollbar {
@@ -136,24 +154,33 @@
   .sidebar-menu {
     flex-direction: row;
     padding: 0;
-    gap: 0;
+    gap: 2px;
   }
 
   .sidebar-item {
-    padding: 6px 10px;
+    padding: 6px 12px;
     font-size: 12px;
     white-space: nowrap;
     border-left: none !important;
   }
 
+  .sidebar-item.active::before {
+    display: none;
+  }
+
   .sidebar-item.active {
     border-left: none !important;
     border-bottom: 2px solid #e9bd6e;
+    border-radius: 0;
+  }
+
+  .sidebar-item:hover {
+    transform: none;
   }
 
   .sidebar-icon {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 
   .sidebar-icon svg {
@@ -178,6 +205,7 @@
   .sidebar-item {
     padding: 4px 8px;
     font-size: 11px;
+    gap: 6px;
   }
 
   .sidebar-icon {

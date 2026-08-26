@@ -1,3 +1,4 @@
+// mantenimiento.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +21,7 @@ export class MantenimientoComponent implements OnInit {
   private router = inject(Router);
 
   productos = signal<any[]>([]);
+  productosFiltrados = signal<any[]>([]);
   categorias = signal<any[]>([]);
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
@@ -27,6 +29,7 @@ export class MantenimientoComponent implements OnInit {
   mostrarFormulario = signal(false);
   editando = signal(false);
   productoEdit = signal<any>(null);
+  terminoBusqueda = signal<string>('');
 
   nuevoProducto = signal({
     nombre: '',
@@ -65,6 +68,7 @@ export class MantenimientoComponent implements OnInit {
     this.productoService.obtenerProductos().subscribe({
       next: (productos) => {
         this.productos.set(productos);
+        this.productosFiltrados.set(productos);
         this.loading.set(false);
       },
       error: (err) => {
@@ -74,6 +78,54 @@ export class MantenimientoComponent implements OnInit {
     });
   }
 
+  // ============================================
+  // BÚSQUEDA Y FILTROS
+  // ============================================
+  filtrarProductos(): void {
+    const termino = this.terminoBusqueda().toLowerCase().trim();
+    
+    if (!termino) {
+      this.productosFiltrados.set(this.productos());
+      return;
+    }
+
+    const filtrados = this.productos().filter(producto => {
+      // Buscar por nombre
+      const nombreMatch = producto.nombre.toLowerCase().includes(termino);
+      
+      // Buscar por categoría
+      const categoria = this.categorias().find(c => c.id === producto.categoria_id);
+      const categoriaMatch = categoria?.nombre.toLowerCase().includes(termino) || false;
+      
+      // Buscar por precio (si el término es numérico)
+      let precioMatch = false;
+      const precioNum = parseFloat(termino.replace('s/', '').replace('s', '').trim());
+      if (!isNaN(precioNum)) {
+        precioMatch = producto.precio === precioNum || 
+                      producto.precio.toString().includes(termino.replace('s/', '').trim());
+      }
+      
+      // Buscar por ID
+      const idMatch = producto.id.toString().includes(termino);
+      
+      // Buscar por stock
+      const stockNum = parseInt(termino);
+      const stockMatch = !isNaN(stockNum) ? producto.stock === stockNum : false;
+
+      return nombreMatch || categoriaMatch || precioMatch || idMatch || stockMatch;
+    });
+
+    this.productosFiltrados.set(filtrados);
+  }
+
+  limpiarBusqueda(): void {
+    this.terminoBusqueda.set('');
+    this.productosFiltrados.set(this.productos());
+  }
+
+  // ============================================
+  // CRUD DE PRODUCTOS
+  // ============================================
   toggleFormulario(): void {
     this.mostrarFormulario.set(!this.mostrarFormulario());
     if (!this.mostrarFormulario()) {

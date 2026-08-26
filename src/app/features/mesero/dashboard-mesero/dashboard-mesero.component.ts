@@ -1,7 +1,9 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+// dashboard-mesero.component.ts
+import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { MesaService, Mesa } from '../../../core/services/mesa.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 
 @Component({
@@ -14,6 +16,7 @@ import { HeaderComponent } from '../../shared/components/header/header.component
 })
 export class DashboardMeseroComponent implements OnInit {
   private authService = inject(AuthService);
+  private mesaService = inject(MesaService);
   private router = inject(Router);
 
   usuario = signal<any>(null);
@@ -21,32 +24,25 @@ export class DashboardMeseroComponent implements OnInit {
   menuAbierto = signal<boolean>(false);
   opcionSeleccionada = signal<string>('');
   
-  // Control del mensaje de bienvenida
   mostrarBienvenida = signal<boolean>(false);
   esPrimeraVez = signal<boolean>(false);
   nombreUsuario = signal<string>('');
   mensajeBienvenida = signal<string>('');
 
-  mesas = signal([
-    { numero: 1, ocupada: false },
-    { numero: 2, ocupada: false },
-    { numero: 3, ocupada: true },
-    { numero: 4, ocupada: false },
-    { numero: 5, ocupada: false },
-    { numero: 6, ocupada: true },
-    { numero: 7, ocupada: false },
-    { numero: 8, ocupada: false },
-    { numero: 9, ocupada: true },
-    { numero: 10, ocupada: false },
-    { numero: 11, ocupada: false },
-    { numero: 12, ocupada: true },
-    { numero: 13, ocupada: false },
-    { numero: 14, ocupada: false },
-    { numero: 15, ocupada: true },
-    { numero: 16, ocupada: false }
-  ]);
+  mesas = this.mesaService.getMesasSignal();
+  mesaSeleccionada = this.mesaService.getMesaSeleccionadaSignal();
 
-  mesaSeleccionada = signal<number | null>(null);
+  totalMesas = signal<number>(16);
+  mesasOcupadas = signal<number>(0);
+  mesasLibres = signal<number>(0);
+
+  constructor() {
+    effect(() => {
+      const mesas = this.mesas();
+      this.mesasOcupadas.set(mesas.filter(m => m.ocupada).length);
+      this.mesasLibres.set(mesas.filter(m => !m.ocupada).length);
+    });
+  }
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -55,7 +51,6 @@ export class DashboardMeseroComponent implements OnInit {
       return;
     }
 
-    // Verificar si es la primera vez que ingresa
     const nombre = this.usuario()?.nombre || 'Usuario';
     this.nombreUsuario.set(nombre);
     
@@ -68,7 +63,6 @@ export class DashboardMeseroComponent implements OnInit {
       localStorage.setItem(claveVisita, 'true');
       this.mostrarBienvenida.set(true);
       
-      // Ocultar mensaje después de 3 segundos
       setTimeout(() => {
         this.mostrarBienvenida.set(false);
       }, 3000);
@@ -77,7 +71,6 @@ export class DashboardMeseroComponent implements OnInit {
       this.mensajeBienvenida.set(`Gusto volver a verte ${nombre}`);
       this.mostrarBienvenida.set(true);
       
-      // Ocultar mensaje después de 2 segundos
       setTimeout(() => {
         this.mostrarBienvenida.set(false);
       }, 2000);
@@ -96,55 +89,67 @@ export class DashboardMeseroComponent implements OnInit {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
     
-    switch(opcion) {
-      case 'carta': this.irCarta(); break;
-      case 'mesas': this.irMesas(); break;
-      case 'pedidos': this.irPedidos(); break;
-      case 'precios': this.irPrecios(); break;
-      case 'ventas': this.irVentas(); break;
-      case 'tickets': this.irTicket(); break;
+    const rutas: { [key: string]: string } = {
+      'carta': '/mesero/carta',
+      'mesas': '/mesero/mesas',
+      'pedidos': '/mesero/pedidos',
+      'precios': '/mesero/precios',
+      'ventas': '/mesero/ventas',
+      'tickets': '/mesero/tickets',
+      'dashboard': '/mesero/dashboard'
+    };
+    
+    const ruta = rutas[opcion];
+    if (ruta) {
+      this.router.navigate([ruta]);
     }
   }
 
   seleccionarMesa(numero: number): void {
-    if (this.mesaSeleccionada() === numero) {
-      this.mesaSeleccionada.set(null);
-    } else {
-      this.mesaSeleccionada.set(numero);
+    this.mesaService.seleccionarMesa(numero);
+  }
+
+  toggleOcupada(numero: number, event: Event): void {
+    event.stopPropagation();
+    const mesa = this.mesas().find(m => m.numero === numero);
+    if (mesa) {
+      if (mesa.ocupada) {
+        if (confirm(`¿Liberar mesa ${numero} - Cliente: ${mesa.cliente}?`)) {
+          this.mesaService.liberarMesa(numero);
+        }
+      } else {
+        const cliente = prompt('Ingrese nombre del cliente:', `Mesa ${numero}`);
+        if (cliente !== null) {
+          this.mesaService.ocuparMesa(numero, cliente || `Mesa ${numero}`);
+        }
+      }
     }
+    this.mesaService.seleccionarMesa(numero);
   }
 
-  toggleOcupada(numero: number): void {
-    this.mesas.update(mesas => 
-      mesas.map(m => 
-        m.numero === numero ? { ...m, ocupada: !m.ocupada } : m
-      )
-    );
-    this.mesaSeleccionada.set(null);
-  }
-
+  // NAVEGACIÓN CORREGIDA
   irCarta(): void {
-    this.router.navigate(['/carta-mesero']);
+    this.router.navigate(['/mesero/carta']);
   }
 
   irMesas(): void {
-    this.router.navigate(['/mesas-mesero']);
+    this.router.navigate(['/mesero/mesas']);
   }
 
   irPedidos(): void {
-    this.router.navigate(['/pedidos-mesero']);
+    this.router.navigate(['/mesero/pedidos']);
   }
 
   irPrecios(): void {
-    this.router.navigate(['/precios-carta-mesero']);
+    this.router.navigate(['/mesero/precios']);
   }
 
   irVentas(): void {
-    this.router.navigate(['/ventas-mesero']);
+    this.router.navigate(['/mesero/ventas']);
   }
 
   irTicket(): void {
-    this.router.navigate(['/ticket']);
+    this.router.navigate(['/mesero/tickets']);
   }
 
   cerrarSesion(): void {

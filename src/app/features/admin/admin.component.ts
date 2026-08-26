@@ -1,3 +1,4 @@
+// features/admin/admin.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
@@ -18,15 +19,22 @@ export class AdminComponent implements OnInit {
   private router = inject(Router);
   
   usuario = signal<any>(null);
+  temaOscuro = signal<boolean>(false);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
     if (!this.usuario()) {
       this.router.navigate(['/login-admin']);
+      return;
     }
     if (this.usuario()?.rol !== 'admin' && this.usuario()?.rol !== 'cajero') {
       this.router.navigate(['/login-admin']);
+      return;
     }
+  }
+
+  toggleTema(): void {
+    this.temaOscuro.set(!this.temaOscuro());
   }
 
   cerrarSesion(): void {

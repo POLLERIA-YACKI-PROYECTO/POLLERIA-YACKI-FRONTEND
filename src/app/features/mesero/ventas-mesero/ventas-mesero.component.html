@@ -1,3 +1,4 @@
+<!-- ventas-mesero.component.html -->
 <div class="ventas-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -12,19 +13,11 @@
             <circle cx="16" cy="13" r="1"/>
             <circle cx="8" cy="18" r="1"/>
           </svg>
-          Punto de Venta
+          Ventas
         </h1>
-        <p class="subtitle">Registro de ventas realizadas</p>
+        <p class="subtitle">Historial de ventas</p>
       </div>
       <div class="header-buttons">
-        <button class="btn-nueva-venta" (click)="nuevaVenta()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Nueva Venta
-        </button>
-
-        <!-- MENÚ DESPLEGABLE -->
         <div class="menu-container">
           <button class="menu-toggle" (click)="toggleMenu()">
             <span class="menu-toggle-text">
@@ -112,7 +105,6 @@
           }
         </div>
 
-        <!-- Botón Tema -->
         <button class="btn-tema" (click)="toggleTema()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/>
@@ -130,7 +122,6 @@
       </div>
     </div>
 
-    <!-- LOADING -->
     @if (loading()) {
       <div class="loading-spinner">
         <div class="spinner"></div>
@@ -138,140 +129,59 @@
       </div>
     }
 
-    <!-- RESUMEN DE VENTAS -->
     @if (!loading()) {
-      <div class="ventas-resumen">
-        <div class="resumen-card">
-          <span class="resumen-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </span>
-          <div>
-            <p class="resumen-label">Total Recaudado</p>
-            <p class="resumen-valor">S/ {{ calcularTotal() | number:'1.2-2' }}</p>
-          </div>
-        </div>
-        <div class="resumen-card">
-          <span class="resumen-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
-              <rect x="2" y="7" width="20" height="14" rx="2"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-            </svg>
-          </span>
-          <div>
-            <p class="resumen-label">Ventas Realizadas</p>
-            <p class="resumen-valor">{{ ventas().length }}</p>
-          </div>
-        </div>
-        <div class="resumen-card">
-          <span class="resumen-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            </svg>
-          </span>
-          <div>
-            <p class="resumen-label">Promedio por Venta</p>
-            <p class="resumen-valor">S/ {{ calcularPromedio() | number:'1.2-2' }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- TABLA DE VENTAS -->
-      <div class="ventas-tabla-container">
-        <div class="tabla-header">
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-              <rect x="2" y="7" width="20" height="14" rx="2"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-            </svg>
-            Registro de Ventas
-          </span>
-          <span class="total-items">{{ ventas().length }} ventas</span>
-        </div>
-        
-        <div class="tabla-scroll">
-          <table class="ventas-tabla">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Mesa</th>
-                <th>Cliente</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Pago</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (venta of ventas(); track venta.id) {
-                <tr>
-                  <td><span class="venta-id">#{{ venta.id }}</span></td>
-                  <td>Mesa {{ venta.mesa_id || 'N/A' }}</td>
-                  <td>{{ venta.cliente || 'Consumidor Final' }}</td>
-                  <td>{{ venta.items?.length || 0 }}</td>
-                  <td class="venta-total">S/ {{ venta.total | number:'1.2-2' }}</td>
-                  <td>
-                    <span class="metodo-pago">
-                      {{ getMetodoPagoIcono(venta.metodo_pago) }} {{ venta.metodo_pago }}
-                    </span>
-                  </td>
-                  <td class="venta-fecha">{{ venta.fecha_venta | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td>
-                    <span class="estado-venta {{ getEstadoClass(venta.estado) }}">
-                      {{ getEstadoIcono(venta.estado) }} {{ getEstadoTexto(venta.estado) }}
-                    </span>
-                  </td>
-                  <td>
-                    <button class="btn-ver-detalle" (click)="verDetalle(venta.id)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              }
-              @empty {
-                <tr>
-                  <td colspan="9" class="empty-message">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                      <rect x="2" y="7" width="20" height="14" rx="2"/>
-                      <line x1="2" y1="12" x2="22" y2="12"/>
-                      <circle cx="16" cy="15" r="1"/>
-                      <circle cx="8" cy="15" r="1"/>
-                    </svg>
-                    <p>No hay ventas registradas</p>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- RESUMEN POR MÉTODO DE PAGO -->
-      <div class="ventas-resumen-pagos">
-        <h3>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          Resumen por Método de Pago
-        </h3>
-        <div class="pagos-grid">
-          @for (pago of resumenPagos(); track pago.metodo) {
-            <div class="pago-item">
-              <span class="pago-icon">{{ getMetodoPagoIcono(pago.metodo) }}</span>
-              <span class="pago-nombre">{{ pago.metodo }}</span>
-              <span class="pago-total">S/ {{ pago.total | number:'1.2-2' }}</span>
-              <span class="pago-cantidad">{{ pago.cantidad }} ventas</span>
+      <div class="ventas-grid">
+        @for (venta of ventas(); track venta.id) {
+          <div class="venta-card">
+            <div class="venta-header-card">
+              <span class="venta-id">#{{ venta.id }}</span>
+              <span class="venta-estado {{ getEstadoClass(venta.estado) }}">
+                {{ getEstadoIcono(venta.estado) }} {{ getEstadoTexto(venta.estado) }}
+              </span>
             </div>
-          }
-        </div>
+            <div class="venta-body">
+              <p class="venta-cliente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                {{ venta.cliente || 'Consumidor Final' }}
+              </p>
+              <p class="venta-total">S/ {{ venta.total | number:'1.2-2' }}</p>
+              <p class="venta-metodo">
+                {{ getMetodoPagoIcono(venta.metodo_pago) }} {{ venta.metodo_pago }}
+              </p>
+              <p class="venta-hora">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {{ venta.fecha_venta ? (venta.fecha_venta | date:'short') : '--:--' }}
+              </p>
+            </div>
+            <div class="venta-footer">
+              <button class="btn-ver" (click)="verDetalle(venta.id)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Ver Detalle
+              </button>
+            </div>
+          </div>
+        }
+        @empty {
+          <div class="empty-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <line x1="2" y1="11" x2="22" y2="11"/>
+              <line x1="2" y1="16" x2="22" y2="16"/>
+              <circle cx="16" cy="13" r="1"/>
+              <circle cx="8" cy="18" r="1"/>
+            </svg>
+            <p>No hay ventas registradas</p>
+          </div>
+        }
       </div>
     }
   </div>

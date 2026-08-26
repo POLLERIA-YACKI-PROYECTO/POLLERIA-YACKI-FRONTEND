@@ -1,3 +1,4 @@
+// dashboard-admin.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -23,34 +24,55 @@ export class DashboardAdminComponent implements OnInit {
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
   
+  // Fecha actual formateada
+  fechaActual = new Date().toLocaleDateString('es-ES', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  // Hora actual
+  horaActual = new Date().toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   stats = signal([
     { 
       icon: 'productos',
       label: 'Productos', 
       value: 0, 
-      color: '#ce8329' 
+      color: '#ce8329',
+      bgColor: '#ce832920'
     },
     { 
       icon: 'ventas',
       label: 'Ventas Hoy', 
       value: 0, 
-      color: '#5e412f' 
+      color: '#5e412f',
+      bgColor: '#5e412f20'
     },
     { 
       icon: 'ingresos',
-      label: 'Ingresos', 
+      label: 'Ingresos Totales', 
       value: 'S/ 0.00', 
-      color: '#921a17' 
+      color: '#2e7d32',
+      bgColor: '#2e7d3220'
     },
     { 
       icon: 'usuarios',
-      label: 'Usuarios', 
+      label: 'Usuarios Activos', 
       value: 0, 
-      color: '#e9bd6e' 
+      color: '#1565c0',
+      bgColor: '#1565c020'
     }
   ]);
 
   ventasRecientes = signal<any[]>([]);
+  ventasHoy = signal<any[]>([]);
+  totalVentasHoy = signal<number>(0);
+  totalIngresosHoy = signal<number>(0);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -75,39 +97,63 @@ export class DashboardAdminComponent implements OnInit {
     // Cargar ventas
     this.ventaService.obtenerVentas().subscribe({
       next: (ventas) => {
-        // Ventas de hoy
         const hoy = new Date().toISOString().split('T')[0];
         const ventasHoy = ventas.filter(v => v.fecha_venta?.startsWith(hoy));
+        
+        // Ventas de hoy
+        this.ventasHoy.set(ventasHoy);
+        this.totalVentasHoy.set(ventasHoy.length);
         this.actualizarStat('ventas', ventasHoy.length);
         
         // Total ingresos
         const total = ventas.reduce((sum, v) => sum + (v.total || 0), 0);
+        const totalHoy = ventasHoy.reduce((sum, v) => sum + (v.total || 0), 0);
+        this.totalIngresosHoy.set(totalHoy);
         this.actualizarStat('ingresos', `S/ ${total.toFixed(2)}`);
         
-        // Ventas recientes (últimas 5)
-        const recientes = ventas.slice(-5).reverse().map(v => ({
+        // Ventas recientes (últimas 10)
+        const recientes = ventas.slice(-10).reverse().map(v => ({
           id: v.id,
           cliente: v.cliente || 'Consumidor Final',
           total: v.total || 0,
-          fecha: v.fecha_venta ? new Date(v.fecha_venta).toLocaleString() : '--',
-          estado: v.estado || 'Completada'
+          fecha: v.fecha_venta ? this.formatearFecha(v.fecha_venta) : '--',
+          estado: v.estado || 'completada'
         }));
         this.ventasRecientes.set(recientes);
+        
+        this.loading.set(false);
       },
-      error: (err) => console.error('Error al cargar ventas:', err)
+      error: (err) => {
+        console.error('Error al cargar ventas:', err);
+        this.loading.set(false);
+      }
     });
 
     // Cargar usuarios
     this.usuarioService.obtenerUsuarios().subscribe({
       next: (usuarios) => {
         this.actualizarStat('usuarios', usuarios.length);
-        this.loading.set(false);
       },
       error: (err) => {
         console.error('Error al cargar usuarios:', err);
         this.loading.set(false);
       }
     });
+  }
+
+  formatearFecha(fecha: string): string {
+    try {
+      const d = new Date(fecha);
+      return d.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return fecha;
+    }
   }
 
   actualizarStat(icono: string, valor: any): void {
@@ -120,14 +166,26 @@ export class DashboardAdminComponent implements OnInit {
 
   getEstadoClass(estado: string): string {
     const clases: any = {
-      'Completada': 'estado-completada',
       'completada': 'estado-completada',
-      'Pendiente': 'estado-pendiente',
+      'Completada': 'estado-completada',
       'pendiente': 'estado-pendiente',
-      'Cancelada': 'estado-cancelada',
-      'cancelada': 'estado-cancelada'
+      'Pendiente': 'estado-pendiente',
+      'cancelada': 'estado-cancelada',
+      'Cancelada': 'estado-cancelada'
     };
     return clases[estado] || 'estado-pendiente';
+  }
+
+  getEstadoTexto(estado: string): string {
+    const textos: any = {
+      'completada': 'Completada',
+      'Completada': 'Completada',
+      'pendiente': 'Pendiente',
+      'Pendiente': 'Pendiente',
+      'cancelada': 'Cancelada',
+      'Cancelada': 'Cancelada'
+    };
+    return textos[estado] || estado;
   }
 
   getIconSvg(icon: string): string {
@@ -152,7 +210,7 @@ export class DashboardAdminComponent implements OnInit {
       'ingresos': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
+          <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
         </svg>
       `,
       'usuarios': `
@@ -163,5 +221,10 @@ export class DashboardAdminComponent implements OnInit {
       `
     };
     return icons[icon] || icons['productos'];
+  }
+
+  // Método para refrescar datos
+  refrescar(): void {
+    this.cargarDatos();
   }
 }

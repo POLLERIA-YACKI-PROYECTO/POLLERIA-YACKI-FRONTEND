@@ -1,8 +1,8 @@
+<!-- carta-mesero.component.html -->
 <div class="carta-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
   
   <div class="carta-content">
-    <!-- Header con menú desplegable -->
     <div class="carta-header">
       <div class="header-top">
         <div class="header-title-group">
@@ -19,7 +19,6 @@
           <p class="subtitle">Bienvenido {{ usuario()?.nombre }}</p>
         </div>
         <div class="header-buttons">
-          <!-- MENÚ DESPLEGABLE -->
           <div class="menu-container">
             <button class="menu-toggle" (click)="toggleMenu()">
               <span class="menu-toggle-text">
@@ -107,7 +106,6 @@
             }
           </div>
 
-          <!-- Botón Tema -->
           <button class="btn-tema" (click)="toggleTema()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="5"/>
@@ -126,26 +124,49 @@
       </div>
     </div>
 
-    <!-- Categorías -->
-    <div class="categorias-scroll">
-      @for (cat of categorias(); track cat.id) {
-        <button 
-          class="categoria-btn"
-          [class.active]="categoriaSeleccionada() === cat.id"
-          (click)="seleccionarCategoria(cat.id)"
-        >
-          <span class="categoria-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <!-- NUEVO SELECTOR DE CATEGORÍAS - MENÚ DESPLEGABLE MEJORADO -->
+    <div class="categoria-selector">
+      <div class="categoria-dropdown">
+        <button class="categoria-dropdown-btn" (click)="toggleCategoriaMenu()">
+          <span class="dropdown-label">
+            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <path d="M12 6v4"/>
               <path d="M12 14v4"/>
               <line x1="6" y1="12" x2="10" y2="12"/>
               <line x1="14" y1="12" x2="18" y2="12"/>
             </svg>
+            {{ categoriaSeleccionadaNombre() }}
           </span>
-          <span class="categoria-nombre">{{ cat.nombre }}</span>
+          <svg class="dropdown-arrow" [class.rotated]="categoriaMenuAbierto()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
         </button>
-      }
+
+        @if (categoriaMenuAbierto()) {
+          <div class="categoria-dropdown-menu">
+            @for (cat of categorias(); track cat.id) {
+              <button 
+                class="categoria-dropdown-item"
+                [class.active]="categoriaSeleccionada() === cat.id"
+                (click)="seleccionarCategoria(cat.id)"
+              >
+                <span class="item-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v4"/>
+                    <path d="M12 14v4"/>
+                    <line x1="6" y1="12" x2="10" y2="12"/>
+                    <line x1="14" y1="12" x2="18" y2="12"/>
+                  </svg>
+                </span>
+                <span class="item-nombre">{{ cat.nombre }}</span>
+                <span class="item-count">{{ contarProductosPorCategoria(cat.id) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
     </div>
 
     <!-- Productos -->

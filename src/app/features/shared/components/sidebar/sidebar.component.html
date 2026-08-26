@@ -1,16 +1,18 @@
+<!-- shared/components/sidebar/sidebar.component.html -->
 <aside class="sidebar">
-  <div class="sidebar-menu">
+  <nav class="sidebar-menu">
     @for (item of menuItems(); track item.route) {
       <a 
         [routerLink]="item.route"
         routerLinkActive="active"
         class="sidebar-item"
+        [routerLinkActiveOptions]="{ exact: false }"
       >
         <span class="sidebar-icon" [innerHTML]="getIconSvg(item.icon)"></span>
         <span class="sidebar-label">{{ item.label }}</span>
       </a>
     }
-  </div>
+  </nav>
   
   <div class="sidebar-footer">
     <a routerLink="/login-mesero" class="sidebar-item mesero-link">

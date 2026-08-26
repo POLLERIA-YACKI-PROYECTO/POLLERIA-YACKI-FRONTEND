@@ -1,9 +1,11 @@
-// src/app/components/reportes/reportes.component.ts
+// reportes.component.ts
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { ReporteService } from '../../../core/services/reporte.service';
+import { PedidoService } from '../../../core/services/pedido.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-reportes',
@@ -13,14 +15,20 @@ import { ReporteService } from '../../../core/services/reporte.service';
   styleUrls: ['./reportes.component.scss']
 })
 export class ReportesComponent implements OnInit {
+  private pedidoService = inject(PedidoService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   loading = signal(false);
   reporteSeleccionado = signal('ventas');
   menuAbierto = signal(false);
-  fechaInicio = signal('2026-01-01'); // Valor por defecto
-  fechaFin = signal(new Date().toISOString().split('T')[0]); // Fecha actual
+  fechaInicio = signal('');
+  fechaFin = signal('');
   
+  pedidos = signal<any[]>([]);
   datosReporte = signal<any[]>([]);
   resumenReporte = signal<any>({});
+  usuario = signal<any>(null);
 
   reportes = signal([
     { id: 'ventas', nombre: 'Reporte de Ventas' },
@@ -33,21 +41,22 @@ export class ReportesComponent implements OnInit {
     { id: 'motorizada', nombre: 'Venta Motorizada' }
   ]);
 
-  private reporteService = inject(ReporteService);
-
   nombreReporte = computed(() => {
     const found = this.reportes().find(r => r.id === this.reporteSeleccionado());
     return found ? found.nombre : 'Reporte';
   });
 
   ngOnInit(): void {
-    // Establecer fechas por defecto (últimos 7 días)
+    this.usuario.set(this.authService.getUsuarioActual());
+    
+    // Fechas por defecto (últimos 7 días)
     const today = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(today.getDate() - 7);
     this.fechaInicio.set(sevenDaysAgo.toISOString().split('T')[0]);
     this.fechaFin.set(today.toISOString().split('T')[0]);
-    this.generarReporte();
+    
+    this.cargarPedidos();
   }
 
   toggleMenu(): void {
@@ -60,161 +69,244 @@ export class ReportesComponent implements OnInit {
     this.generarReporte();
   }
 
-  async generarReporte(): Promise<void> {
+  cargarPedidos(): void {
+    this.loading.set(true);
+    
+    this.pedidoService.obtenerPedidos().subscribe({
+      next: (pedidos) => {
+        this.pedidos.set(pedidos);
+        this.generarReporte();
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar pedidos:', err);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  generarReporte(): void {
     this.loading.set(true);
     
     try {
       const tipo = this.reporteSeleccionado();
       const fechaInicio = this.fechaInicio();
       const fechaFin = this.fechaFin();
+      
+      // Filtrar pedidos por fecha
+      let pedidosFiltrados = this.pedidos().filter(p => {
+        const fecha = new Date(p.created_at).toISOString().split('T')[0];
+        return fecha >= fechaInicio && fecha <= fechaFin;
+      });
 
       let datos: any[] = [];
       let resumen: any = {};
 
       switch(tipo) {
         case 'ventas':
-        case 'totales':
-        case 'pago':
-        case 'cliente':
-        case 'motorizada':
-          // Usar el endpoint de ventas
-          const ventasData = await this.reporteService
-            .getReporteVentas(fechaInicio, fechaFin)
-            .toPromise();
+          // Reporte de ventas - todos los pedidos
+          datos = pedidosFiltrados.map((p: any) => ({
+            id: p.id,
+            fecha: p.created_at ? new Date(p.created_at).toLocaleString() : '--',
+            cliente: p.cliente_nombre || p.cliente_nombre_real || 'Consumidor Final',
+            items: p.items?.length || 0,
+            usuario: p.usuario_nombre || 'Desconocido',
+            total: p.total || 0,
+            estado: p.estado || 'pendiente'
+          }));
           
-          if (ventasData) {
-            resumen = ventasData.resumen;
-            
-            // Transformar según el tipo de reporte
-            switch(tipo) {
-              case 'ventas':
-                datos = ventasData.detalle.map((v: any) => ({
-                  id: v.id,
-                  fecha: v.fecha_venta || v.fecha,
-                  cliente: v.cliente_nombre || 'Cliente General',
-                  items: v.items?.length || 0,
-                  usuario: v.usuario_nombre || 'Sistema',
-                  total: v.total
-                }));
-                break;
-                
-              case 'totales':
-                // Agrupar por fecha
-                const agrupadoPorFecha: any = {};
-                ventasData.detalle.forEach((v: any) => {
-                  const fecha = v.fecha_venta || v.fecha;
-                  if (!agrupadoPorFecha[fecha]) {
-                    agrupadoPorFecha[fecha] = {
-                      id: Object.keys(agrupadoPorFecha).length + 1,
-                      fecha: fecha,
-                      cliente: 'Total del día',
-                      items: 0,
-                      usuario: 'Sistema',
-                      total: 0
-                    };
-                  }
-                  agrupadoPorFecha[fecha].items += v.items?.length || 0;
-                  agrupadoPorFecha[fecha].total += v.total;
-                });
-                datos = Object.values(agrupadoPorFecha);
-                break;
-                
-              case 'pago':
-                // Agrupar por método de pago
-                const porPago: any = {};
-                ventasData.detalle.forEach((v: any) => {
-                  const metodo = v.metodo_pago || 'Otro';
-                  if (!porPago[metodo]) {
-                    porPago[metodo] = {
-                      id: Object.keys(porPago).length + 1,
-                      fecha: 'Resumen',
-                      cliente: metodo,
-                      items: 0,
-                      usuario: 'Sistema',
-                      total: 0
-                    };
-                  }
-                  porPago[metodo].items += v.items?.length || 0;
-                  porPago[metodo].total += v.total;
-                });
-                datos = Object.values(porPago);
-                break;
-                
-              case 'cliente':
-                // Agrupar por cliente
-                const porCliente: any = {};
-                ventasData.detalle.forEach((v: any) => {
-                  const cliente = v.cliente_nombre || 'Cliente General';
-                  if (!porCliente[cliente]) {
-                    porCliente[cliente] = {
-                      id: Object.keys(porCliente).length + 1,
-                      fecha: 'Resumen',
-                      cliente: cliente,
-                      items: 0,
-                      usuario: 'Sistema',
-                      total: 0
-                    };
-                  }
-                  porCliente[cliente].items += v.items?.length || 0;
-                  porCliente[cliente].total += v.total;
-                });
-                datos = Object.values(porCliente);
-                break;
-                
-              case 'motorizada':
-                // Filtrar ventas motorizadas
-                datos = ventasData.detalle
-                  .filter((v: any) => v.tipo_entrega === 'motorizada' || v.motorizado_id)
-                  .map((v: any) => ({
-                    id: v.id,
-                    fecha: v.fecha_venta || v.fecha,
-                    cliente: v.cliente_nombre || 'Delivery',
-                    items: v.items?.length || 0,
-                    usuario: 'Motorizado',
-                    total: v.total
-                  }));
-                break;
-            }
-          }
+          const totalVentas = datos.length;
+          const totalRecaudado = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas,
+            totalRecaudado,
+            promedio: totalVentas > 0 ? totalRecaudado / totalVentas : 0
+          };
           break;
-          
+
         case 'diario':
-        case 'cajero':
-        case 'mozo':
-          // Usar el endpoint de diario cajero
-          const diarioData = await this.reporteService
-            .getReporteDiarioCajero(fechaFin)
-            .toPromise();
-          
-          if (diarioData) {
-            resumen = diarioData.resumen || {};
-            
-            if (tipo === 'diario' || tipo === 'cajero') {
-              // Datos por usuario (cajero)
-              datos = diarioData.porUsuario.map((u: any) => ({
-                id: u.usuario_id,
-                fecha: diarioData.fecha,
-                cliente: u.usuario_nombre,
-                items: u.cantidad,
-                usuario: u.usuario_nombre,
-                total: u.total
-              }));
-            } else if (tipo === 'mozo') {
-              // Filtrar solo mozos (puedes ajustar según tu lógica)
-              datos = diarioData.porUsuario
-                .filter((u: any) => u.usuario_nombre.includes('Mozo') || u.rol === 'mozo')
-                .map((u: any) => ({
-                  id: u.usuario_id,
-                  fecha: diarioData.fecha,
-                  cliente: u.usuario_nombre,
-                  items: u.cantidad,
-                  usuario: u.usuario_nombre,
-                  total: u.total
-                }));
+          // Venta diaria - agrupar por día
+          const porDia: any = {};
+          pedidosFiltrados.forEach((p: any) => {
+            const fecha = p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : '--';
+            if (!porDia[fecha]) {
+              porDia[fecha] = {
+                id: Object.keys(porDia).length + 1,
+                fecha: fecha,
+                cliente: 'Total del día',
+                items: 0,
+                usuario: 'Sistema',
+                total: 0
+              };
             }
-          }
-          break;
+            porDia[fecha].items += p.items?.length || 0;
+            porDia[fecha].total += p.total || 0;
+          });
+          datos = Object.values(porDia);
           
+          const totalRecaudadoDiario = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas: datos.length,
+            totalRecaudado: totalRecaudadoDiario,
+            promedio: datos.length > 0 ? totalRecaudadoDiario / datos.length : 0
+          };
+          break;
+
+        case 'cajero':
+          // Diario de cajero - agrupar por usuario (cajero)
+          const porUsuario: any = {};
+          pedidosFiltrados.forEach((p: any) => {
+            const usuario = p.usuario_nombre || 'Desconocido';
+            if (!porUsuario[usuario]) {
+              porUsuario[usuario] = {
+                id: Object.keys(porUsuario).length + 1,
+                fecha: 'Resumen',
+                cliente: usuario,
+                items: 0,
+                usuario: usuario,
+                total: 0
+              };
+            }
+            porUsuario[usuario].items += p.items?.length || 0;
+            porUsuario[usuario].total += p.total || 0;
+          });
+          datos = Object.values(porUsuario);
+          
+          const totalRecaudadoCajero = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas: datos.length,
+            totalRecaudado: totalRecaudadoCajero,
+            promedio: datos.length > 0 ? totalRecaudadoCajero / datos.length : 0
+          };
+          break;
+
+        case 'totales':
+          // Ventas totales - resumen general
+          const totalItems = pedidosFiltrados.reduce((sum, p) => sum + (p.items?.length || 0), 0);
+          const totalGeneral = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
+          
+          datos = [{
+            id: 1,
+            fecha: `${fechaInicio} - ${fechaFin}`,
+            cliente: 'RESUMEN GENERAL',
+            items: totalItems,
+            usuario: 'Sistema',
+            total: totalGeneral
+          }];
+          
+          resumen = {
+            totalVentas: pedidosFiltrados.length,
+            totalRecaudado: totalGeneral,
+            promedio: pedidosFiltrados.length > 0 ? totalGeneral / pedidosFiltrados.length : 0
+          };
+          break;
+
+        case 'pago':
+          // Forma de pago - agrupar por método de pago (por ahora mostramos por estado)
+          const porEstado: any = {};
+          pedidosFiltrados.forEach((p: any) => {
+            const estado = p.estado || 'pendiente';
+            if (!porEstado[estado]) {
+              porEstado[estado] = {
+                id: Object.keys(porEstado).length + 1,
+                fecha: 'Resumen',
+                cliente: estado === 'entregado' ? 'Pagado' : estado,
+                items: 0,
+                usuario: 'Sistema',
+                total: 0
+              };
+            }
+            porEstado[estado].items += p.items?.length || 0;
+            porEstado[estado].total += p.total || 0;
+          });
+          datos = Object.values(porEstado);
+          
+          const totalRecaudadoPago = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas: datos.length,
+            totalRecaudado: totalRecaudadoPago,
+            promedio: datos.length > 0 ? totalRecaudadoPago / datos.length : 0
+          };
+          break;
+
+        case 'mozo':
+          // Ventas por mozo - solo pedidos de meseros
+          const porMozo: any = {};
+          const pedidosMozo = pedidosFiltrados.filter(p => p.usuario_rol === 'mesero' || p.estado === 'entregado');
+          pedidosMozo.forEach((p: any) => {
+            const usuario = p.usuario_nombre || 'Desconocido';
+            if (!porMozo[usuario]) {
+              porMozo[usuario] = {
+                id: Object.keys(porMozo).length + 1,
+                fecha: 'Resumen',
+                cliente: usuario,
+                items: 0,
+                usuario: usuario,
+                total: 0
+              };
+            }
+            porMozo[usuario].items += p.items?.length || 0;
+            porMozo[usuario].total += p.total || 0;
+          });
+          datos = Object.values(porMozo);
+          
+          const totalRecaudadoMozo = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas: datos.length,
+            totalRecaudado: totalRecaudadoMozo,
+            promedio: datos.length > 0 ? totalRecaudadoMozo / datos.length : 0
+          };
+          break;
+
+        case 'cliente':
+          // Ventas por cliente - agrupar por cliente
+          const porCliente: any = {};
+          pedidosFiltrados.forEach((p: any) => {
+            const cliente = p.cliente_nombre || p.cliente_nombre_real || 'Consumidor Final';
+            if (!porCliente[cliente]) {
+              porCliente[cliente] = {
+                id: Object.keys(porCliente).length + 1,
+                fecha: 'Resumen',
+                cliente: cliente,
+                items: 0,
+                usuario: 'Sistema',
+                total: 0
+              };
+            }
+            porCliente[cliente].items += p.items?.length || 0;
+            porCliente[cliente].total += p.total || 0;
+          });
+          datos = Object.values(porCliente);
+          
+          const totalRecaudadoCliente = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas: datos.length,
+            totalRecaudado: totalRecaudadoCliente,
+            promedio: datos.length > 0 ? totalRecaudadoCliente / datos.length : 0
+          };
+          break;
+
+        case 'motorizada':
+          // Venta motorizada - pedidos tipo delivery
+          const pedidosMotorizados = pedidosFiltrados.filter(p => p.tipo === 'delivery' || p.tipo === 'motorizada');
+          datos = pedidosMotorizados.map((p: any) => ({
+            id: p.id,
+            fecha: p.created_at ? new Date(p.created_at).toLocaleString() : '--',
+            cliente: p.cliente_nombre || p.cliente_nombre_real || 'Delivery',
+            items: p.items?.length || 0,
+            usuario: 'Motorizado',
+            total: p.total || 0
+          }));
+          
+          const totalMotorizados = datos.length;
+          const totalRecaudadoMotorizado = datos.reduce((sum, d) => sum + d.total, 0);
+          resumen = {
+            totalVentas: totalMotorizados,
+            totalRecaudado: totalRecaudadoMotorizado,
+            promedio: totalMotorizados > 0 ? totalRecaudadoMotorizado / totalMotorizados : 0
+          };
+          break;
+
         default:
           datos = [];
       }
@@ -239,7 +331,30 @@ export class ReportesComponent implements OnInit {
     return this.datosReporte().reduce((sum, item) => sum + (item.items || 0), 0);
   }
 
+  getEstadoClass(estado: string): string {
+    const clases: any = {
+      'pendiente': 'estado-pendiente',
+      'preparando': 'estado-preparando',
+      'listo': 'estado-listo',
+      'entregado': 'estado-pagado',
+      'cancelado': 'estado-cancelado'
+    };
+    return clases[estado] || 'estado-pendiente';
+  }
+
+  getEstadoTexto(estado: string): string {
+    const textos: any = {
+      'pendiente': 'Pendiente',
+      'preparando': 'Preparando',
+      'listo': 'Listo',
+      'entregado': 'Pagado',
+      'cancelado': 'Cancelado'
+    };
+    return textos[estado] || estado;
+  }
+
   exportarPDF(): void {
+    // Mantener la misma funcionalidad
     this.loading.set(true);
     
     setTimeout(() => {
@@ -349,7 +464,6 @@ export class ReportesComponent implements OnInit {
   }
 
   exportarExcel(): void {
-    // Aquí puedes implementar la exportación a Excel con librerías como xlsx
     alert('📊 Exportando a Excel...');
   }
 }

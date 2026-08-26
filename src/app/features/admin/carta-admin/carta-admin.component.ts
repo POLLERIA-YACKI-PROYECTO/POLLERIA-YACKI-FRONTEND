@@ -1,4 +1,5 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+// carta-admin.component.ts
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductoService } from '../../../core/services/producto.service';
@@ -20,10 +21,12 @@ export class CartaAdminComponent implements OnInit {
   private router = inject(Router);
 
   productos = signal<any[]>([]);
+  productosFiltrados = signal<any[]>([]);
   categorias = signal<any[]>([]);
   loading = signal(true);
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
+  terminoBusqueda = signal<string>('');
   
   mostrarFormulario = signal(false);
   productoEdit = signal<any>(null);
@@ -66,6 +69,7 @@ export class CartaAdminComponent implements OnInit {
     this.productoService.obtenerProductos().subscribe({
       next: (productos) => {
         this.productos.set(productos);
+        this.productosFiltrados.set(productos);
         this.loading.set(false);
       },
       error: (err) => {
@@ -75,12 +79,66 @@ export class CartaAdminComponent implements OnInit {
     });
   }
 
+  // ============================================
+  // BÚSQUEDA Y FILTROS
+  // ============================================
+  filtrarProductos(): void {
+    const termino = this.terminoBusqueda().toLowerCase().trim();
+    
+    if (!termino) {
+      this.productosFiltrados.set(this.productos());
+      return;
+    }
+
+    const filtrados = this.productos().filter(producto => {
+      // Buscar por nombre
+      const nombreMatch = producto.nombre.toLowerCase().includes(termino);
+      
+      // Buscar por categoría
+      const categoria = this.categorias().find(c => c.id === producto.categoria_id);
+      const categoriaMatch = categoria?.nombre.toLowerCase().includes(termino) || false;
+      
+      // Buscar por precio (si el término es numérico)
+      let precioMatch = false;
+      const precioNum = parseFloat(termino.replace('s/', '').replace('s', '').trim());
+      if (!isNaN(precioNum)) {
+        precioMatch = producto.precio === precioNum || 
+                      producto.precio.toString().includes(termino.replace('s/', '').trim());
+      }
+      
+      // Buscar por ID
+      const idMatch = producto.id.toString().includes(termino);
+      
+      // Buscar por estado (agotado/disponible)
+      const estadoMatch = termino === 'agotado' ? producto.agotado === true :
+                         termino === 'disponible' ? producto.agotado === false : false;
+
+      return nombreMatch || categoriaMatch || precioMatch || idMatch || estadoMatch;
+    });
+
+    this.productosFiltrados.set(filtrados);
+  }
+
+  limpiarBusqueda(): void {
+    this.terminoBusqueda.set('');
+    this.productosFiltrados.set(this.productos());
+  }
+
+  // ============================================
+  // CRUD DE PRODUCTOS
+  // ============================================
   toggleFormulario(): void {
     this.mostrarFormulario.set(!this.mostrarFormulario());
     if (!this.mostrarFormulario()) {
       this.editando.set(false);
       this.productoEdit.set(null);
-      this.nuevoProducto.set({ categoria_id: this.categorias()[0]?.id || 0, nombre: '', precio: 0, descripcion: '', stock: 0 });
+      this.nuevoProducto.set({ 
+        categoria_id: this.categorias()[0]?.id || 0, 
+        nombre: '', 
+        precio: 0, 
+        descripcion: '', 
+        stock: 0 
+      });
     }
   }
 
@@ -136,6 +194,7 @@ export class CartaAdminComponent implements OnInit {
         this.productos.update(list =>
           list.map(p => p.id === producto.id ? { ...p, agotado: result.agotado } : p)
         );
+        this.filtrarProductos(); // Refrescar filtro
       },
       error: (err) => console.error('Error al cambiar estado:', err)
     });
