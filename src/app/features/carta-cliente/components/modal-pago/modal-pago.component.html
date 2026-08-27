@@ -1,0 +1,75 @@
+<!-- modal-pago.component.html -->
+<div class="modal-overlay" [class.active]="visible" (click)="cerrar.emit()"></div>
+
+<div class="modal-pago" [class.active]="visible">
+  <div class="modal-header">
+    <h2>💳 Finalizar Pedido</h2>
+    <button class="btn-cerrar" (click)="cerrar.emit()" [disabled]="cargando">✕</button>
+  </div>
+
+  <div class="modal-body">
+    <!-- Resumen -->
+    <div class="resumen-pago">
+      <span class="total-label">Total a pagar</span>
+      <span class="total-monto">{{ formatearPrecio(total) }}</span>
+    </div>
+
+    <!-- Métodos de pago -->
+    <div class="metodos-pago">
+      <label class="metodo-item" *ngFor="let metodo of metodosPago">
+        <input 
+          type="radio" 
+          name="metodoPago" 
+          [value]="metodo.id"
+          [(ngModel)]="metodoPago"
+          [disabled]="cargando"
+        >
+        <span class="metodo-icon">{{ metodo.icon }}</span>
+        <span class="metodo-label">{{ metodo.label }}</span>
+      </label>
+    </div>
+
+    <!-- Instrucciones para Yape/Plin -->
+    <div class="instruccion-digital" *ngIf="esPagoDigital">
+      <div class="qr-placeholder">
+        <span class="qr-icon">📱</span>
+        <p>Escanea el código QR con tu aplicación</p>
+        <div class="codigo-numero">
+          <span>Número: <strong>902 458 936</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Datos del cliente -->
+    <div class="datos-cliente">
+      <div class="campo">
+        <label>Tu nombre (opcional)</label>
+        <input 
+          type="text" 
+          [(ngModel)]="clienteNombre" 
+          placeholder="¿Cómo te llamamos?"
+          class="input-text"
+          [disabled]="cargando"
+        >
+      </div>
+      <div class="campo">
+        <label>Observaciones (opcional)</label>
+        <textarea 
+          [(ngModel)]="observaciones" 
+          placeholder="Ej: Sin ají, con extra papas..."
+          class="input-textarea"
+          rows="2"
+          [disabled]="cargando"
+        ></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-cancelar" (click)="cerrar.emit()" [disabled]="cargando">Cancelar</button>
+    <button class="btn-confirmar" (click)="onSubmit()" [disabled]="cargando">
+      <span *ngIf="!cargando">Confirmar Pedido</span>
+      <span *ngIf="cargando" class="spinner-btn"></span>
+    </button>
+  </div>
+</div>

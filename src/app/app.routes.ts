@@ -5,7 +5,19 @@ import { AdminGuard } from './core/guards/admin.guard';
 import { MeseroGuard } from './core/guards/mesero.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login-mesero', pathMatch: 'full' },
+  // ============================================
+  // RUTA PRINCIPAL - CARTA DEL CLIENTE
+  // ============================================
+  { 
+    path: '', 
+    redirectTo: '/carta', 
+    pathMatch: 'full' 
+  },
+  {
+    path: 'carta',
+    loadChildren: () => import('./features/carta-cliente/carta-cliente.routes')
+      .then(m => m.CARTA_CLIENTE_ROUTES)
+  },
   
   // Login
   {
@@ -20,7 +32,7 @@ export const routes: Routes = [
   },
   
   // ============================================
-  // RUTAS DEL MESERO CON PREFIJO /mesero/
+  // RUTAS DEL MESERO
   // ============================================
   {
     path: 'mesero',
@@ -66,13 +78,11 @@ export const routes: Routes = [
   },
   
   // ============================================
-  // RUTAS DEL ADMINISTRADOR CON PREFIJO /admin/
-  // USANDO AdminComponent COMO LAYOUT
+  // RUTAS DEL ADMINISTRADOR
   // ============================================
   {
     path: 'admin',
     canActivate: [AuthGuard, AdminGuard],
-    // ⚠️ IMPORTANTE: Usar loadComponent para el layout
     loadComponent: () => import('./features/admin/admin.component')
       .then(m => m.AdminComponent),
     children: [
@@ -81,7 +91,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/dashboard-admin/dashboard-admin.component')
           .then(m => m.DashboardAdminComponent)
       },
-        { path: 'ventas-admin', loadComponent: () => import('./features/admin/ventas-admin/ventas-admin.component').then(m => m.VentasAdminComponent) },
+      {
+        path: 'ventas-admin',
+        loadComponent: () => import('./features/admin/ventas-admin/ventas-admin.component')
+          .then(m => m.VentasAdminComponent)
+      },
       {
         path: 'carta-admin',
         loadComponent: () => import('./features/admin/carta-admin/carta-admin.component')
@@ -111,5 +125,5 @@ export const routes: Routes = [
     ]
   },
   
-  { path: '**', redirectTo: '/login-mesero' }
+  { path: '**', redirectTo: '/carta' }
 ];

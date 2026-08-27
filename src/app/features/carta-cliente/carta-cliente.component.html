@@ -1,0 +1,100 @@
+<!-- carta-cliente.component.html -->
+<div class="carta-cliente">
+  
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <img src="assets/images/logocarta.jpeg" alt="Doña Yacki" class="logo-img" (error)="onImageError($event)">
+        <div>
+          <h1>Doña Yacki</h1>
+          <span class="slogan">¡Sabor que enamora!</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-carrito" (click)="toggleCarrito()">
+          <span class="carrito-icon">🛒</span>
+          <span class="carrito-badge" *ngIf="totalItems() > 0">{{ totalItems() }}</span>
+        </button>
+        <button class="btn-admin" (click)="irAdmin()" title="Administrador">
+          👤
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- CATEGORÍAS -->
+  <nav class="categorias-nav" *ngIf="!loading()">
+    <div class="categorias-scroll">
+      <button 
+        *ngFor="let cat of categoriasActivas()"
+        class="categoria-btn"
+        [class.active]="categoriaSeleccionada() === cat.id"
+        (click)="seleccionarCategoria(cat.id)"
+      >
+        <span class="categoria-icono">{{ cat.icono || '🍽️' }}</span>
+        <span class="categoria-nombre">{{ cat.nombre }}</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- PRODUCTOS -->
+  <main class="productos-container">
+    <div class="loading-state" *ngIf="loading()">
+      <div class="spinner"></div>
+      <p>Cargando deliciosas opciones...</p>
+    </div>
+
+    <div class="error-state" *ngIf="error() && !loading()">
+      <span class="error-icon">😅</span>
+      <p>{{ error() }}</p>
+      <button class="btn-reintentar" (click)="cargarDatos()">Reintentar</button>
+    </div>
+
+    <div class="productos-grid" *ngIf="!loading() && !error()">
+      <app-producto-card
+        *ngFor="let producto of productosFiltrados()"
+        [producto]="producto"
+        (agregar)="agregarAlCarrito($event)"
+      ></app-producto-card>
+      
+      <div class="empty-state" *ngIf="productosFiltrados().length === 0">
+        <span class="empty-icon">🍽️</span>
+        <p>No hay productos disponibles en esta categoría</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- CARRITO LATERAL -->
+  <app-carrito-lateral
+    [visible]="mostrarCarrito()"
+    [items]="carrito()"
+    [subtotal]="subtotal()"
+    [igv]="igv()"
+    [total]="total()"
+    (cerrar)="mostrarCarrito.set(false)"
+    (vaciar)="vaciarCarrito()"
+    (eliminar)="eliminarDelCarrito($event)"
+    (pagar)="abrirModalPago()"
+  ></app-carrito-lateral>
+
+  <!-- MODAL DE PAGO -->
+  <app-modal-pago
+    [visible]="mostrarModalPago()"
+    [total]="total()"
+    [cargando]="cargandoPedido()"
+    (cerrar)="cerrarModalPago()"
+    (confirmar)="procesarPedido($event)"
+  ></app-modal-pago>
+src/app/features/carta-cliente/carta-cliente-routes/carta-cliente.routes.ts
+  <!-- FLOATING CARRITO (Móvil) -->
+  <button 
+    class="floating-carrito" 
+    *ngIf="totalItems() > 0 && !mostrarCarrito()"
+    (click)="toggleCarrito()"
+  >
+    🛒 <span class="floating-badge">{{ totalItems() }}</span>
+    <span class="floating-total">{{ formatearPrecio(total()) }}</span>
+  </button>
+
+</div>

@@ -1,0 +1,35 @@
+<!-- producto-card.component.html -->
+<div class="producto-card" [class.disponible]="estaDisponible" [class.no-disponible]="!estaDisponible">
+  
+  <!-- Imagen -->
+  <div class="producto-imagen">
+    <img 
+      [src]="imagenUrl" 
+      [alt]="producto.nombre"
+      loading="lazy"
+      (error)="onImageError($event)"
+    >
+    <span class="destacado-badge" *ngIf="producto.destacado">⭐ Destacado</span>
+    <span class="stock-badge" *ngIf="!estaDisponible">Agotado</span>
+  </div>
+
+  <!-- Información -->
+  <div class="producto-info">
+    <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+    <p class="producto-descripcion" *ngIf="producto.descripcion">{{ producto.descripcion }}</p>
+    <div class="producto-footer">
+      <!-- ✅ Usar el método seguro -->
+      <span class="producto-precio">{{ formatearPrecio(producto.precio) }}</span>
+      <button 
+        class="btn-agregar" 
+        [class.agregando]="agregando()"
+        [disabled]="!estaDisponible"
+        (click)="onAgregar()"
+        [attr.data-producto-id]="producto.id"
+      >
+        <span *ngIf="!agregando()">+ Agregar</span>
+        <span *ngIf="agregando()">✓</span>
+      </button>
+    </div>
+  </div>
+</div>

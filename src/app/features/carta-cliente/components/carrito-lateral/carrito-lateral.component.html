@@ -1,0 +1,65 @@
+<!-- components/carrito-lateral/carrito-lateral.component.html -->
+<div class="carrito-overlay" [class.active]="visible" (click)="cerrar.emit()"></div>
+
+<div class="carrito-lateral" [class.active]="visible">
+  <!-- Header -->
+  <div class="carrito-header">
+    <div class="carrito-titulo">
+      <span class="icon">🛒</span>
+      <h2>Mi Pedido</h2>
+      <span class="badge" *ngIf="tieneItems">{{ totalItems }}</span>
+    </div>
+    <button class="btn-cerrar" (click)="cerrar.emit()">✕</button>
+  </div>
+
+  <!-- Items -->
+  <div class="carrito-items" *ngIf="tieneItems; else vacio">
+    <div class="carrito-item" *ngFor="let item of items">
+      <div class="item-info">
+        <div class="item-imagen">
+          <img [src]="getImagenUrl(item.producto.imagen)" [alt]="item.producto.nombre">
+        </div>
+        <div class="item-detalle">
+          <span class="item-nombre">{{ item.producto.nombre }}</span>
+          <div class="item-cantidad">
+            <span class="cantidad">x{{ item.cantidad }}</span>
+            <!-- ✅ USAR EL MÉTODO DEL COMPONENTE -->
+            <span class="item-subtotal">{{ formatearSubtotal(item.producto.precio, item.cantidad) }}</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-eliminar" (click)="eliminar.emit(item.producto.id)">✕</button>
+    </div>
+  </div>
+
+  <ng-template #vacio>
+    <div class="carrito-vacio">
+      <span class="vacio-icon">🍽️</span>
+      <p>Tu carrito está vacío</p>
+      <p class="vacio-sub">Agrega tus productos favoritos</p>
+    </div>
+  </ng-template>
+
+  <!-- Footer -->
+  <div class="carrito-footer" *ngIf="tieneItems">
+    <div class="resumen">
+      <div class="resumen-line">
+        <span>Subtotal</span>
+        <span>{{ formatearPrecio(subtotal) }}</span>
+      </div>
+      <div class="resumen-line">
+        <span>IGV (18%)</span>
+        <span>{{ formatearPrecio(igv) }}</span>
+      </div>
+      <div class="resumen-line total">
+        <span>Total</span>
+        <span>{{ formatearPrecio(total) }}</span>
+      </div>
+    </div>
+
+    <div class="carrito-acciones">
+      <button class="btn-vaciar" (click)="vaciar.emit()">Vaciar</button>
+      <button class="btn-pagar" (click)="pagar.emit()">Pagar Ahora</button>
+    </div>
+  </div>
+</div>
