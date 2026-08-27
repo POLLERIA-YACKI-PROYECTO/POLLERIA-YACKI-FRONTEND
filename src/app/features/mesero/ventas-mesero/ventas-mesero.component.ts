@@ -1,5 +1,5 @@
-// ventas-mesero.component.ts (COMPLETO Y CORREGIDO)
-import { Component, signal, inject, OnInit } from '@angular/core';
+// ventas-mesero.component.ts
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -26,6 +26,22 @@ export class VentasMeseroComponent implements OnInit {
   loading = signal<boolean>(true);
 
   ventas = signal<any[]>([]);
+  ventasLocal = signal<any[]>([]);
+  ventasDelivery = signal<any[]>([]);
+  resumen = signal<any>({});
+
+  // Totales calculados
+  totalLocal = computed(() => {
+    return this.ventasLocal().reduce((sum, v) => sum + v.total, 0);
+  });
+
+  totalDelivery = computed(() => {
+    return this.ventasDelivery().reduce((sum, v) => sum + v.total, 0);
+  });
+
+  totalGeneral = computed(() => {
+    return this.totalLocal() + this.totalDelivery();
+  });
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -33,19 +49,42 @@ export class VentasMeseroComponent implements OnInit {
       this.router.navigate(['/login-mesero']);
       return;
     }
-    this.cargarVentas();
+    this.cargarDatos();
   }
 
-  cargarVentas(): void {
+  cargarDatos(): void {
     this.loading.set(true);
-    this.ventaService.obtenerVentas().subscribe({
+    
+    // Obtener ventas del usuario actual
+    this.ventaService.obtenerVentasPorUsuario(this.usuario().id).subscribe({
       next: (ventas) => {
         this.ventas.set(ventas);
+        this.organizarVentas(ventas);
+        this.cargarResumen();
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Error al cargar ventas:', err);
         this.loading.set(false);
+      }
+    });
+  }
+
+  organizarVentas(ventas: any[]): void {
+    const local = ventas.filter(v => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
+    const delivery = ventas.filter(v => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
+    
+    this.ventasLocal.set(local);
+    this.ventasDelivery.set(delivery);
+  }
+
+  cargarResumen(): void {
+    this.ventaService.obtenerResumenPorUsuario(this.usuario().id).subscribe({
+      next: (resumen) => {
+        this.resumen.set(resumen);
+      },
+      error: (err) => {
+        console.error('Error al cargar resumen:', err);
       }
     });
   }
@@ -116,40 +155,34 @@ export class VentasMeseroComponent implements OnInit {
     return iconos[metodo] || '💰';
   }
 
-  calcularTotal(): number {
-    return this.ventas().reduce((sum, v) => sum + v.total, 0);
+  getTipoEntregaLabel(tipo: string): string {
+    const labels: any = {
+      'local': 'Local',
+      'delivery': 'Motorizado',
+      'paraLlevar': 'Para Llevar',
+      'motorizada': 'Motorizado'
+    };
+    return labels[tipo] || tipo;
   }
 
-  calcularPromedio(): number {
-    const total = this.calcularTotal();
-    return this.ventas().length > 0 ? total / this.ventas().length : 0;
+  getTipoEntregaIcono(tipo: string): string {
+    const iconos: any = {
+      'local': '🏠',
+      'delivery': '🛵',
+      'paraLlevar': '📦',
+      'motorizada': '🛵'
+    };
+    return iconos[tipo] || '🏠';
   }
 
-  resumenPagos(): any[] {
-    const resumen: any = {};
-    this.ventas().forEach(v => {
-      if (!resumen[v.metodo_pago]) {
-        resumen[v.metodo_pago] = { metodo: v.metodo_pago, total: 0, cantidad: 0 };
-      }
-      resumen[v.metodo_pago].total += v.total;
-      resumen[v.metodo_pago].cantidad += 1;
-    });
-    return Object.values(resumen);
-  }
-
-  // ✅ MÉTODO AGREGADO - Ver detalle de venta
   verDetalle(id: number): void {
-    console.log(`📋 Ver detalle de venta #${id}`);
-    // Aquí puedes agregar la navegación a la página de detalle
-    // this.router.navigate(['/mesero/venta-detalle', id]);
     alert(`📋 Ver detalle de venta #${id}`);
   }
 
   nuevaVenta(): void {
-    alert('🆕 Abrir formulario de nueva venta');
+    this.router.navigate(['/mesero/pedidos']);
   }
 
-  // ✅ NAVEGACIÓN CORREGIDA
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);
   }

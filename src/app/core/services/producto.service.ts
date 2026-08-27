@@ -1,4 +1,4 @@
-// producto.service.ts (agregar método)
+// producto.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -26,12 +26,28 @@ export class ProductoService {
     return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
-  // Buscar productos por término
-  buscarProductos(termino: string): Observable<any[]> {
-    const params = new HttpParams().set('q', termino);
-    return this.http.get<any[]>(`${this.apiUrl}/buscar`, { 
-      headers: this.getHeaders(),
-      params 
+  // Buscar productos por término (frontend)
+  buscarProductos(termino: string, productos: any[]): any[] {
+    if (!termino || termino.trim() === '') {
+      return productos;
+    }
+
+    const terminoLower = termino.toLowerCase().trim();
+    
+    return productos.filter(producto => {
+      // Buscar por nombre
+      const nombreMatch = producto.nombre.toLowerCase().includes(terminoLower);
+      
+      // Buscar por categoría (si está disponible)
+      const categoriaMatch = producto.categoria_nombre?.toLowerCase().includes(terminoLower) || false;
+      
+      // Buscar por precio
+      const precioMatch = producto.precio.toString().includes(terminoLower);
+      
+      // Buscar por ID
+      const idMatch = producto.id.toString().includes(terminoLower);
+      
+      return nombreMatch || categoriaMatch || precioMatch || idMatch;
     });
   }
 

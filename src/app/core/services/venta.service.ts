@@ -1,3 +1,4 @@
+// venta.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -24,11 +25,27 @@ export class VentaService {
     return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
+  obtenerVentasPorUsuario(usuarioId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/usuario/${usuarioId}`, { headers: this.getHeaders() });
+  }
+
+  obtenerVentasPorTipo(tipo: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/tipo/${tipo}`, { headers: this.getHeaders() });
+  }
+
+  obtenerResumenPorUsuario(usuarioId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/resumen/usuario/${usuarioId}`, { headers: this.getHeaders() });
+  }
+
+  obtenerResumenGeneral(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/resumen/general`, { headers: this.getHeaders() });
+  }
+
   obtenerVenta(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
-  crearVenta(venta: any): Observable<any> {
-    return this.http.post(this.apiUrl, venta, { headers: this.getHeaders() });
+  eliminarVenta(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 }

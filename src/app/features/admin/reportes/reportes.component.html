@@ -17,7 +17,7 @@
       <p class="subtitle">Gestiona todos los reportes del sistema</p>
     </div>
     <div class="header-actions">
-      <button class="btn-refresh" (click)="cargarPedidos()" title="Actualizar datos">
+      <button class="btn-refresh" (click)="cargarDatos()" title="Actualizar datos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10"/>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -31,7 +31,6 @@
     <div class="config-panel">
       <h3>Configurar Reporte</h3>
       
-      <!-- MENÚ DESPLEGABLE -->
       <div class="menu-container">
         <button class="menu-toggle" (click)="toggleMenu()">
           <span class="menu-toggle-text">
@@ -67,7 +66,6 @@
         }
       </div>
 
-      <!-- FECHAS -->
       <div class="form-fechas">
         <div class="form-group">
           <label>Fecha Inicio</label>
@@ -178,6 +176,7 @@
                   <th>Cliente</th>
                   <th>Items</th>
                   <th>Usuario</th>
+                  <th>Tipo</th>
                   <th>Total</th>
                   <th>Estado</th>
                 </tr>
@@ -192,22 +191,38 @@
                     </td>
                     <td>{{ dato.items || 0 }}</td>
                     <td>{{ dato.usuario || '-' }}</td>
+                    <td>
+                      <span class="tipo-badge {{ getTipoEntregaClass(dato.tipo_entrega) }}">
+                        <span class="tipo-icon">
+                          @if (dato.tipo_entrega === 'delivery' || dato.tipo_entrega === 'motorizada') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                              <rect x="1" y="4" width="15" height="13" rx="2"/>
+                              <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                              <circle cx="5.5" cy="18" r="2.5"/>
+                              <circle cx="18.5" cy="18" r="2.5"/>
+                            </svg>
+                          } @else {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                              <rect x="2" y="7" width="20" height="14" rx="2"/>
+                              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                          }
+                        </span>
+                        {{ getTipoEntregaLabel(dato.tipo_entrega) }}
+                      </span>
+                    </td>
                     <td class="total-col">S/ {{ dato.total | number:'1.2-2' }}</td>
                     <td>
-                      @if (dato.estado) {
-                        <span class="estado-badge {{ getEstadoClass(dato.estado) }}">
-                          {{ getEstadoTexto(dato.estado) }}
-                        </span>
-                      } @else {
-                        <span class="estado-badge estado-pendiente">Pendiente</span>
-                      }
+                      <span class="estado-badge {{ getEstadoClass(dato.estado) }}">
+                        {{ getEstadoTexto(dato.estado) }}
+                      </span>
                     </td>
                   </tr>
                 }
               </tbody>
               <tfoot>
                 <tr class="total-row">
-                  <td colspan="5"><strong>Total General</strong></td>
+                  <td colspan="6"><strong>Total General</strong></td>
                   <td colspan="2"><strong>S/ {{ calcularTotal() | number:'1.2-2' }}</strong></td>
                 </tr>
               </tfoot>

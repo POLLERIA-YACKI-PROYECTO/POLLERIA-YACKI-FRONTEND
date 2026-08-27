@@ -29,6 +29,14 @@ export class PedidoService {
     return this.http.get<any[]>(`${this.apiUrl}/pendientes`, { headers: this.getHeaders() });
   }
 
+  obtenerPedidosPagados(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/pagados`, { headers: this.getHeaders() });
+  }
+
+  obtenerPedidosPorTipo(tipo: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/tipo/${tipo}`, { headers: this.getHeaders() });
+  }
+
   obtenerPedido(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
@@ -41,8 +49,10 @@ export class PedidoService {
     return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
   }
 
-  marcarPagado(id: number): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}/pagar`, {}, { headers: this.getHeaders() });
+  // ✅ MÉTODO PARA MARCAR PAGADO
+  marcarPagado(id: number, metodo_pago: string): Observable<any> {
+    console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
+    return this.http.put(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });
   }
 
   eliminarPedido(id: number): Observable<any> {

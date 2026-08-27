@@ -128,6 +128,36 @@
       </div>
     </div>
 
+    <!-- FILTROS POR TIPO DE ENTREGA -->
+    <div class="filtros-tipo">
+      <button 
+        class="filtro-btn" 
+        [class.active]="filtroTipo() === 'todos'"
+        (click)="cambiarFiltroTipo('todos')"
+      >
+        Todos
+        <span class="filtro-count">{{ pedidos().length }}</span>
+      </button>
+      <button 
+        class="filtro-btn local" 
+        [class.active]="filtroTipo() === 'local'"
+        (click)="cambiarFiltroTipo('local')"
+      >
+        <span class="filtro-icon">🏠</span>
+        Local
+        <span class="filtro-count">{{ pedidosLocal().length }}</span>
+      </button>
+      <button 
+        class="filtro-btn delivery" 
+        [class.active]="filtroTipo() === 'delivery'"
+        (click)="cambiarFiltroTipo('delivery')"
+      >
+        <span class="filtro-icon">🛵</span>
+        Motorizado
+        <span class="filtro-count">{{ pedidosDelivery().length }}</span>
+      </button>
+    </div>
+
     @if (loading()) {
       <div class="loading-spinner">
         <div class="spinner"></div>
@@ -137,7 +167,7 @@
 
     @if (!loading()) {
       <div class="pedidos-grid">
-        @for (pedido of pedidos(); track pedido.id) {
+        @for (pedido of pedidosFiltrados(); track pedido.id) {
           <div class="pedido-card">
             <div class="pedido-header-card">
               <span class="pedido-mesa">Mesa {{ pedido.mesa_id || 'N/A' }}</span>
@@ -152,6 +182,10 @@
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
                 {{ pedido.cliente || 'Cliente' }}
+              </p>
+              <p class="pedido-tipo {{ pedido.tipo_entrega || 'local' }}">
+                <span class="tipo-icono">{{ getTipoEntregaIcono(pedido.tipo_entrega) }}</span>
+                {{ getTipoEntregaLabel(pedido.tipo_entrega) }}
               </p>
               <p class="pedido-items">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -296,6 +330,37 @@
               </div>
             </div>
           }
+        </div>
+
+        <!-- SECCIÓN TIPO DE ENTREGA -->
+        <div class="tipo-entrega-section">
+          <h3>Tipo de Entrega</h3>
+          <div class="tipo-entrega-options">
+            <button 
+              class="tipo-btn" 
+              [class.active]="tipoEntrega() === 'local'"
+              (click)="seleccionarTipoEntrega('local')"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              <span>Local</span>
+            </button>
+            <button 
+              class="tipo-btn" 
+              [class.active]="tipoEntrega() === 'delivery'"
+              (click)="seleccionarTipoEntrega('delivery')"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <rect x="1" y="4" width="15" height="13" rx="2"/>
+                <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18" r="2.5"/>
+                <circle cx="18.5" cy="18" r="2.5"/>
+              </svg>
+              <span>Motorizado</span>
+            </button>
+          </div>
         </div>
 
         <!-- SECCIÓN PRODUCTOS -->

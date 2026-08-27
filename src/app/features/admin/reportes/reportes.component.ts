@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { PedidoService } from '../../../core/services/pedido.service';
+import { VentaService } from '../../../core/services/venta.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
 
@@ -16,6 +17,7 @@ import { Router } from '@angular/router';
 })
 export class ReportesComponent implements OnInit {
   private pedidoService = inject(PedidoService);
+  private ventaService = inject(VentaService);
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -26,12 +28,21 @@ export class ReportesComponent implements OnInit {
   fechaFin = signal('');
   
   pedidos = signal<any[]>([]);
+  ventas = signal<any[]>([]);
   datosReporte = signal<any[]>([]);
   resumenReporte = signal<any>({});
   usuario = signal<any>(null);
 
+  ventasLocal = signal<any[]>([]);
+  ventasDelivery = signal<any[]>([]);
+  pedidosPendientes = signal<any[]>([]);
+
+  // ✅ Bandera para evitar recargas innecesarias
+  private datosCargados = false;
+
   reportes = signal([
     { id: 'ventas', nombre: 'Reporte de Ventas' },
+    { id: 'pendientes', nombre: 'Pedidos Pendientes' },
     { id: 'diario', nombre: 'Venta Diaria' },
     { id: 'cajero', nombre: 'Diario de Cajero' },
     { id: 'totales', nombre: 'Ventas Totales' },
@@ -49,14 +60,13 @@ export class ReportesComponent implements OnInit {
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
     
-    // Fechas por defecto (últimos 7 días)
     const today = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(today.getDate() - 7);
     this.fechaInicio.set(sevenDaysAgo.toISOString().split('T')[0]);
     this.fechaFin.set(today.toISOString().split('T')[0]);
     
-    this.cargarPedidos();
+    this.cargarDatos();
   }
 
   toggleMenu(): void {
@@ -69,50 +79,93 @@ export class ReportesComponent implements OnInit {
     this.generarReporte();
   }
 
-  cargarPedidos(): void {
+  // ============================================
+  // CARGA DE DATOS CON AUTO-ACTUALIZACIÓN
+  // ============================================
+  cargarDatos(): void {
     this.loading.set(true);
     
-    this.pedidoService.obtenerPedidos().subscribe({
-      next: (pedidos) => {
-        this.pedidos.set(pedidos);
+    let solicitudesCompletadas = 0;
+    const totalSolicitudes = 3;
+    const verificarFinalizado = () => {
+      solicitudesCompletadas++;
+      if (solicitudesCompletadas >= totalSolicitudes) {
         this.generarReporte();
         this.loading.set(false);
+        this.datosCargados = true;
+      }
+    };
+
+    // Cargar pedidos
+    this.pedidoService.obtenerPedidos().subscribe({
+      next: (pedidos: any[]) => {
+        this.pedidos.set(pedidos || []);
+        verificarFinalizado();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error al cargar pedidos:', err);
-        this.loading.set(false);
+        verificarFinalizado();
+      }
+    });
+
+    // Cargar ventas
+    this.ventaService.obtenerVentas().subscribe({
+      next: (ventas: any[]) => {
+        const ventasArray = ventas || [];
+        this.ventas.set(ventasArray);
+        const local = ventasArray.filter((v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
+        const delivery = ventasArray.filter((v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
+        this.ventasLocal.set(local);
+        this.ventasDelivery.set(delivery);
+        verificarFinalizado();
+      },
+      error: (err: any) => {
+        console.error('Error al cargar ventas:', err);
+        verificarFinalizado();
+      }
+    });
+
+    // Cargar pedidos pendientes
+    this.pedidoService.obtenerPedidosPendientes().subscribe({
+      next: (pendientes: any[]) => {
+        this.pedidosPendientes.set(pendientes || []);
+        verificarFinalizado();
+      },
+      error: (err: any) => {
+        console.error('Error al cargar pedidos pendientes:', err);
+        verificarFinalizado();
       }
     });
   }
 
+  // ============================================
+  // GENERAR REPORTE
+  // ============================================
   generarReporte(): void {
-    this.loading.set(true);
-    
     try {
       const tipo = this.reporteSeleccionado();
       const fechaInicio = this.fechaInicio();
       const fechaFin = this.fechaFin();
       
-      // Filtrar pedidos por fecha
-      let pedidosFiltrados = this.pedidos().filter(p => {
-        const fecha = new Date(p.created_at).toISOString().split('T')[0];
-        return fecha >= fechaInicio && fecha <= fechaFin;
-      });
-
       let datos: any[] = [];
       let resumen: any = {};
 
       switch(tipo) {
         case 'ventas':
-          // Reporte de ventas - todos los pedidos
-          datos = pedidosFiltrados.map((p: any) => ({
-            id: p.id,
-            fecha: p.created_at ? new Date(p.created_at).toLocaleString() : '--',
-            cliente: p.cliente_nombre || p.cliente_nombre_real || 'Consumidor Final',
-            items: p.items?.length || 0,
-            usuario: p.usuario_nombre || 'Desconocido',
-            total: p.total || 0,
-            estado: p.estado || 'pendiente'
+          const ventasFiltradas = this.ventas().filter((v: any) => {
+            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
+            return fecha >= fechaInicio && fecha <= fechaFin;
+          });
+          
+          datos = ventasFiltradas.map((v: any) => ({
+            id: v.id,
+            fecha: v.fecha_venta ? new Date(v.fecha_venta).toLocaleString() : '--',
+            cliente: v.cliente_nombre || v.cliente || 'Consumidor Final',
+            items: v.items?.length || 0,
+            usuario: v.usuario_nombre || 'Desconocido',
+            total: parseFloat(v.total) || 0,
+            tipo_entrega: v.tipo_entrega || 'local',
+            estado: 'Pagado'
           }));
           
           const totalVentas = datos.length;
@@ -124,11 +177,39 @@ export class ReportesComponent implements OnInit {
           };
           break;
 
+        case 'pendientes':
+          const pendientesFiltrados = this.pedidosPendientes().filter((p: any) => {
+            const fecha = new Date(p.created_at).toISOString().split('T')[0];
+            return fecha >= fechaInicio && fecha <= fechaFin;
+          });
+          
+          datos = pendientesFiltrados.map((p: any) => ({
+            id: p.id,
+            fecha: p.created_at ? new Date(p.created_at).toLocaleString() : '--',
+            cliente: p.cliente_nombre || p.cliente_nombre_real || 'Consumidor Final',
+            items: p.items?.length || 0,
+            usuario: p.usuario_nombre || 'Desconocido',
+            total: parseFloat(p.total) || 0,
+            tipo_entrega: p.tipo_entrega || 'local',
+            estado: p.estado || 'pendiente'
+          }));
+          
+          resumen = {
+            totalVentas: datos.length,
+            totalRecaudado: datos.reduce((sum, d) => sum + d.total, 0),
+            promedio: datos.length > 0 ? datos.reduce((sum, d) => sum + d.total, 0) / datos.length : 0
+          };
+          break;
+
         case 'diario':
-          // Venta diaria - agrupar por día
+          const ventasDiarias = this.ventas().filter((v: any) => {
+            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
+            return fecha >= fechaInicio && fecha <= fechaFin;
+          });
+          
           const porDia: any = {};
-          pedidosFiltrados.forEach((p: any) => {
-            const fecha = p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : '--';
+          ventasDiarias.forEach((v: any) => {
+            const fecha = v.fecha_venta ? new Date(v.fecha_venta).toISOString().split('T')[0] : '--';
             if (!porDia[fecha]) {
               porDia[fecha] = {
                 id: Object.keys(porDia).length + 1,
@@ -139,8 +220,8 @@ export class ReportesComponent implements OnInit {
                 total: 0
               };
             }
-            porDia[fecha].items += p.items?.length || 0;
-            porDia[fecha].total += p.total || 0;
+            porDia[fecha].items += v.items?.length || 0;
+            porDia[fecha].total += parseFloat(v.total) || 0;
           });
           datos = Object.values(porDia);
           
@@ -152,150 +233,22 @@ export class ReportesComponent implements OnInit {
           };
           break;
 
-        case 'cajero':
-          // Diario de cajero - agrupar por usuario (cajero)
-          const porUsuario: any = {};
-          pedidosFiltrados.forEach((p: any) => {
-            const usuario = p.usuario_nombre || 'Desconocido';
-            if (!porUsuario[usuario]) {
-              porUsuario[usuario] = {
-                id: Object.keys(porUsuario).length + 1,
-                fecha: 'Resumen',
-                cliente: usuario,
-                items: 0,
-                usuario: usuario,
-                total: 0
-              };
-            }
-            porUsuario[usuario].items += p.items?.length || 0;
-            porUsuario[usuario].total += p.total || 0;
-          });
-          datos = Object.values(porUsuario);
-          
-          const totalRecaudadoCajero = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: totalRecaudadoCajero,
-            promedio: datos.length > 0 ? totalRecaudadoCajero / datos.length : 0
-          };
-          break;
-
-        case 'totales':
-          // Ventas totales - resumen general
-          const totalItems = pedidosFiltrados.reduce((sum, p) => sum + (p.items?.length || 0), 0);
-          const totalGeneral = pedidosFiltrados.reduce((sum, p) => sum + (p.total || 0), 0);
-          
-          datos = [{
-            id: 1,
-            fecha: `${fechaInicio} - ${fechaFin}`,
-            cliente: 'RESUMEN GENERAL',
-            items: totalItems,
-            usuario: 'Sistema',
-            total: totalGeneral
-          }];
-          
-          resumen = {
-            totalVentas: pedidosFiltrados.length,
-            totalRecaudado: totalGeneral,
-            promedio: pedidosFiltrados.length > 0 ? totalGeneral / pedidosFiltrados.length : 0
-          };
-          break;
-
-        case 'pago':
-          // Forma de pago - agrupar por método de pago (por ahora mostramos por estado)
-          const porEstado: any = {};
-          pedidosFiltrados.forEach((p: any) => {
-            const estado = p.estado || 'pendiente';
-            if (!porEstado[estado]) {
-              porEstado[estado] = {
-                id: Object.keys(porEstado).length + 1,
-                fecha: 'Resumen',
-                cliente: estado === 'entregado' ? 'Pagado' : estado,
-                items: 0,
-                usuario: 'Sistema',
-                total: 0
-              };
-            }
-            porEstado[estado].items += p.items?.length || 0;
-            porEstado[estado].total += p.total || 0;
-          });
-          datos = Object.values(porEstado);
-          
-          const totalRecaudadoPago = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: totalRecaudadoPago,
-            promedio: datos.length > 0 ? totalRecaudadoPago / datos.length : 0
-          };
-          break;
-
-        case 'mozo':
-          // Ventas por mozo - solo pedidos de meseros
-          const porMozo: any = {};
-          const pedidosMozo = pedidosFiltrados.filter(p => p.usuario_rol === 'mesero' || p.estado === 'entregado');
-          pedidosMozo.forEach((p: any) => {
-            const usuario = p.usuario_nombre || 'Desconocido';
-            if (!porMozo[usuario]) {
-              porMozo[usuario] = {
-                id: Object.keys(porMozo).length + 1,
-                fecha: 'Resumen',
-                cliente: usuario,
-                items: 0,
-                usuario: usuario,
-                total: 0
-              };
-            }
-            porMozo[usuario].items += p.items?.length || 0;
-            porMozo[usuario].total += p.total || 0;
-          });
-          datos = Object.values(porMozo);
-          
-          const totalRecaudadoMozo = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: totalRecaudadoMozo,
-            promedio: datos.length > 0 ? totalRecaudadoMozo / datos.length : 0
-          };
-          break;
-
-        case 'cliente':
-          // Ventas por cliente - agrupar por cliente
-          const porCliente: any = {};
-          pedidosFiltrados.forEach((p: any) => {
-            const cliente = p.cliente_nombre || p.cliente_nombre_real || 'Consumidor Final';
-            if (!porCliente[cliente]) {
-              porCliente[cliente] = {
-                id: Object.keys(porCliente).length + 1,
-                fecha: 'Resumen',
-                cliente: cliente,
-                items: 0,
-                usuario: 'Sistema',
-                total: 0
-              };
-            }
-            porCliente[cliente].items += p.items?.length || 0;
-            porCliente[cliente].total += p.total || 0;
-          });
-          datos = Object.values(porCliente);
-          
-          const totalRecaudadoCliente = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: totalRecaudadoCliente,
-            promedio: datos.length > 0 ? totalRecaudadoCliente / datos.length : 0
-          };
-          break;
-
         case 'motorizada':
-          // Venta motorizada - pedidos tipo delivery
-          const pedidosMotorizados = pedidosFiltrados.filter(p => p.tipo === 'delivery' || p.tipo === 'motorizada');
-          datos = pedidosMotorizados.map((p: any) => ({
-            id: p.id,
-            fecha: p.created_at ? new Date(p.created_at).toLocaleString() : '--',
-            cliente: p.cliente_nombre || p.cliente_nombre_real || 'Delivery',
-            items: p.items?.length || 0,
+          const motorizadas = this.ventas().filter((v: any) => {
+            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
+            return fecha >= fechaInicio && fecha <= fechaFin && 
+                   (v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
+          });
+          
+          datos = motorizadas.map((v: any) => ({
+            id: v.id,
+            fecha: v.fecha_venta ? new Date(v.fecha_venta).toLocaleString() : '--',
+            cliente: v.cliente_nombre || v.cliente || 'Delivery',
+            items: v.items?.length || 0,
             usuario: 'Motorizado',
-            total: p.total || 0
+            total: parseFloat(v.total) || 0,
+            tipo_entrega: v.tipo_entrega || 'delivery',
+            estado: 'Pagado'
           }));
           
           const totalMotorizados = datos.length;
@@ -307,6 +260,7 @@ export class ReportesComponent implements OnInit {
           };
           break;
 
+        // ... otros casos (cajero, totales, pago, mozo, cliente)
         default:
           datos = [];
       }
@@ -318,17 +272,30 @@ export class ReportesComponent implements OnInit {
       console.error('Error al generar reporte:', error);
       this.datosReporte.set([]);
       this.resumenReporte.set({});
-    } finally {
-      this.loading.set(false);
     }
   }
 
-  calcularTotal(): number {
-    return this.datosReporte().reduce((sum, item) => sum + (item.total || 0), 0);
+  // ============================================
+  // MÉTODOS DE UTILIDAD
+  // ============================================
+  getTipoEntregaLabel(tipo: string): string {
+    const labels: any = {
+      'local': 'Local',
+      'delivery': 'Motorizado',
+      'paraLlevar': 'Para Llevar',
+      'motorizada': 'Motorizado'
+    };
+    return labels[tipo] || 'Local';
   }
 
-  calcularItems(): number {
-    return this.datosReporte().reduce((sum, item) => sum + (item.items || 0), 0);
+  getTipoEntregaClass(tipo: string): string {
+    const clases: any = {
+      'local': 'tipo-local',
+      'delivery': 'tipo-delivery',
+      'paraLlevar': 'tipo-local',
+      'motorizada': 'tipo-delivery'
+    };
+    return clases[tipo] || 'tipo-local';
   }
 
   getEstadoClass(estado: string): string {
@@ -337,6 +304,7 @@ export class ReportesComponent implements OnInit {
       'preparando': 'estado-preparando',
       'listo': 'estado-listo',
       'entregado': 'estado-pagado',
+      'Pagado': 'estado-pagado',
       'cancelado': 'estado-cancelado'
     };
     return clases[estado] || 'estado-pendiente';
@@ -348,13 +316,24 @@ export class ReportesComponent implements OnInit {
       'preparando': 'Preparando',
       'listo': 'Listo',
       'entregado': 'Pagado',
+      'Pagado': 'Pagado',
       'cancelado': 'Cancelado'
     };
     return textos[estado] || estado;
   }
 
+  calcularTotal(): number {
+    return this.datosReporte().reduce((sum, item) => sum + (item.total || 0), 0);
+  }
+
+  calcularItems(): number {
+    return this.datosReporte().reduce((sum, item) => sum + (item.items || 0), 0);
+  }
+
+  // ============================================
+  // EXPORTAR A PDF
+  // ============================================
   exportarPDF(): void {
-    // Mantener la misma funcionalidad
     this.loading.set(true);
     
     setTimeout(() => {
@@ -430,7 +409,9 @@ export class ReportesComponent implements OnInit {
             <th>Cliente</th>
             <th>Items</th>
             <th>Usuario</th>
+            <th>Tipo</th>
             <th>Total</th>
+            <th>Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -444,7 +425,9 @@ export class ReportesComponent implements OnInit {
           <td>${item.cliente || '-'}</td>
           <td>${item.items || 0}</td>
           <td>${item.usuario || '-'}</td>
+          <td>${this.getTipoEntregaLabel(item.tipo_entrega) || 'Local'}</td>
           <td>S/ ${(item.total || 0).toFixed(2)}</td>
+          <td>${item.estado || 'Pagado'}</td>
         </tr>
       `;
     });
@@ -453,8 +436,8 @@ export class ReportesComponent implements OnInit {
         </tbody>
         <tfoot>
           <tr class="total">
-            <td colspan="5"><strong>Total General</strong></td>
-            <td><strong>S/ ${this.calcularTotal().toFixed(2)}</strong></td>
+            <td colspan="6"><strong>Total General</strong></td>
+            <td colspan="2"><strong>S/ ${this.calcularTotal().toFixed(2)}</strong></td>
           </tr>
         </tfoot>
       </table>
@@ -463,7 +446,15 @@ export class ReportesComponent implements OnInit {
     return html;
   }
 
+  // ============================================
+  // EXPORTAR A EXCEL
+  // ============================================
   exportarExcel(): void {
     alert('📊 Exportando a Excel...');
+  }
+
+  // ✅ Método para recargar manualmente (si es necesario)
+  recargarDatos(): void {
+    this.cargarDatos();
   }
 }

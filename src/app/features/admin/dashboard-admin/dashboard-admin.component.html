@@ -30,6 +30,19 @@
       </div>
     </div>
 
+    <!-- Mensaje de Error -->
+    @if (errorMessage()) {
+      <div class="error-message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ errorMessage() }}</span>
+        <button (click)="refrescar()">Reintentar</button>
+      </div>
+    }
+
     <!-- Loading -->
     @if (loading()) {
       <div class="loading-container">
@@ -38,7 +51,7 @@
       </div>
     }
 
-    <!-- Stats -->
+    <!-- Stats Grid -->
     @if (!loading()) {
       <div class="stats-grid">
         @for (stat of stats(); track stat.label) {
@@ -52,6 +65,79 @@
             </div>
           </div>
         }
+      </div>
+    }
+
+    <!-- Resumen de Ventas -->
+    @if (!loading()) {
+      <div class="resumen-container">
+        <div class="resumen-header">
+          <h3>
+            <svg class="resumen-icon-header" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <line x1="2" y1="11" x2="22" y2="11"/>
+              <line x1="2" y1="16" x2="22" y2="16"/>
+              <circle cx="16" cy="13" r="1"/>
+              <circle cx="8" cy="18" r="1"/>
+            </svg>
+            Resumen de Ventas
+          </h3>
+          <span class="resumen-total">Total General: S/ {{ resumenVentas().totalRecaudado | number:'1.2-2' }}</span>
+        </div>
+        <div class="resumen-grid">
+          <div class="resumen-card total">
+            <span class="resumen-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <line x1="2" y1="11" x2="22" y2="11"/>
+              </svg>
+            </span>
+            <div class="resumen-info">
+              <span class="resumen-valor">{{ resumenVentas().totalVentas }}</span>
+              <span class="resumen-label">Total Ventas</span>
+            </div>
+          </div>
+          <div class="resumen-card local">
+            <span class="resumen-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+            </span>
+            <div class="resumen-info">
+              <span class="resumen-valor">{{ resumenVentas().ventasLocal }}</span>
+              <span class="resumen-label">Ventas en Local</span>
+              <span class="resumen-sub">S/ {{ resumenVentas().recaudadoLocal | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="resumen-card delivery">
+            <span class="resumen-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="15" height="13" rx="2"/>
+                <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18" r="2.5"/>
+                <circle cx="18.5" cy="18" r="2.5"/>
+              </svg>
+            </span>
+            <div class="resumen-info">
+              <span class="resumen-valor">{{ resumenVentas().ventasDelivery }}</span>
+              <span class="resumen-label">Ventas Motorizadas</span>
+              <span class="resumen-sub">S/ {{ resumenVentas().recaudadoDelivery | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="resumen-card recaudado">
+            <span class="resumen-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+              </svg>
+            </span>
+            <div class="resumen-info">
+              <span class="resumen-valor">S/ {{ resumenVentas().totalRecaudado | number:'1.2-2' }}</span>
+              <span class="resumen-label">Total Recaudado</span>
+            </div>
+          </div>
+        </div>
       </div>
     }
 
@@ -76,6 +162,7 @@
               <tr>
                 <th>ID</th>
                 <th>Cliente</th>
+                <th>Tipo</th>
                 <th>Total</th>
                 <th>Fecha</th>
                 <th>Estado</th>
@@ -88,10 +175,18 @@
                   <td>
                     <span class="cliente-nombre">{{ venta.cliente }}</span>
                   </td>
+                  <td>
+                    <span class="tipo-badge {{ venta.tipo }}">
+                      <span class="tipo-icon" [innerHTML]="getTipoSvg(venta.tipo)"></span>
+                      {{ venta.tipo === 'delivery' ? 'Motorizado' : 
+                         venta.tipo === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
+                    </span>
+                  </td>
                   <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
                   <td>{{ venta.fecha }}</td>
                   <td>
                     <span class="estado-badge {{ getEstadoClass(venta.estado) }}">
+                      <span class="estado-icon" [innerHTML]="getEstadoSvg(venta.estado)"></span>
                       {{ getEstadoTexto(venta.estado) }}
                     </span>
                   </td>
@@ -99,7 +194,7 @@
               }
               @empty {
                 <tr>
-                  <td colspan="5" class="text-center">
+                  <td colspan="6" class="text-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10"/>
                       <line x1="12" y1="8" x2="12" y2="12"/>

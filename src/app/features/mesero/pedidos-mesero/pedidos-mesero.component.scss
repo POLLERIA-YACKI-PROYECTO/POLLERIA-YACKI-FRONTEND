@@ -327,6 +327,142 @@
 }
 
 /* ============================================
+   FILTROS POR TIPO
+   ============================================ */
+.filtros-tipo {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filtro-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.filtro-btn:hover {
+  border-color: #f31730;
+  color: #ffffda;
+}
+
+.filtro-btn.active {
+  background: #f31730;
+  border-color: #f31730;
+  color: #ffffda;
+}
+
+.filtro-btn.local.active {
+  background: #f31730;
+  border-color: #f31730;
+}
+
+.filtro-btn.delivery.active {
+  background: #f31730;
+  border-color: #f31730;
+}
+
+.filtro-count {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+.filtro-btn.active .filtro-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   TIPO DE ENTREGA - SELECTOR EN MODAL
+   ============================================ */
+.tipo-entrega-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.tipo-entrega-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffda;
+  margin: 0 0 10px 0;
+}
+
+.tipo-entrega-options {
+  display: flex;
+  gap: 10px;
+}
+
+.tipo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #1a1a1a;
+  border: 2px solid #2a2a2a;
+  border-radius: 8px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  justify-content: center;
+}
+
+.tipo-btn:hover {
+  border-color: #f31730;
+  color: #ffffda;
+}
+
+.tipo-btn.active {
+  border-color: #f31730;
+  background: rgba(243, 23, 48, 0.1);
+  color: #ffffda;
+}
+
+.tipo-btn svg {
+  stroke: currentColor;
+}
+
+.tipo-btn.active svg {
+  stroke: #f31730;
+}
+
+/* ============================================
+   TIPO DE ENTREGA EN TARJETA DE PEDIDO
+   ============================================ */
+.pedido-tipo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #888;
+  margin: 2px 0 4px;
+}
+
+.pedido-tipo.local {
+  color: #32CD32;
+}
+
+.pedido-tipo.delivery {
+  color: #f31730;
+}
+
+/* ============================================
    LOADING
    ============================================ */
 .loading-spinner {
@@ -428,6 +564,7 @@
 }
 
 .pedido-cliente,
+.pedido-tipo,
 .pedido-items,
 .pedido-total,
 .pedido-hora {
@@ -1463,6 +1600,24 @@
     width: 100%;
     justify-content: center;
   }
+
+  .filtros-tipo {
+    gap: 6px;
+  }
+
+  .filtro-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .tipo-entrega-options {
+    flex-direction: row;
+  }
+
+  .tipo-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1505,6 +1660,7 @@
   }
 
   .pedido-cliente,
+  .pedido-tipo,
   .pedido-items,
   .pedido-total,
   .pedido-hora {
@@ -1560,6 +1716,29 @@
     margin-left: 0;
     margin-top: 4px;
   }
+
+  .filtros-tipo {
+    gap: 4px;
+  }
+
+  .filtro-btn {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .filtro-count {
+    font-size: 9px;
+    padding: 0 6px;
+  }
+
+  .tipo-entrega-options {
+    flex-direction: column;
+  }
+
+  .tipo-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -1588,6 +1767,7 @@
   }
 
   .pedido-cliente,
+  .pedido-tipo,
   .pedido-items,
   .pedido-total,
   .pedido-hora {
@@ -1621,5 +1801,25 @@
   .btn-agregar {
     padding: 6px 12px;
     font-size: 11px;
+  }
+
+  .filtro-btn {
+    font-size: 9px;
+    padding: 3px 6px;
+  }
+
+  .filtro-count {
+    font-size: 8px;
+    padding: 0 4px;
+  }
+
+  .tipo-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .tipo-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }

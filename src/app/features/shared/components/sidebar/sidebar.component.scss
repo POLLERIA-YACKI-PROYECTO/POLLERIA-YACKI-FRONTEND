@@ -1,8 +1,18 @@
 // shared/components/sidebar/sidebar.component.scss
+
+/* ============================================
+   SIDEBAR - COLORES COMBINADOS
+   #c43129 - Rojo principal
+   #d6ad31 - Dorado
+   #71492f - Marrón oscuro
+   #e5ccad - Beige claro
+   #452b1d - Marrón muy oscuro
+   ============================================ */
+
 .sidebar {
   width: 250px;
   min-height: calc(100vh - 80px);
-  background: #5e412f;
+  background: #452b1d; /* Marrón muy oscuro */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -12,6 +22,7 @@
   overflow-y: auto;
   flex-shrink: 0;
   transition: width 0.3s ease;
+  border-right: 1px solid rgba(213, 173, 49, 0.15);
 }
 
 .sidebar::-webkit-scrollbar {
@@ -19,8 +30,12 @@
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background: rgba(233, 189, 110, 0.3);
+  background: rgba(213, 173, 49, 0.3);
   border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(69, 43, 29, 0.5);
 }
 
 .sidebar-menu {
@@ -30,31 +45,34 @@
   padding: 0 12px;
 }
 
+/* ============================================
+   ITEMS DEL SIDEBAR
+   ============================================ */
 .sidebar-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
   border-radius: 8px;
-  color: #e9bd6e;
+  color: #e5ccad; /* Beige claro */
   text-decoration: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
 }
 
 .sidebar-item:hover {
-  background: rgba(233, 189, 110, 0.12);
-  color: #e9bd6e;
+  background: rgba(196, 49, 41, 0.15); /* #c43129 con opacidad */
+  color: #d6ad31; /* Dorado */
   transform: translateX(4px);
 }
 
 .sidebar-item.active {
-  background: rgba(233, 189, 110, 0.18);
-  color: #e9bd6e;
+  background: rgba(196, 49, 41, 0.20);
+  color: #d6ad31; /* Dorado */
   font-weight: 600;
 }
 
@@ -65,10 +83,13 @@
   top: 20%;
   height: 60%;
   width: 3px;
-  background: #e9bd6e;
+  background: #c43129; /* Rojo principal */
   border-radius: 0 4px 4px 0;
 }
 
+/* ============================================
+   ICONOS DEL SIDEBAR
+   ============================================ */
 .sidebar-icon {
   display: flex;
   align-items: center;
@@ -81,54 +102,92 @@
 .sidebar-icon svg {
   width: 20px;
   height: 20px;
-  stroke: #e9bd6e;
+  stroke: #e5ccad; /* Beige claro */
   stroke-width: 2;
   fill: none;
+  transition: stroke 0.3s ease;
+}
+
+.sidebar-item:hover .sidebar-icon svg {
+  stroke: #d6ad31; /* Dorado */
 }
 
 .sidebar-item.active .sidebar-icon svg {
-  stroke: #e9bd6e;
+  stroke: #d6ad31; /* Dorado */
 }
 
+/* ============================================
+   LABEL DEL SIDEBAR
+   ============================================ */
 .sidebar-label {
   flex: 1;
   font-size: 13px;
   letter-spacing: 0.3px;
+  color: #e5ccad; /* Beige claro */
+  transition: color 0.3s ease;
 }
 
+.sidebar-item:hover .sidebar-label {
+  color: #d6ad31; /* Dorado */
+}
+
+.sidebar-item.active .sidebar-label {
+  color: #d6ad31; /* Dorado */
+}
+
+/* ============================================
+   FOOTER DEL SIDEBAR
+   ============================================ */
 .sidebar-footer {
   padding: 0 12px;
-  border-top: 1px solid rgba(233, 189, 110, 0.15);
+  border-top: 1px solid rgba(213, 173, 49, 0.15);
   padding-top: 12px;
   margin-top: 12px;
 }
 
 .mesero-link {
-  background: rgba(233, 189, 110, 0.06);
+  background: rgba(196, 49, 41, 0.08);
   border-radius: 8px;
-  border: 1px solid rgba(233, 189, 110, 0.15);
+  border: 1px solid rgba(213, 173, 49, 0.15);
 }
 
 .mesero-link:hover {
-  background: rgba(233, 189, 110, 0.15);
+  background: rgba(196, 49, 41, 0.20);
   transform: translateX(4px);
 }
 
 .mesero-link .sidebar-icon svg {
-  stroke: #e9bd6e;
+  stroke: #d6ad31; /* Dorado */
 }
 
 .mesero-link .sidebar-icon svg circle {
-  fill: #e9bd6e;
+  fill: #d6ad31; /* Dorado */
 }
 
-/* RESPONSIVE */
+.mesero-link .sidebar-label {
+  color: #d6ad31; /* Dorado */
+}
+
+.mesero-link:hover .sidebar-label {
+  color: #e5ccad; /* Beige claro */
+}
+
+.mesero-link:hover .sidebar-icon svg {
+  stroke: #e5ccad; /* Beige claro */
+}
+
+/* ============================================
+   RESPONSIVE - TABLET
+   ============================================ */
 @media (max-width: 1024px) {
   .sidebar {
     width: 220px;
   }
 }
 
+/* ============================================
+   RESPONSIVE - MÓVIL
+   ============================================ */
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -139,7 +198,8 @@
     padding: 6px 12px;
     overflow-x: auto;
     overflow-y: hidden;
-    border-bottom: 1px solid rgba(233, 189, 110, 0.15);
+    border-bottom: 1px solid rgba(213, 173, 49, 0.15);
+    border-right: none;
   }
 
   .sidebar::-webkit-scrollbar {
@@ -147,7 +207,7 @@
   }
 
   .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(233, 189, 110, 0.3);
+    background: rgba(213, 173, 49, 0.3);
     border-radius: 4px;
   }
 
@@ -162,6 +222,7 @@
     font-size: 12px;
     white-space: nowrap;
     border-left: none !important;
+    border-radius: 6px;
   }
 
   .sidebar-item.active::before {
@@ -170,12 +231,14 @@
 
   .sidebar-item.active {
     border-left: none !important;
-    border-bottom: 2px solid #e9bd6e;
+    border-bottom: 2px solid #c43129; /* Rojo principal */
     border-radius: 0;
+    background: transparent;
   }
 
   .sidebar-item:hover {
     transform: none;
+    background: rgba(196, 49, 41, 0.10);
   }
 
   .sidebar-icon {
@@ -197,6 +260,9 @@
   }
 }
 
+/* ============================================
+   RESPONSIVE - MÓVIL PEQUEÑO
+   ============================================ */
 @media (max-width: 480px) {
   .sidebar {
     padding: 4px 8px;
@@ -206,6 +272,7 @@
     padding: 4px 8px;
     font-size: 11px;
     gap: 6px;
+    border-radius: 4px;
   }
 
   .sidebar-icon {
@@ -222,3 +289,54 @@
     font-size: 10px;
   }
 }
+
+/* ============================================
+   RESPONSIVE - MÓVIL MUY PEQUEÑO
+   ============================================ */
+@media (max-width: 360px) {
+  .sidebar-item {
+    padding: 3px 6px;
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .sidebar-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .sidebar-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+  }
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+@keyframes sidebarItemSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar-item {
+  animation: sidebarItemSlideIn 0.3s ease forwards;
+}
+
+.sidebar-item:nth-child(1) { animation-delay: 0.05s; }
+.sidebar-item:nth-child(2) { animation-delay: 0.10s; }
+.sidebar-item:nth-child(3) { animation-delay: 0.15s; }
+.sidebar-item:nth-child(4) { animation-delay: 0.20s; }
+.sidebar-item:nth-child(5) { animation-delay: 0.25s; }
+.sidebar-item:nth-child(6) { animation-delay: 0.30s; }
+.sidebar-item:nth-child(7) { animation-delay: 0.35s; }

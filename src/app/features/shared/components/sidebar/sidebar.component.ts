@@ -18,6 +18,11 @@ export class SidebarComponent {
       route: '/admin/dashboard-admin'
     },
     { 
+      icon: 'ventas',
+      label: 'Ventas', 
+      route: '/admin/ventas-admin'
+    },
+    { 
       icon: 'carta',
       label: 'Carta', 
       route: '/admin/carta-admin'
@@ -52,6 +57,15 @@ export class SidebarComponent {
           <rect x="14" y="3" width="7" height="7" rx="1"/>
           <rect x="3" y="14" width="7" height="7" rx="1"/>
           <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      `,
+      'ventas': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <line x1="2" y1="11" x2="22" y2="11"/>
+          <line x1="2" y1="16" x2="22" y2="16"/>
+          <circle cx="16" cy="13" r="1"/>
+          <circle cx="8" cy="18" r="1"/>
         </svg>
       `,
       'carta': `

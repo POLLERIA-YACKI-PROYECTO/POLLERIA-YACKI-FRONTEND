@@ -81,6 +81,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/dashboard-admin/dashboard-admin.component')
           .then(m => m.DashboardAdminComponent)
       },
+        { path: 'ventas-admin', loadComponent: () => import('./features/admin/ventas-admin/ventas-admin.component').then(m => m.VentasAdminComponent) },
       {
         path: 'carta-admin',
         loadComponent: () => import('./features/admin/carta-admin/carta-admin.component')

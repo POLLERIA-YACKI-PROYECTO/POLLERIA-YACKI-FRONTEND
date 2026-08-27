@@ -124,7 +124,44 @@
       </div>
     </div>
 
-    <!-- NUEVO SELECTOR DE CATEGORÍAS - MENÚ DESPLEGABLE MEJORADO -->
+    <!-- ============ BUSCADOR ============ -->
+    <div class="buscador-container">
+      <div class="buscador-wrapper">
+        <svg class="buscador-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input 
+          type="text" 
+          class="buscador-input"
+          placeholder="Buscar productos por nombre, categoría o precio..."
+          [(ngModel)]="terminoBusqueda"
+          (input)="buscarProductos()"
+          (keyup.escape)="limpiarBusqueda()"
+        >
+        @if (terminoBusqueda().length > 0) {
+          <button class="buscador-clear" (click)="limpiarBusqueda()" title="Limpiar búsqueda">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        }
+      </div>
+      <div class="buscador-info">
+        <span class="resultados-count">
+          {{ productosFiltrados().length }} {{ productosFiltrados().length === 1 ? 'producto' : 'productos' }}
+          @if (terminoBusqueda().length > 0) {
+            <span class="filtro-activo">· Filtrando por "{{ terminoBusqueda() }}"</span>
+          }
+        </span>
+        @if (terminoBusqueda().length > 0 && productosFiltrados().length === 0) {
+          <span class="sin-resultados">Sin resultados</span>
+        }
+      </div>
+    </div>
+
+    <!-- ============ SELECTOR DE CATEGORÍAS ============ -->
     <div class="categoria-selector">
       <div class="categoria-dropdown">
         <button class="categoria-dropdown-btn" (click)="toggleCategoriaMenu()">
@@ -169,7 +206,7 @@
       </div>
     </div>
 
-    <!-- Productos -->
+    <!-- ============ PRODUCTOS ============ -->
     <div class="productos-grid">
       @if (loading()) {
         <div class="loading-spinner">
@@ -180,7 +217,7 @@
         @for (producto of productosFiltrados(); track producto.id) {
           <div class="producto-card" [class.agotado]="producto.agotado">
             <div class="producto-info">
-              <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+              <h3 class="producto-nombre" [innerHTML]="resaltarCoincidencia(producto.nombre)"></h3>
               <span class="producto-precio">S/ {{ producto.precio | number:'1.2-2' }}</span>
               @if (producto.agotado) {
                 <span class="badge-agotado">Agotado</span>
@@ -206,7 +243,11 @@
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p>No hay productos disponibles</p>
+            @if (terminoBusqueda().length > 0) {
+              <p>No se encontraron productos para "{{ terminoBusqueda() }}"</p>
+            } @else {
+              <p>No hay productos disponibles</p>
+            }
           </div>
         }
       }

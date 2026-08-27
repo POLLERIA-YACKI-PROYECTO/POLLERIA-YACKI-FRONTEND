@@ -580,6 +580,41 @@
   color: #991b1b;
 }
 
+/* ============================================
+   TIPO DE ENTREGA
+   ============================================ */
+.tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tipo-badge.tipo-local {
+  background: rgba(196, 49, 41, 0.15);
+  color: #c43129;
+}
+
+.tipo-badge.tipo-delivery {
+  background: rgba(113, 73, 47, 0.15);
+  color: #71492f;
+}
+
+.tipo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tipo-icon svg {
+  stroke: currentColor;
+  width: 14px;
+  height: 14px;
+}
+
 .total-row {
   background: #f5f0e8;
   font-weight: 700;

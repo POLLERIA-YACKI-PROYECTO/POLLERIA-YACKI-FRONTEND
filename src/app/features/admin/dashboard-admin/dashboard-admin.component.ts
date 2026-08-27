@@ -2,10 +2,12 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../../core/services/auth.service';
 import { VentaService } from '../../../core/services/venta.service';
 import { ProductoService } from '../../../core/services/producto.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
+import { PedidoService } from '../../../core/services/pedido.service';
 
 @Component({
   selector: 'app-dashboard-admin',
@@ -19,12 +21,14 @@ export class DashboardAdminComponent implements OnInit {
   private ventaService = inject(VentaService);
   private productoService = inject(ProductoService);
   private usuarioService = inject(UsuarioService);
+  private pedidoService = inject(PedidoService);
+  private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
 
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
+  errorMessage = signal<string>('');
   
-  // Fecha actual formateada
   fechaActual = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
     year: 'numeric',
@@ -32,7 +36,6 @@ export class DashboardAdminComponent implements OnInit {
     day: 'numeric'
   });
 
-  // Hora actual
   horaActual = new Date().toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit'
@@ -41,38 +44,59 @@ export class DashboardAdminComponent implements OnInit {
   stats = signal([
     { 
       icon: 'productos',
-      label: 'Productos', 
+      label: 'Productos Registrados', 
       value: 0, 
-      color: '#ce8329',
-      bgColor: '#ce832920'
+      color: '#c43129',
+      bgColor: '#c4312920'
     },
     { 
       icon: 'ventas',
       label: 'Ventas Hoy', 
       value: 0, 
-      color: '#5e412f',
-      bgColor: '#5e412f20'
+      color: '#d6ad31',
+      bgColor: '#d6ad3120'
+    },
+    { 
+      icon: 'pendientes',
+      label: 'Pedidos Pendientes', 
+      value: 0, 
+      color: '#71492f',
+      bgColor: '#71492f20'
     },
     { 
       icon: 'ingresos',
       label: 'Ingresos Totales', 
       value: 'S/ 0.00', 
-      color: '#2e7d32',
-      bgColor: '#2e7d3220'
+      color: '#432c1c',
+      bgColor: '#432c1c20'
     },
     { 
       icon: 'usuarios',
       label: 'Usuarios Activos', 
       value: 0, 
-      color: '#1565c0',
-      bgColor: '#1565c020'
+      color: '#c43129',
+      bgColor: '#c4312920'
+    },
+    { 
+      icon: 'local',
+      label: 'Ventas en Local', 
+      value: 0, 
+      color: '#71492f',
+      bgColor: '#71492f20'
     }
   ]);
 
+  resumenVentas = signal({
+    totalVentas: 0,
+    ventasLocal: 0,
+    ventasDelivery: 0,
+    totalRecaudado: 0,
+    recaudadoLocal: 0,
+    recaudadoDelivery: 0
+  });
+
   ventasRecientes = signal<any[]>([]);
-  ventasHoy = signal<any[]>([]);
-  totalVentasHoy = signal<number>(0);
-  totalIngresosHoy = signal<number>(0);
+  pedidosPendientes = signal<any[]>([]);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -85,58 +109,106 @@ export class DashboardAdminComponent implements OnInit {
 
   cargarDatos(): void {
     this.loading.set(true);
+    this.errorMessage.set('');
     
-    // Cargar productos
+    let solicitudesCompletadas = 0;
+    const totalSolicitudes = 4;
+    const verificarFinalizado = () => {
+      solicitudesCompletadas++;
+      if (solicitudesCompletadas >= totalSolicitudes) {
+        this.loading.set(false);
+      }
+    };
+
     this.productoService.obtenerProductos().subscribe({
       next: (productos) => {
-        this.actualizarStat('productos', productos.length);
-      },
-      error: (err) => console.error('Error al cargar productos:', err)
-    });
-
-    // Cargar ventas
-    this.ventaService.obtenerVentas().subscribe({
-      next: (ventas) => {
-        const hoy = new Date().toISOString().split('T')[0];
-        const ventasHoy = ventas.filter(v => v.fecha_venta?.startsWith(hoy));
-        
-        // Ventas de hoy
-        this.ventasHoy.set(ventasHoy);
-        this.totalVentasHoy.set(ventasHoy.length);
-        this.actualizarStat('ventas', ventasHoy.length);
-        
-        // Total ingresos
-        const total = ventas.reduce((sum, v) => sum + (v.total || 0), 0);
-        const totalHoy = ventasHoy.reduce((sum, v) => sum + (v.total || 0), 0);
-        this.totalIngresosHoy.set(totalHoy);
-        this.actualizarStat('ingresos', `S/ ${total.toFixed(2)}`);
-        
-        // Ventas recientes (últimas 10)
-        const recientes = ventas.slice(-10).reverse().map(v => ({
-          id: v.id,
-          cliente: v.cliente || 'Consumidor Final',
-          total: v.total || 0,
-          fecha: v.fecha_venta ? this.formatearFecha(v.fecha_venta) : '--',
-          estado: v.estado || 'completada'
-        }));
-        this.ventasRecientes.set(recientes);
-        
-        this.loading.set(false);
+        this.actualizarStat('productos', productos?.length || 0);
+        verificarFinalizado();
       },
       error: (err) => {
-        console.error('Error al cargar ventas:', err);
-        this.loading.set(false);
+        console.error('Error al cargar productos:', err);
+        this.errorMessage.set('Error al cargar productos');
+        verificarFinalizado();
       }
     });
 
-    // Cargar usuarios
     this.usuarioService.obtenerUsuarios().subscribe({
       next: (usuarios) => {
-        this.actualizarStat('usuarios', usuarios.length);
+        this.actualizarStat('usuarios', usuarios?.length || 0);
+        verificarFinalizado();
       },
       error: (err) => {
         console.error('Error al cargar usuarios:', err);
-        this.loading.set(false);
+        verificarFinalizado();
+      }
+    });
+
+    this.pedidoService.obtenerPedidosPendientes().subscribe({
+      next: (pedidos) => {
+        this.pedidosPendientes.set(pedidos || []);
+        this.actualizarStat('pendientes', pedidos?.length || 0);
+        verificarFinalizado();
+      },
+      error: (err) => {
+        console.error('Error al cargar pedidos pendientes:', err);
+        verificarFinalizado();
+      }
+    });
+
+    this.ventaService.obtenerVentas().subscribe({
+      next: (ventas) => {
+        const ventasArray = ventas || [];
+        const hoy = new Date().toISOString().split('T')[0];
+        const ventasHoy = ventasArray.filter((v: any) => v.fecha_venta?.startsWith(hoy));
+        
+        this.actualizarStat('ventas', ventasHoy.length);
+        
+        const total = ventasArray.reduce((sum: number, v: any) => {
+          const totalVenta = parseFloat(v.total) || 0;
+          return sum + totalVenta;
+        }, 0);
+        
+        this.actualizarStat('ingresos', `S/ ${total.toFixed(2)}`);
+        
+        const local = ventasArray.filter((v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
+        const delivery = ventasArray.filter((v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
+        
+        const totalLocal = local.reduce((sum: number, v: any) => {
+          const totalVenta = parseFloat(v.total) || 0;
+          return sum + totalVenta;
+        }, 0);
+        
+        const totalDelivery = delivery.reduce((sum: number, v: any) => {
+          const totalVenta = parseFloat(v.total) || 0;
+          return sum + totalVenta;
+        }, 0);
+        
+        this.actualizarStat('local', local.length);
+        
+        this.resumenVentas.set({
+          totalVentas: ventasArray.length,
+          ventasLocal: local.length,
+          ventasDelivery: delivery.length,
+          totalRecaudado: total,
+          recaudadoLocal: totalLocal,
+          recaudadoDelivery: totalDelivery
+        });
+        
+        const recientes = ventasArray.slice(-10).reverse().map((v: any) => ({
+          id: v.id,
+          cliente: v.cliente_nombre || v.cliente || 'Consumidor Final',
+          total: parseFloat(v.total) || 0,
+          fecha: v.fecha_venta ? this.formatearFecha(v.fecha_venta) : '--',
+          estado: v.estado || 'completada',
+          tipo: v.tipo_entrega || 'local'
+        }));
+        this.ventasRecientes.set(recientes);
+        verificarFinalizado();
+      },
+      error: (err) => {
+        console.error('Error al cargar ventas:', err);
+        this.errorMessage.set('Error al cargar ventas');
+        verificarFinalizado();
       }
     });
   }
@@ -171,7 +243,8 @@ export class DashboardAdminComponent implements OnInit {
       'pendiente': 'estado-pendiente',
       'Pendiente': 'estado-pendiente',
       'cancelada': 'estado-cancelada',
-      'Cancelada': 'estado-cancelada'
+      'Cancelada': 'estado-cancelada',
+      'entregado': 'estado-completada'
     };
     return clases[estado] || 'estado-pendiente';
   }
@@ -183,12 +256,60 @@ export class DashboardAdminComponent implements OnInit {
       'pendiente': 'Pendiente',
       'Pendiente': 'Pendiente',
       'cancelada': 'Cancelada',
-      'Cancelada': 'Cancelada'
+      'Cancelada': 'Cancelada',
+      'entregado': 'Completada'
     };
     return textos[estado] || estado;
   }
 
-  getIconSvg(icon: string): string {
+  // ✅ MÉTODO PARA SVG DE ESTADO
+  getEstadoSvg(estado: string): SafeHtml {
+    const svgs: any = {
+      'completada': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      `,
+      'Completada': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      `,
+      'pendiente': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      `,
+      'Pendiente': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      `,
+      'cancelada': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      `,
+      'Cancelada': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      `,
+      'entregado': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      `
+    };
+    return this.sanitizer.bypassSecurityTrustHtml(svgs[estado] || svgs['pendiente']);
+  }
+
+  // ✅ MÉTODO PARA SVG DE ICONOS
+  getIconSvg(icon: string): SafeHtml {
     const icons: any = {
       'productos': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -207,6 +328,12 @@ export class DashboardAdminComponent implements OnInit {
           <circle cx="8" cy="15" r="1"/>
         </svg>
       `,
+      'pendientes': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      `,
       'ingresos': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
@@ -218,12 +345,48 @@ export class DashboardAdminComponent implements OnInit {
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
           <circle cx="12" cy="7" r="4"/>
         </svg>
+      `,
+      'local': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
       `
     };
-    return icons[icon] || icons['productos'];
+    return this.sanitizer.bypassSecurityTrustHtml(icons[icon] || icons['productos']);
   }
 
-  // Método para refrescar datos
+  // ✅ MÉTODO PARA SVG DE TIPO DE ENTREGA
+  getTipoSvg(tipo: string): SafeHtml {
+    const icons: any = {
+      'local': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+      `,
+      'delivery': `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+          <rect x="1" y="4" width="15" height="13" rx="2"/>
+          <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+          <circle cx="5.5" cy="18" r="2.5"/>
+          <circle cx="18.5" cy="18" r="2.5"/>
+        </svg>
+      `
+    };
+    return this.sanitizer.bypassSecurityTrustHtml(icons[tipo] || icons['local']);
+  }
+
+  getTipoIcono(tipo: string): string {
+    const iconos: any = {
+      'local': '🏠',
+      'delivery': '🛵',
+      'paraLlevar': '📦',
+      'motorizada': '🛵'
+    };
+    return iconos[tipo] || '🏠';
+  }
+
   refrescar(): void {
     this.cargarDatos();
   }

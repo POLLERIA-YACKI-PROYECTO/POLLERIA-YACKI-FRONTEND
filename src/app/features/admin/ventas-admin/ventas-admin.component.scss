@@ -1,0 +1,512 @@
+/* ventas-admin.component.scss */
+.ventas-admin-container {
+  animation: fadeIn 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-left h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #5e412f;
+  margin: 0;
+}
+
+.header-icon {
+  width: 28px;
+  height: 28px;
+  stroke: #c5302a;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-dashboard,
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #5e412f;
+  color: #d7af33;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-dashboard:hover,
+.btn-refresh:hover {
+  background: #442b1c;
+  transform: translateY(-2px);
+}
+
+.btn-dashboard svg,
+.btn-refresh svg {
+  stroke: #d7af33;
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================
+   STATS
+   ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 2px solid #e4cbad;
+}
+
+.stat-card.pendientes .stat-value {
+  color: #c5302a;
+}
+
+.stat-card.pagados .stat-value {
+  color: #2e7d32;
+}
+
+.stat-card.local .stat-value {
+  color: #71492f;
+}
+
+.stat-card.delivery .stat-value {
+  color: #1565c0;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #888;
+}
+
+/* ============================================
+   RESUMEN RECAUDACIÓN
+   ============================================ */
+.resumen-recaudacion {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 2px solid #e4cbad;
+}
+
+.resumen-item.local .resumen-valor {
+  color: #71492f;
+}
+
+.resumen-item.delivery .resumen-valor {
+  color: #1565c0;
+}
+
+.resumen-label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.resumen-valor {
+  font-size: 20px;
+  font-weight: 700;
+  color: #5e412f;
+}
+
+/* ============================================
+   TABLA
+   ============================================ */
+.tabla-container {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e4cbad;
+  overflow: hidden;
+}
+
+.tabla-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #faf8f5;
+  border-bottom: 1px solid #e4cbad;
+}
+
+.tabla-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #5e412f;
+  margin: 0;
+}
+
+.total-items {
+  font-size: 12px;
+  color: #888;
+  background: #f5f0e8;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+  padding: 0 20px 20px 20px;
+}
+
+.tabla-ventas {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tabla-ventas th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5e412f;
+  border-bottom: 2px solid #e4cbad;
+  text-transform: uppercase;
+}
+
+.tabla-ventas td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0ece4;
+}
+
+.tabla-ventas tr:hover td {
+  background: #faf8f5;
+}
+
+.id-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #f5f0e8;
+  color: #5e412f;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.total-col {
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.total-row {
+  background: #f5f0e8;
+  font-weight: 700;
+}
+
+.total-row td {
+  padding: 10px 14px;
+  border-top: 2px solid #e4cbad;
+}
+
+/* ESTADOS */
+.estado-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.estado-pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+.estado-preparando {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.estado-listo {
+  background: #dcfce7;
+  color: #166534;
+}
+.estado-pagado {
+  background: #dcfce7;
+  color: #166534;
+}
+.estado-cancelado {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* TIPO ENTREGA */
+.tipo-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tipo-badge.local {
+  background: #e4cbad;
+  color: #5e412f;
+}
+
+.tipo-badge.delivery {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tipo-badge.paraLlevar {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* MÉTODO PAGO */
+.metodo-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.metodo-badge.efectivo {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.metodo-badge.tarjeta {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.metodo-badge.yape {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.metodo-badge.plin {
+  background: #f3e8ff;
+  color: #6d28d9;
+}
+
+.metodo-badge.transferencia {
+  background: #fce4ec;
+  color: #c62828;
+}
+
+/* ACCIONES */
+.acciones-btns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.select-pago {
+  padding: 4px 8px;
+  border: 1px solid #e4cbad;
+  border-radius: 4px;
+  font-size: 11px;
+  background: #faf8f5;
+  color: #5e412f;
+}
+
+.btn-pagar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #c5302a;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-pagar:hover {
+  background: #a02822;
+}
+
+.btn-pagar svg {
+  stroke: #ffffff;
+  width: 14px;
+  height: 14px;
+}
+
+/* LOADING */
+.loading-container {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e4cbad;
+  border-top-color: #c5302a;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* TEXT CENTER */
+.text-center {
+  text-align: center;
+  padding: 30px !important;
+  color: #888;
+}
+
+.text-center svg {
+  width: 40px;
+  height: 40px;
+  stroke: #ccc;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resumen-recaudacion {
+    grid-template-columns: 1fr;
+  }
+
+  .tabla-scroll {
+    padding: 0 12px 12px 12px;
+  }
+
+  .tabla-ventas {
+    font-size: 12px;
+  }
+
+  .tabla-ventas th,
+  .tabla-ventas td {
+    padding: 8px 10px;
+  }
+
+  .acciones-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .select-pago {
+    width: 100%;
+  }
+
+  .btn-pagar {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .page-header h2 {
+    font-size: 18px;
+  }
+
+  .header-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tabla-ventas {
+    font-size: 11px;
+  }
+
+  .tabla-ventas th,
+  .tabla-ventas td {
+    padding: 6px 8px;
+  }
+
+  .id-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .estado-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .btn-dashboard span,
+  .btn-refresh span {
+    display: none;
+  }
+}
