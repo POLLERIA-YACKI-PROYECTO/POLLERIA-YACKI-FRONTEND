@@ -1,4 +1,4 @@
-// src/app/features/carta-cliente/components/producto-card/producto-card.component.ts
+// producto-card.component.ts
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Producto } from '../../../../core/models/interfaces';
@@ -26,6 +26,17 @@ export class ProductoCardComponent {
     return this.producto?.disponible !== false && 
            this.producto?.agotado !== true &&
            (this.producto?.stock ?? 0) > 0;
+  }
+
+  get tieneStock(): boolean {
+    return (this.producto?.stock ?? 0) > 0;
+  }
+
+  get stockLabel(): string {
+    const stock = this.producto?.stock ?? 0;
+    if (stock === 0) return 'Agotado';
+    if (stock < 5) return `Últimas ${stock}`;
+    return '';
   }
 
   formatearPrecio(precio: number | string): string {

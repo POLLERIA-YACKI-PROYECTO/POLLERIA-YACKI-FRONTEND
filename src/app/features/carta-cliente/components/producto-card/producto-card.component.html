@@ -1,7 +1,6 @@
 <!-- producto-card.component.html -->
 <div class="producto-card" [class.disponible]="estaDisponible" [class.no-disponible]="!estaDisponible">
   
-  <!-- Imagen -->
   <div class="producto-imagen">
     <img 
       [src]="imagenUrl" 
@@ -9,26 +8,52 @@
       loading="lazy"
       (error)="onImageError($event)"
     >
-    <span class="destacado-badge" *ngIf="producto.destacado">⭐ Destacado</span>
-    <span class="stock-badge" *ngIf="!estaDisponible">Agotado</span>
+    <span class="badge destacado" *ngIf="producto.destacado">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+      Destacado
+    </span>
+    <span class="badge agotado" *ngIf="!estaDisponible">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Agotado
+    </span>
+    <span class="badge stock-bajo" *ngIf="estaDisponible && stockLabel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      {{ stockLabel }}
+    </span>
   </div>
 
-  <!-- Información -->
   <div class="producto-info">
     <h3 class="producto-nombre">{{ producto.nombre }}</h3>
     <p class="producto-descripcion" *ngIf="producto.descripcion">{{ producto.descripcion }}</p>
     <div class="producto-footer">
-      <!-- ✅ Usar el método seguro -->
       <span class="producto-precio">{{ formatearPrecio(producto.precio) }}</span>
       <button 
         class="btn-agregar" 
         [class.agregando]="agregando()"
         [disabled]="!estaDisponible"
         (click)="onAgregar()"
-        [attr.data-producto-id]="producto.id"
       >
-        <span *ngIf="!agregando()">+ Agregar</span>
-        <span *ngIf="agregando()">✓</span>
+        <span *ngIf="!agregando()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Agregar
+        </span>
+        <span *ngIf="agregando()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </span>
       </button>
     </div>
   </div>

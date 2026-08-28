@@ -1,4 +1,4 @@
-// src/app/features/carta-cliente/components/carrito-lateral/carrito-lateral.component.ts
+// carrito-lateral.component.ts
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItemCarrito } from '../../../../core/models/interfaces';

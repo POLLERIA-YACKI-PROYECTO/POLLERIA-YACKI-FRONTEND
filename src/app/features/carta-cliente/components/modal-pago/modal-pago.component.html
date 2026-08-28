@@ -1,74 +1,162 @@
 <!-- modal-pago.component.html -->
-<div class="modal-overlay" [class.active]="visible" (click)="cerrar.emit()"></div>
+<div class="modal-overlay" [class.active]="visible" (click)="cerrarModal()"></div>
 
 <div class="modal-pago" [class.active]="visible">
   <div class="modal-header">
-    <h2>💳 Finalizar Pedido</h2>
-    <button class="btn-cerrar" (click)="cerrar.emit()" [disabled]="cargando">✕</button>
+    <div class="modal-titulo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      <h2>Finalizar Pedido</h2>
+    </div>
+    <button class="btn-cerrar" (click)="cerrarModal()" [disabled]="cargando || mostrarProcesando">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
   </div>
 
   <div class="modal-body">
     <!-- Resumen -->
     <div class="resumen-pago">
-      <span class="total-label">Total a pagar</span>
-      <span class="total-monto">{{ formatearPrecio(total) }}</span>
+      <div>
+        <span class="total-label">Total a pagar</span>
+        <span class="total-monto">{{ formatearPrecio(total) }}</span>
+      </div>
     </div>
 
-    <!-- Métodos de pago -->
-    <div class="metodos-pago">
-      <label class="metodo-item" *ngFor="let metodo of metodosPago">
-        <input 
-          type="radio" 
-          name="metodoPago" 
-          [value]="metodo.id"
-          [(ngModel)]="metodoPago"
-          [disabled]="cargando"
-        >
-        <span class="metodo-icon">{{ metodo.icon }}</span>
-        <span class="metodo-label">{{ metodo.label }}</span>
-      </label>
-    </div>
-
-    <!-- Instrucciones para Yape/Plin -->
-    <div class="instruccion-digital" *ngIf="esPagoDigital">
-      <div class="qr-placeholder">
-        <span class="qr-icon">📱</span>
-        <p>Escanea el código QR con tu aplicación</p>
-        <div class="codigo-numero">
-          <span>Número: <strong>902 458 936</strong></span>
+    <!-- FORMULARIO DE PAGO -->
+    <ng-container *ngIf="mostrarFormulario">
+      <!-- Tipo de entrega -->
+      <div class="tipo-entrega">
+        <span class="tipo-label">Tipo de entrega</span>
+        <div class="tipo-opciones">
+          <button 
+            class="tipo-btn" 
+            [class.active]="tipoEntrega() === 'local'"
+            (click)="tipoEntrega.set('local')"
+            [disabled]="cargando"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            Local
+          </button>
+          <button 
+            class="tipo-btn" 
+            [class.active]="tipoEntrega() === 'delivery'"
+            (click)="tipoEntrega.set('delivery')"
+            [disabled]="cargando"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <rect x="1" y="4" width="15" height="13" rx="2"/>
+              <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+              <circle cx="5.5" cy="18" r="2.5"/>
+              <circle cx="18.5" cy="18" r="2.5"/>
+            </svg>
+            Delivery
+          </button>
         </div>
       </div>
+
+      <!-- Métodos de pago -->
+      <div class="metodos-pago">
+        <span class="metodos-label">Método de pago</span>
+        <div class="metodos-grid">
+          <label class="metodo-item" *ngFor="let metodo of metodosPago"
+                 [class.active]="metodoPago() === metodo.id">
+            <input 
+              type="radio" 
+              name="metodoPago" 
+              [value]="metodo.id"
+              [(ngModel)]="metodoPago"
+              [disabled]="cargando"
+            >
+            <span class="metodo-label">{{ metodo.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Datos del cliente -->
+      <div class="datos-cliente">
+        <div class="campo">
+          <label>Tu nombre (opcional)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="clienteNombre" 
+            placeholder="¿Cómo te llamamos?"
+            class="input-text"
+            [disabled]="cargando"
+          >
+        </div>
+        <div class="campo">
+          <label>Observaciones (opcional)</label>
+          <textarea 
+            [(ngModel)]="observaciones" 
+            placeholder="Ej: Sin ají, con extra papas..."
+            class="input-textarea"
+            rows="2"
+            [disabled]="cargando"
+          ></textarea>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ESTADO: PROCESANDO PAGO -->
+    <div class="estado-procesando" *ngIf="mostrarProcesando">
+      <div class="spinner-pago"></div>
+      <span class="procesando-label">Procesando pago...</span>
+      <span class="procesando-sub">Serás redirigido a Izipay</span>
+      <div class="izipay-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <line x1="2" y1="10" x2="22" y2="10"/>
+          <circle cx="8" cy="14" r="1"/>
+          <circle cx="16" cy="14" r="1"/>
+          <path d="M12 2v20"/>
+        </svg>
+        <span>Izipay</span>
+      </div>
     </div>
 
-    <!-- Datos del cliente -->
-    <div class="datos-cliente">
-      <div class="campo">
-        <label>Tu nombre (opcional)</label>
-        <input 
-          type="text" 
-          [(ngModel)]="clienteNombre" 
-          placeholder="¿Cómo te llamamos?"
-          class="input-text"
-          [disabled]="cargando"
-        >
-      </div>
-      <div class="campo">
-        <label>Observaciones (opcional)</label>
-        <textarea 
-          [(ngModel)]="observaciones" 
-          placeholder="Ej: Sin ají, con extra papas..."
-          class="input-textarea"
-          rows="2"
-          [disabled]="cargando"
-        ></textarea>
-      </div>
+    <!-- ESTADO: PAGO EXITOSO -->
+    <div class="estado-exitoso" *ngIf="mostrarExitoso">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      <span class="exitoso-label">¡Pago confirmado!</span>
+      <span class="exitoso-sub">Tu pedido está siendo preparado</span>
+    </div>
+
+    <!-- ESTADO: ERROR -->
+    <div class="estado-error" *ngIf="mostrarError">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span class="error-label">Error en el pago</span>
+      <span class="error-sub">{{ mensajeError() }}</span>
+      <button class="btn-reintentar" (click)="reintentar()" [disabled]="cargando">
+        Reintentar
+      </button>
     </div>
   </div>
 
-  <div class="modal-footer">
-    <button class="btn-cancelar" (click)="cerrar.emit()" [disabled]="cargando">Cancelar</button>
+  <!-- Footer -->
+  <div class="modal-footer" *ngIf="mostrarFormulario">
+    <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="cargando">Cancelar</button>
     <button class="btn-confirmar" (click)="onSubmit()" [disabled]="cargando">
-      <span *ngIf="!cargando">Confirmar Pedido</span>
+      <span *ngIf="!cargando">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Pagar con Izipay
+      </span>
       <span *ngIf="cargando" class="spinner-btn"></span>
     </button>
   </div>
