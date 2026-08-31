@@ -394,7 +394,6 @@ export class PedidosMeseroComponent implements OnInit {
     const total = subtotal + igv;
 
     const pedidoData: any = {
-      mesa_id: null,
       usuario_id: this.usuario().id,
       cliente_id: this.clienteSeleccionado()?.id || null,
       cliente_nombre: nombreCliente,

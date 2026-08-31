@@ -1,46 +1,54 @@
 // core/services/mesa.service.ts
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface Mesa {
   id: number;
   numero: number;
   ocupada: boolean;
   cliente?: string;
-  pedido?: any;
-  total?: number;
-  horaInicio?: Date;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class MesaService {
-  private mesas = signal<Mesa[]>([
-    { id: 1, numero: 1, ocupada: false },
-    { id: 2, numero: 2, ocupada: false },
-    { id: 3, numero: 3, ocupada: true, cliente: 'Juan Pérez' },
-    { id: 4, numero: 4, ocupada: false },
-    { id: 5, numero: 5, ocupada: false },
-    { id: 6, numero: 6, ocupada: false },
-    { id: 7, numero: 7, ocupada: false },
-    { id: 8, numero: 8, ocupada: false },
-    { id: 9, numero: 9, ocupada: false },
-    { id: 10, numero: 10, ocupada: false },
-    { id: 11, numero: 11, ocupada: false },
-    { id: 12, numero: 12, ocupada: false },
-    { id: 13, numero: 13, ocupada: false },
-    { id: 14, numero: 14, ocupada: false },
-    { id: 15, numero: 15, ocupada: false },
-    { id: 16, numero: 16, ocupada: false }
-  ]);
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
+  private apiUrl = `${environment.apiUrl}/mesas`;
+
+  private mesas = signal<Mesa[]>([]);
 
   private mesaSeleccionada = signal<number | null>(null);
   private ultimaActualizacion = signal<Date>(new Date());
 
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
+  cargarMesas(): void {
+    this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() }).subscribe({
+      next: (mesas) => {
+        this.mesas.set((mesas || []).map((m: any) => ({
+          id: m.id,
+          numero: m.numero,
+          ocupada: !!m.ocupada,
+          cliente: m.cliente || undefined
+        })));
+        this.ultimaActualizacion.set(new Date());
+      },
+      error: (err) => console.error('Error al cargar mesas del servidor:', err)
+    });
+  }
+
   obtenerMesas(): Observable<Mesa[]> {
-    return of(this.mesas()).pipe(delay(200));
+    return of(this.mesas());
   }
 
   getMesasSignal() {
@@ -60,25 +68,23 @@ export class MesaService {
   }
 
   ocuparMesa(numero: number, cliente?: string): void {
-    this.mesas.update(list => 
-      list.map(m => 
-        m.numero === numero 
-          ? { ...m, ocupada: true, cliente: cliente || `Cliente ${numero}`, horaInicio: new Date() }
-          : m
-      )
-    );
-    this.ultimaActualizacion.set(new Date());
+    this.http.put(`${this.apiUrl}/ocupar/${numero}`, { cliente }, { headers: this.getHeaders() }).subscribe({
+      next: () => {
+        this.cargarMesas();
+        this.seleccionarMesa(numero);
+      },
+      error: (err) => alert(err.error?.error || `No se pudo ocupar la mesa ${numero}`)
+    });
   }
 
   liberarMesa(numero: number): void {
-    this.mesas.update(list => 
-      list.map(m => 
-        m.numero === numero 
-          ? { ...m, ocupada: false, cliente: undefined, horaInicio: undefined, pedido: undefined, total: undefined }
-          : m
-      )
-    );
-    this.ultimaActualizacion.set(new Date());
+    this.http.put(`${this.apiUrl}/liberar/${numero}`, {}, { headers: this.getHeaders() }).subscribe({
+      next: () => {
+        this.cargarMesas();
+        this.seleccionarMesa(numero);
+      },
+      error: (err) => alert(err.error?.error || `No se pudo liberar la mesa ${numero}`)
+    });
   }
 
   estaOcupada(numero: number): boolean {
@@ -92,8 +98,8 @@ export class MesaService {
   }
 
   actualizarMesa(mesa: Mesa): void {
-    this.mesas.update(list => 
-      list.map(m => 
+    this.mesas.update(list =>
+      list.map(m =>
         m.numero === mesa.numero ? mesa : m
       )
     );

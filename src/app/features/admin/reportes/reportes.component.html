@@ -30,7 +30,7 @@
     <!-- Panel de configuración -->
     <div class="config-panel">
       <h3>Configurar Reporte</h3>
-      
+
       <div class="menu-container">
         <button class="menu-toggle" (click)="toggleMenu()">
           <span class="menu-toggle-text">
@@ -51,7 +51,7 @@
 
         @if (menuAbierto()) {
           <div class="menu-dropdown">
-            @for (reporte of reportes(); track reporte.id) {
+            @for (reporte of reportes; track reporte.id) {
               <button class="menu-item" (click)="seleccionarReporte(reporte.id)">
                 <span class="menu-item-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -148,6 +148,20 @@
             <span class="resumen-label">Promedio</span>
             <span class="resumen-valor">S/ {{ (resumenReporte().promedio || 0) | number:'1.2-2' }}</span>
           </div>
+          @if (resumenReporte().local && (resumenReporte().local.cantidad > 0 || resumenReporte().local.total > 0)) {
+            <div class="resumen-item resumen-local">
+              <span class="resumen-label">Local</span>
+              <span class="resumen-valor">S/ {{ (resumenReporte().local.total || 0) | number:'1.2-2' }}</span>
+              <span class="resumen-sub">{{ resumenReporte().local.cantidad }} pedido(s)</span>
+            </div>
+          }
+          @if (resumenReporte().motorizado && (resumenReporte().motorizado.cantidad > 0 || resumenReporte().motorizado.total > 0)) {
+            <div class="resumen-item resumen-motorizado">
+              <span class="resumen-label">Motorizado</span>
+              <span class="resumen-valor">S/ {{ (resumenReporte().motorizado.total || 0) | number:'1.2-2' }}</span>
+              <span class="resumen-sub">{{ resumenReporte().motorizado.cantidad }} pedido(s)</span>
+            </div>
+          }
         </div>
       </div>
 
@@ -192,7 +206,7 @@
                     <td>{{ dato.items || 0 }}</td>
                     <td>{{ dato.usuario || '-' }}</td>
                     <td>
-                      <span class="tipo-badge {{ getTipoEntregaClass(dato.tipo_entrega) }}">
+                      <span class="tipo-badge {{ dato.tipo_clase }}">
                         <span class="tipo-icon">
                           @if (dato.tipo_entrega === 'delivery' || dato.tipo_entrega === 'motorizada') {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -208,13 +222,13 @@
                             </svg>
                           }
                         </span>
-                        {{ getTipoEntregaLabel(dato.tipo_entrega) }}
+                        {{ dato.tipo_texto }}
                       </span>
                     </td>
                     <td class="total-col">S/ {{ dato.total | number:'1.2-2' }}</td>
                     <td>
-                      <span class="estado-badge {{ getEstadoClass(dato.estado) }}">
-                        {{ getEstadoTexto(dato.estado) }}
+                      <span class="estado-badge {{ dato.estado_clase }}">
+                        {{ dato.estado_texto }}
                       </span>
                     </td>
                   </tr>

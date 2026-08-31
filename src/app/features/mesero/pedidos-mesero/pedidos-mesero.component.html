@@ -170,7 +170,6 @@
         @for (pedido of pedidosFiltrados(); track pedido.id) {
           <div class="pedido-card">
             <div class="pedido-header-card">
-              <span class="pedido-mesa">Mesa {{ pedido.mesa_id || 'N/A' }}</span>
               <span class="pedido-estado {{ getEstadoClass(pedido.estado) }}">
                 {{ getEstadoIcono(pedido.estado) }} {{ getEstadoTexto(pedido.estado) }}
               </span>
@@ -181,7 +180,7 @@
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                {{ pedido.cliente || 'Cliente' }}
+                {{ pedido.cliente_nombre_real || pedido.cliente_nombre || 'Cliente' }}
               </p>
               <p class="pedido-tipo {{ pedido.tipo_entrega || 'local' }}">
                 <span class="tipo-icono">{{ getTipoEntregaIcono(pedido.tipo_entrega) }}</span>

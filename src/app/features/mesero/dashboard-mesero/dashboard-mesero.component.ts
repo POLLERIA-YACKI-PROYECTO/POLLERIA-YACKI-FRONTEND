@@ -39,6 +39,7 @@ export class DashboardMeseroComponent implements OnInit {
   constructor() {
     effect(() => {
       const mesas = this.mesas();
+      this.totalMesas.set(mesas.length);
       this.mesasOcupadas.set(mesas.filter(m => m.ocupada).length);
       this.mesasLibres.set(mesas.filter(m => !m.ocupada).length);
     });
@@ -50,6 +51,8 @@ export class DashboardMeseroComponent implements OnInit {
       this.router.navigate(['/login-mesero']);
       return;
     }
+
+    this.mesaService.cargarMesas();
 
     const nombre = this.usuario()?.nombre || 'Usuario';
     this.nombreUsuario.set(nombre);

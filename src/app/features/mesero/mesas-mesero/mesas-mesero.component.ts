@@ -35,6 +35,7 @@ export class MesasMeseroComponent implements OnInit {
   constructor() {
     effect(() => {
       const mesas = this.mesas();
+      this.totalMesas.set(mesas.length);
       this.mesasOcupadas.set(mesas.filter(m => m.ocupada).length);
       this.mesasLibres.set(mesas.filter(m => !m.ocupada).length);
     });
@@ -46,6 +47,8 @@ export class MesasMeseroComponent implements OnInit {
       this.router.navigate(['/login-mesero']);
       return;
     }
+
+    this.mesaService.cargarMesas();
   }
 
   getMesaByNumero(numero: number): Mesa | undefined {

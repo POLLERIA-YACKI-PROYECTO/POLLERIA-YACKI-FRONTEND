@@ -522,11 +522,6 @@
   border-bottom: 1px solid #2a2a2a;
 }
 
-.pedido-mesa {
-  font-weight: 700;
-  font-size: 15px;
-}
-
 .pedido-estado {
   font-size: 11px;
   padding: 3px 10px;
@@ -605,6 +600,9 @@
 .pedido-footer {
   padding: 10px 14px;
   border-top: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .btn-ver {
@@ -1755,10 +1753,6 @@
   .menu-item {
     font-size: 9px;
     padding: 4px 8px;
-  }
-
-  .pedido-mesa {
-    font-size: 13px;
   }
 
   .pedido-estado {
