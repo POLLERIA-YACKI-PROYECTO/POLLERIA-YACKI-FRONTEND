@@ -1,8 +1,8 @@
-<!-- shared/components/sidebar/sidebar.component.html -->
+<!-- src/app/features/shared/components/sidebar/sidebar.component.html -->
 <aside class="sidebar">
   <nav class="sidebar-menu">
     @for (item of menuItems(); track item.route) {
-      <a 
+      <a
         [routerLink]="item.route"
         routerLinkActive="active"
         class="sidebar-item"
@@ -13,7 +13,7 @@
       </a>
     }
   </nav>
-  
+
   <div class="sidebar-footer">
     <a routerLink="/login-mesero" class="sidebar-item mesero-link">
       <span class="sidebar-icon">

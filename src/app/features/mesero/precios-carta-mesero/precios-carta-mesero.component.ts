@@ -1,4 +1,4 @@
-// precios-carta-mesero.component.ts
+// src/app/features/mesero/precios-carta-mesero/precios-carta-mesero.component.ts
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -69,7 +69,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
 
   cargarDatos(): void {
     this.loading.set(true);
-    
+
     this.categoriaService.obtenerCategorias().subscribe({
       next: (categorias: any[]) => {
         this.categorias.set(categorias);
@@ -105,7 +105,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
-    
+
     const rutas: { [key: string]: string } = {
       'carta': '/mesero/carta',
       'mesas': '/mesero/mesas',
@@ -115,7 +115,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
       'tickets': '/mesero/tickets',
       'dashboard': '/mesero/dashboard'
     };
-    
+
     const ruta = rutas[opcion];
     if (ruta) {
       this.router.navigate([ruta]);
@@ -129,7 +129,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
     this.terminoBusqueda.set('');
     this.buscadorActivo.set(false);
     this.resultadosBusqueda.set([]);
-    
+
     if (categoriaId === 'todas') {
       this.productosFiltrados.set(this.productos());
     } else {
@@ -143,7 +143,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
   // ============================================
   buscarProductos(): void {
     const termino = this.terminoBusqueda().trim();
-    
+
     if (!termino) {
       this.buscadorActivo.set(false);
       this.resultadosBusqueda.set([]);
@@ -158,11 +158,11 @@ export class PreciosCartaMeseroComponent implements OnInit {
     }
 
     this.buscadorActivo.set(true);
-    
+
     // Buscar en todos los productos
     const todosLosProductos = this.productos();
     const resultados = this.productoService.buscarProductos(termino, todosLosProductos);
-    
+
     this.resultadosBusqueda.set(resultados);
     this.productosFiltrados.set(resultados);
   }
@@ -184,7 +184,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
   resaltarCoincidencia(texto: string): string {
     const termino = this.terminoBusqueda().trim();
     if (!termino) return texto;
-    
+
     const regex = new RegExp(`(${termino.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     return texto.replace(regex, '<mark class="highlight">$1</mark>');
   }

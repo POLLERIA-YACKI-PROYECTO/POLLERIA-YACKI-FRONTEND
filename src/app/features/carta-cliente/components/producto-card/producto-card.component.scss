@@ -1,4 +1,4 @@
-// producto-card.component.scss
+// src/app/features/carta-cliente/components/producto-card/producto-card.component.scss
 .producto-card {
   background: #ffffff;
   border-radius: 16px;
@@ -278,7 +278,7 @@
       .producto-footer {
         .producto-precio {
           font-size: 14px;
-          
+
           &::before {
             font-size: 11px;
           }
@@ -302,7 +302,7 @@
       padding: 2px 8px;
       top: 6px;
       left: 6px;
-      
+
       svg {
         width: 10px;
         height: 10px;

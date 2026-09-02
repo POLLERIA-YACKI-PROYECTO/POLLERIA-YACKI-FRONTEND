@@ -1,3 +1,5 @@
+// src/app/features/carta-cliente/producto.model.ts
+
 export interface Producto {
   id: number;
   nombre: string;

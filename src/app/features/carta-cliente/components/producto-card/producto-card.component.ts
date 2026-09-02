@@ -1,4 +1,4 @@
-// producto-card.component.ts
+// src/app/features/carta-cliente/components/producto-card/producto-card.component.ts
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Producto } from '../../../../core/models/interfaces';
@@ -23,7 +23,7 @@ export class ProductoCardComponent {
   }
 
   get estaDisponible(): boolean {
-    return this.producto?.disponible !== false && 
+    return this.producto?.disponible !== false &&
            this.producto?.agotado !== true &&
            (this.producto?.stock ?? 0) > 0;
   }

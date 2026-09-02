@@ -1,4 +1,4 @@
-// modal-pago.component.ts
+// src/app/features/carta-cliente/components/modal-pago/modal-pago.component.ts
 import { Component, Input, Output, EventEmitter, signal, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -70,7 +70,7 @@ export class ModalPagoComponent implements OnChanges {
   // ✅ Enviar a Izipay
   onSubmit(): void {
     if (this.cargando) return;
-    
+
     if (!this.metodoPago()) {
       alert('Por favor selecciona un método de pago');
       return;

@@ -1,4 +1,4 @@
-// app.routes.ts
+// src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
@@ -8,17 +8,17 @@ export const routes: Routes = [
   // ============================================
   // RUTA PRINCIPAL - CARTA DEL CLIENTE
   // ============================================
-  { 
-    path: '', 
-    redirectTo: '/carta', 
-    pathMatch: 'full' 
+  {
+    path: '',
+    redirectTo: '/carta',
+    pathMatch: 'full'
   },
   {
     path: 'carta',
     loadChildren: () => import('./features/carta-cliente/carta-cliente.routes')
       .then(m => m.CARTA_CLIENTE_ROUTES)
   },
-  
+
   // Login
   {
     path: 'login-admin',
@@ -30,7 +30,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login-mesero/login-mesero.component')
       .then(m => m.LoginMeseroComponent)
   },
-  
+
   // ============================================
   // RUTAS DEL MESERO
   // ============================================
@@ -76,7 +76,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-  
+
   // ============================================
   // RUTAS DEL ADMINISTRADOR
   // ============================================
@@ -124,6 +124,6 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard-admin', pathMatch: 'full' }
     ]
   },
-  
+
   { path: '**', redirectTo: '/carta' }
 ];

@@ -1,3 +1,5 @@
+// src/app/features/auth/login-mesero/login-mesero.component.html
+
 <div class="login-container">
   <!-- Mensaje de Bienvenida Profesional -->
   @if (mostrarBienvenida()) {
@@ -22,10 +24,10 @@
 
   <div class="login-card">
     <div class="logo-container">
-      <img 
-        [src]="logoUrl" 
-        alt="Polleria Yacky" 
-        class="logo" 
+      <img
+        [src]="logoUrl"
+        alt="Polleria Yacky"
+        class="logo"
         (error)="handleImageError($event)"
       >
       <h1 class="brand-title">Polleria Yacky</h1>
@@ -76,7 +78,7 @@
       </button>
 
       <div class="login-footer">
-        <p>¿Eres administrador? 
+        <p>¿Eres administrador?
           <a (click)="irLoginAdmin()" class="link-admin">Ingresa aquí</a>
         </p>
       </div>

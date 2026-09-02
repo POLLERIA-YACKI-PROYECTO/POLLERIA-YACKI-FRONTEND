@@ -1,4 +1,4 @@
-// mesas-mesero.component.ts
+// src/app/features/mesero/mesas-mesero/mesas-mesero.component.ts
 import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -66,7 +66,7 @@ export class MesasMeseroComponent implements OnInit {
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
-    
+
     const rutas: { [key: string]: string } = {
       'carta': '/mesero/carta',
       'mesas': '/mesero/mesas',
@@ -76,7 +76,7 @@ export class MesasMeseroComponent implements OnInit {
       'tickets': '/mesero/tickets',
       'dashboard': '/mesero/dashboard'
     };
-    
+
     const ruta = rutas[opcion];
     if (ruta) {
       this.router.navigate([ruta]);
@@ -95,13 +95,13 @@ export class MesasMeseroComponent implements OnInit {
       alert('Primero seleccione una mesa');
       return;
     }
-    
+
     const mesa = this.mesas().find(m => m.numero === num);
     if (mesa?.ocupada) {
       alert(`La mesa ${num} ya está ocupada`);
       return;
     }
-    
+
     const cliente = prompt('Ingrese nombre del cliente:') || `Mesa ${num}`;
     this.mesaService.ocuparMesa(num, cliente);
     this.mesaService.seleccionarMesa(num);
@@ -113,13 +113,13 @@ export class MesasMeseroComponent implements OnInit {
       alert('Primero seleccione una mesa');
       return;
     }
-    
+
     const mesa = this.mesas().find(m => m.numero === num);
     if (!mesa?.ocupada) {
       alert(`La mesa ${num} ya está libre`);
       return;
     }
-    
+
     if (confirm(`¿Liberar mesa ${num} - Cliente: ${mesa.cliente}?`)) {
       this.mesaService.liberarMesa(num);
       this.mesaService.seleccionarMesa(num);

@@ -1,4 +1,4 @@
-// features/admin/admin.component.ts
+// src/app/features/admin/admin.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
@@ -17,7 +17,7 @@ import { SidebarComponent } from '../shared/components/sidebar/sidebar.component
 export class AdminComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
-  
+
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
 

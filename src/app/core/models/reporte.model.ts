@@ -1,3 +1,5 @@
+// src/app/core/models/reporte.model.ts
+
 export interface ReporteVenta {
   id: number;
   fecha: Date;

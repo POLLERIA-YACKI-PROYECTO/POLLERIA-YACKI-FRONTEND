@@ -1,4 +1,4 @@
-<!-- pedidos-mesero.component.html -->
+<!-- src/app/features/mesero/pedidos-mesero/pedidos-mesero.component.html -->
 <div class="pedidos-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -130,16 +130,16 @@
 
     <!-- FILTROS POR TIPO DE ENTREGA -->
     <div class="filtros-tipo">
-      <button 
-        class="filtro-btn" 
+      <button
+        class="filtro-btn"
         [class.active]="filtroTipo() === 'todos'"
         (click)="cambiarFiltroTipo('todos')"
       >
         Todos
         <span class="filtro-count">{{ pedidos().length }}</span>
       </button>
-      <button 
-        class="filtro-btn local" 
+      <button
+        class="filtro-btn local"
         [class.active]="filtroTipo() === 'local'"
         (click)="cambiarFiltroTipo('local')"
       >
@@ -147,8 +147,8 @@
         Local
         <span class="filtro-count">{{ pedidosLocal().length }}</span>
       </button>
-      <button 
-        class="filtro-btn delivery" 
+      <button
+        class="filtro-btn delivery"
         [class.active]="filtroTipo() === 'delivery'"
         (click)="cambiarFiltroTipo('delivery')"
       >
@@ -253,7 +253,7 @@
         <!-- SECCIÓN CLIENTE -->
         <div class="cliente-section">
           <h3>Cliente</h3>
-          
+
           <div class="form-group">
             <label>Buscar cliente</label>
             <div class="input-wrapper">
@@ -261,14 +261,14 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="12" r="4"/>
               </svg>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 [(ngModel)]="busquedaCliente"
                 (input)="buscarClientes()"
                 placeholder="Buscar cliente por nombre o DNI..."
               >
             </div>
-            
+
             @if (clientesEncontrados().length > 0) {
               <div class="clientes-sugerencias">
                 @for (cliente of clientesEncontrados(); track cliente.id) {
@@ -335,8 +335,8 @@
         <div class="tipo-entrega-section">
           <h3>Tipo de Entrega</h3>
           <div class="tipo-entrega-options">
-            <button 
-              class="tipo-btn" 
+            <button
+              class="tipo-btn"
               [class.active]="tipoEntrega() === 'local'"
               (click)="seleccionarTipoEntrega('local')"
             >
@@ -346,8 +346,8 @@
               </svg>
               <span>Local</span>
             </button>
-            <button 
-              class="tipo-btn" 
+            <button
+              class="tipo-btn"
               [class.active]="tipoEntrega() === 'delivery'"
               (click)="seleccionarTipoEntrega('delivery')"
             >
@@ -434,7 +434,7 @@
       <div class="modal-body">
         <div class="categorias-scroll">
           @for (cat of categorias(); track cat.id) {
-            <button 
+            <button
               class="categoria-btn"
               [class.active]="categoriaSeleccionada() === cat.id"
               (click)="seleccionarCategoria(cat.id)"
@@ -449,7 +449,7 @@
         } @else {
           <div class="productos-grid-modal">
             @for (producto of productos(); track producto.id) {
-              <button 
+              <button
                 class="producto-btn"
                 [class.selected]="productoSeleccionado()?.id === producto.id"
                 (click)="seleccionarProducto(producto)"

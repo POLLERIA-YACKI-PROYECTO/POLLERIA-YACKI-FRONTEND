@@ -1,3 +1,5 @@
+<!-- src/app/features/auth/login-admin/login-admin.component.html -->
+
 <div class="login-container">
   <!-- Mensaje de Bienvenida -->
   @if (mostrarBienvenida()) {
@@ -14,10 +16,10 @@
 
   <div class="login-card">
     <div class="logo-container">
-      <img 
-        [src]="logoUrl" 
-        alt="Polleria Yacky Admin" 
-        class="logo" 
+      <img
+        [src]="logoUrl"
+        alt="Polleria Yacky Admin"
+        class="logo"
         (error)="handleImageError($event)"
       >
       <h1 class="brand-title">Polleria Yacky Admin</h1>
@@ -68,7 +70,7 @@
       </button>
 
       <div class="login-footer">
-        <p>¿Eres mesero? 
+        <p>¿Eres mesero?
           <a (click)="irLoginMesero()" class="link-mesero">Ingresa aquí</a>
         </p>
       </div>

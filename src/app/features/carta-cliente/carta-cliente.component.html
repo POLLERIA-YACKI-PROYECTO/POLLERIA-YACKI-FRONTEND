@@ -1,14 +1,14 @@
-<!-- carta-cliente.component.html -->
+<!-- src/app/features/carta-cliente/carta-cliente.component.html -->
 <div class="carta-cliente">
-  
+
   <!-- HEADER CON LOGO IMAGEN -->
   <header class="header">
     <div class="header-content">
       <div class="logo">
         <h2>hola </h2>
-        <img 
-          src="assets/images/logocarta.jpeg" 
-          alt="Doña Yacki" 
+        <img
+          src="assets/images/logocarta.jpeg"
+          alt="Doña Yacki"
           class="logo-img"
           (error)="onImageError($event)"
         >
@@ -46,7 +46,7 @@
         <circle cx="11" cy="11" r="8"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input 
+      <input
         type="text"
         [(ngModel)]="busqueda"
         placeholder="Buscar productos..."
@@ -59,7 +59,7 @@
   <!-- CATEGORÍAS -->
   <nav class="categorias-nav" *ngIf="!loading()">
     <div class="categorias-scroll">
-      <button 
+      <button
         *ngFor="let cat of categoriasActivas()"
         class="categoria-btn"
         [class.active]="categoriaSeleccionada() === cat.id"
@@ -97,7 +97,7 @@
         [producto]="producto"
         (agregar)="agregarAlCarrito($event)"
       ></app-producto-card>
-      
+
       <div class="empty-state" *ngIf="productosFiltradosPorBusqueda().length === 0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
           <circle cx="12" cy="12" r="10"/>
@@ -133,8 +133,8 @@
   ></app-modal-pago>
 
   <!-- FLOATING CARRITO (Móvil) -->
-  <button 
-    class="floating-carrito" 
+  <button
+    class="floating-carrito"
     *ngIf="totalItems() > 0 && !mostrarCarrito()"
     (click)="toggleCarrito()"
   >

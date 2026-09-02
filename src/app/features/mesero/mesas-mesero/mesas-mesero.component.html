@@ -1,4 +1,4 @@
-<!-- mesas-mesero.component.html -->
+<!-- src/app/features/mesero/mesas-mesero/mesas-mesero.component.html -->
 <div class="mesas-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -76,7 +76,7 @@
 
     <div class="mesas-grid">
       @for (mesa of mesas(); track mesa.numero) {
-        <div 
+        <div
           class="mesa-item"
           [class.ocupada]="mesa.ocupada"
           [class.seleccionada]="mesaSeleccionada() === mesa.numero"

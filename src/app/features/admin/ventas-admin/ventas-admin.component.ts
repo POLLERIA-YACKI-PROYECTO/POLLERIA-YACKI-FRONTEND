@@ -1,4 +1,4 @@
-// ventas-admin.component.ts
+// src/app/features/admin/ventas-admin/ventas-admin.component.ts
 import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -26,13 +26,13 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
   errorMessage = signal<string>('');
-  
+
   // Datos
   pedidosPendientes = signal<any[]>([]);
   pedidosPagados = signal<any[]>([]);
   ventasLocal = signal<any[]>([]);
   ventasDelivery = signal<any[]>([]);
-  
+
   // Estadísticas
   totalPendientes = signal<number>(0);
   totalPagados = signal<number>(0);
@@ -66,7 +66,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set('');
     this.pagando = false;
-    
+
     let solicitudesCompletadas = 0;
     const totalSolicitudes = 3;
     const verificarFinalizado = () => {
@@ -121,7 +121,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
         const ventasArray = ventas || [];
         const local = ventasArray.filter((v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
         const delivery = ventasArray.filter((v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
-        
+
         this.ventasLocal.set(local);
         this.ventasDelivery.set(delivery);
         this.totalVentasLocal.set(local.length);
@@ -139,7 +139,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   organizarVentas(pedidos: any[]): void {
     const local = pedidos.filter((p: any) => p.tipo_entrega === 'local' || p.tipo_entrega === 'paraLlevar');
     const delivery = pedidos.filter((p: any) => p.tipo_entrega === 'delivery' || p.tipo_entrega === 'motorizada');
-    
+
     this.ventasLocal.set(local);
     this.ventasDelivery.set(delivery);
     this.totalVentasLocal.set(local.length);
@@ -185,13 +185,13 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     const sub = this.pedidoService.marcarPagado(pedido.id, metodo).subscribe({
       next: (response: any) => {
         console.log('✅ Respuesta del servidor:', response);
-        
+
         if (response && response.success === true) {
           const tipoEntrega = response.tipo_entrega || 'local';
           const tipoTexto = tipoEntrega === 'delivery' || tipoEntrega === 'motorizada' ? 'Motorizado' : 'Local';
-          
+
           alert(`✅ Pedido #${pedido.id} pagado correctamente\nTipo: ${tipoTexto}\nMétodo: ${this.getMetodoPagoLabel(metodo)}`);
-          
+
           // Recargar datos
           setTimeout(() => {
             this.cargarDatos();
@@ -203,12 +203,12 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error('❌ Error:', err);
-        
+
         let mensaje = 'Error al marcar pedido como pagado';
         if (err.error) {
           mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
         }
-        
+
         if (err.status === 400 && mensaje.includes('ya está pagado')) {
           alert('ℹ️ El pedido ya estaba pagado. Actualizando datos...');
           this.cargarDatos();
@@ -232,8 +232,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   mostrarBotonPago(pedido: any): boolean {
-    return !this.estaPagado(pedido) && 
-           !this.estaCancelado(pedido) && 
+    return !this.estaPagado(pedido) &&
+           !this.estaCancelado(pedido) &&
            (pedido.estado === 'pendiente' || pedido.estado === 'preparando' || pedido.estado === 'listo');
   }
 

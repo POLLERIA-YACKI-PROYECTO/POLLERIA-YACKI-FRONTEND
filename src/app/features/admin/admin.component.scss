@@ -1,4 +1,4 @@
-// features/admin/admin.component.scss
+// src/app/features/admin/admin.component.scss
 .admin-container {
   min-height: 100vh;
   background: #f5f0e8;
@@ -34,7 +34,7 @@
   .admin-layout {
     flex-direction: column;
   }
-  
+
   .admin-content {
     max-height: none;
     padding: 16px;

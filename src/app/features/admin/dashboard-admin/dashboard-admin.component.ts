@@ -1,4 +1,4 @@
-// dashboard-admin.component.ts
+// src/app/features/admin/dashboard-admin/dashboard-admin.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -28,7 +28,7 @@ export class DashboardAdminComponent implements OnInit {
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
   errorMessage = signal<string>('');
-  
+
   fechaActual = new Date().toLocaleDateString('es-ES', {
     weekday: 'long',
     year: 'numeric',
@@ -42,45 +42,45 @@ export class DashboardAdminComponent implements OnInit {
   });
 
   stats = signal([
-    { 
+    {
       icon: 'productos',
-      label: 'Productos Registrados', 
-      value: 0, 
+      label: 'Productos Registrados',
+      value: 0,
       color: '#c43129',
       bgColor: '#c4312920'
     },
-    { 
+    {
       icon: 'ventas',
-      label: 'Ventas Hoy', 
-      value: 0, 
+      label: 'Ventas Hoy',
+      value: 0,
       color: '#d6ad31',
       bgColor: '#d6ad3120'
     },
-    { 
+    {
       icon: 'pendientes',
-      label: 'Pedidos Pendientes', 
-      value: 0, 
+      label: 'Pedidos Pendientes',
+      value: 0,
       color: '#71492f',
       bgColor: '#71492f20'
     },
-    { 
+    {
       icon: 'ingresos',
-      label: 'Ingresos Totales', 
-      value: 'S/ 0.00', 
+      label: 'Ingresos Totales',
+      value: 'S/ 0.00',
       color: '#432c1c',
       bgColor: '#432c1c20'
     },
-    { 
+    {
       icon: 'usuarios',
-      label: 'Usuarios Activos', 
-      value: 0, 
+      label: 'Usuarios Activos',
+      value: 0,
       color: '#c43129',
       bgColor: '#c4312920'
     },
-    { 
+    {
       icon: 'local',
-      label: 'Ventas en Local', 
-      value: 0, 
+      label: 'Ventas en Local',
+      value: 0,
       color: '#71492f',
       bgColor: '#71492f20'
     }
@@ -110,7 +110,7 @@ export class DashboardAdminComponent implements OnInit {
   cargarDatos(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    
+
     let solicitudesCompletadas = 0;
     const totalSolicitudes = 4;
     const verificarFinalizado = () => {
@@ -160,31 +160,31 @@ export class DashboardAdminComponent implements OnInit {
         const ventasArray = ventas || [];
         const hoy = new Date().toISOString().split('T')[0];
         const ventasHoy = ventasArray.filter((v: any) => v.fecha_venta?.startsWith(hoy));
-        
+
         this.actualizarStat('ventas', ventasHoy.length);
-        
+
         const total = ventasArray.reduce((sum: number, v: any) => {
           const totalVenta = parseFloat(v.total) || 0;
           return sum + totalVenta;
         }, 0);
-        
+
         this.actualizarStat('ingresos', `S/ ${total.toFixed(2)}`);
-        
+
         const local = ventasArray.filter((v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
         const delivery = ventasArray.filter((v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
-        
+
         const totalLocal = local.reduce((sum: number, v: any) => {
           const totalVenta = parseFloat(v.total) || 0;
           return sum + totalVenta;
         }, 0);
-        
+
         const totalDelivery = delivery.reduce((sum: number, v: any) => {
           const totalVenta = parseFloat(v.total) || 0;
           return sum + totalVenta;
         }, 0);
-        
+
         this.actualizarStat('local', local.length);
-        
+
         this.resumenVentas.set({
           totalVentas: ventasArray.length,
           ventasLocal: local.length,
@@ -193,7 +193,7 @@ export class DashboardAdminComponent implements OnInit {
           recaudadoLocal: totalLocal,
           recaudadoDelivery: totalDelivery
         });
-        
+
         const recientes = ventasArray.slice(-10).reverse().map((v: any) => ({
           id: v.id,
           cliente: v.cliente_nombre || v.cliente || 'Consumidor Final',
@@ -229,8 +229,8 @@ export class DashboardAdminComponent implements OnInit {
   }
 
   actualizarStat(icono: string, valor: any): void {
-    this.stats.update(stats => 
-      stats.map(s => 
+    this.stats.update(stats =>
+      stats.map(s =>
         s.icon === icono ? { ...s, value: valor } : s
       )
     );

@@ -1,4 +1,4 @@
-<!-- carta-admin.component.html -->
+<!-- src/app/features/admin/carta-admin/carta-admin.component.html -->
 <div class="carta-admin-container" [class.tema-oscuro]="temaOscuro()">
   <div class="page-header">
     <div class="header-left">
@@ -51,8 +51,8 @@
         <circle cx="11" cy="11" r="8"/>
         <line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input 
-        type="text" 
+      <input
+        type="text"
         class="buscador-input"
         placeholder="Buscar productos por nombre, categoría o precio..."
         [(ngModel)]="terminoBusqueda"
@@ -201,7 +201,7 @@
               <td class="precio-col">S/ {{ producto.precio | number:'1.2-2' }}</td>
               <td>{{ producto.stock || 0 }}</td>
               <td>
-                <button 
+                <button
                   class="btn-estado"
                   [class.agotado]="producto.agotado"
                   [class.disponible]="!producto.agotado"

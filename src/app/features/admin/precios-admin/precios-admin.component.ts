@@ -1,4 +1,4 @@
-// precios-admin.component.ts
+// src/app/features/admin/precios-admin/precios-admin.component.ts
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -60,7 +60,7 @@ export class PreciosAdminComponent implements OnInit {
 
   cargarDatos(): void {
     this.loading.set(true);
-    
+
     this.categoriaService.obtenerCategorias().subscribe({
       next: (categorias) => {
         this.categorias.set(categorias);
@@ -81,7 +81,7 @@ export class PreciosAdminComponent implements OnInit {
     this.loading.set(true);
     this.categoriaSeleccionada.set(categoriaId);
     this.categoriaMenuAbierto.set(false);
-    
+
     this.productoService.obtenerPorCategoria(categoriaId).subscribe({
       next: (productos) => {
         this.productos.set(productos);

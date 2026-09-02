@@ -1,4 +1,5 @@
-// dashboard-admin.component.scss
+
+// src/app/features/admin/dashboard-admin/dashboard-admin.component.scss
 
 /* ============================================
    BASE
@@ -633,7 +634,7 @@
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .resumen-grid {
     grid-template-columns: repeat(2, 1fr);
   }

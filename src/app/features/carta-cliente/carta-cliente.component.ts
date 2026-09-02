@@ -1,4 +1,4 @@
-// carta-cliente.component.ts
+// src/app/features/carta-cliente/carta-cliente.component.ts
 import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -72,10 +72,10 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   productosFiltradosPorBusqueda = computed(() => {
     const search = this.busqueda().toLowerCase().trim();
     const productos = this.productosFiltrados();
-    
+
     if (!search) return productos;
-    
-    return productos.filter(p => 
+
+    return productos.filter(p =>
       p.nombre.toLowerCase().includes(search) ||
       (p.descripcion && p.descripcion.toLowerCase().includes(search))
     );
@@ -138,9 +138,9 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   filtrarProductos(): void {
     const catId = this.categoriaSeleccionada();
     const search = this.busqueda().toLowerCase().trim();
-    
-    let filtrados = this.productos().filter(p => 
-      p.disponible !== false && 
+
+    let filtrados = this.productos().filter(p =>
+      p.disponible !== false &&
       p.agotado !== true
     );
 
@@ -149,7 +149,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }
 
     if (search) {
-      filtrados = filtrados.filter(p => 
+      filtrados = filtrados.filter(p =>
         p.nombre.toLowerCase().includes(search) ||
         (p.descripcion && p.descripcion.toLowerCase().includes(search))
       );
@@ -223,21 +223,21 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   procesarPedido(datosPago: any): void {
     console.log('📤 === PROCESANDO PEDIDO CON IZIPAY ===');
     console.log('📤 Datos de pago:', datosPago);
-    
+
     // Verificar autenticación para hacer el pedido
     const token = this.authService.getToken();
     const usuario = this.authService.getUsuarioActual();
-    
+
     if (!token || !usuario) {
       console.warn('⚠️ Usuario no autenticado, redirigiendo a login...');
       alert('⚠️ Debes iniciar sesión para realizar un pedido.');
       this.router.navigate(['/login-admin']);
       return;
     }
-    
+
     console.log('👤 Usuario autenticado:', usuario);
     console.log('🔐 Token:', token?.substring(0, 20) + '...');
-    
+
     this.cargandoPedido.set(true);
 
     // Verificar que el carrito no esté vacío
@@ -272,17 +272,17 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.pedidoService.crearPedido(pedido).subscribe({
       next: (response: any) => {
         console.log('✅ Respuesta del servidor:', response);
-        
+
         if (response && response.success) {
           const pedidoId = response.pedido?.id;
-          
+
           if (pedidoId) {
             // 2. Redirigir a Izipay con el ID del pedido y el monto
             console.log('🔄 Redirigiendo a Izipay...');
             console.log('📝 Pedido ID:', pedidoId);
             console.log('💰 Monto:', this.total());
             console.log('📝 Método:', datosPago.metodo);
-            
+
             // ✅ Redirigir a Izipay
             this.redirigirAIzipay(pedidoId, this.total(), datosPago.metodo);
           } else {
@@ -300,7 +300,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
         console.error('❌ Error al crear pedido:', err);
         console.error('❌ Detalle:', err.error);
         this.cargandoPedido.set(false);
-        
+
         let mensaje = 'Error al procesar el pedido. Por favor, intenta nuevamente.';
         if (err.error?.error) {
           mensaje = err.error.error;
@@ -323,12 +323,12 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     // Construir URL de Izipay con los parámetros
     const izipayUrl = `https://izipay.pe/pago?pedido=${pedidoId}&monto=${monto.toFixed(2)}&metodo=${metodo}&nombre=Doña Yacki`;
-    
+
     console.log('🔗 URL Izipay:', izipayUrl);
-    
+
     // ✅ En producción, redirigir a Izipay
     // window.location.href = izipayUrl;
-    
+
     // ⚠️ SIMULACIÓN - Para pruebas, simular que Izipay confirma el pago
     this.simularPagoIzipay(pedidoId);
   }
@@ -336,15 +336,15 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   // ✅ SIMULAR PAGO CON IZIPAY (para pruebas)
   simularPagoIzipay(pedidoId: number): void {
     console.log('🔄 Simulando pago con Izipay...');
-    
+
     // Mostrar mensaje de espera
     alert('🔄 Redirigiendo a Izipay...\nEspera la confirmación del pago.');
-    
+
     // Simular que Izipay confirma el pago después de 5 segundos
     setTimeout(() => {
       console.log('✅ Confirmación de pago recibida de Izipay');
       console.log('📝 Pedido ID:', pedidoId);
-      
+
       // Marcar el pedido como pagado
       this.pedidoService.marcarPagado(pedidoId, 'izipay').subscribe({
         next: (response) => {

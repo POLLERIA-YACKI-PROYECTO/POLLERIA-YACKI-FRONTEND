@@ -1,4 +1,4 @@
-// producto.service.ts
+// src\app\core\services\producto.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';

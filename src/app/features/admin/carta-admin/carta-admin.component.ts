@@ -1,4 +1,4 @@
-// carta-admin.component.ts
+// src/app/features/admin/carta-admin/carta-admin.component.ts
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,7 +27,7 @@ export class CartaAdminComponent implements OnInit {
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
   terminoBusqueda = signal<string>('');
-  
+
   mostrarFormulario = signal(false);
   productoEdit = signal<any>(null);
   editando = signal(false);
@@ -55,7 +55,7 @@ export class CartaAdminComponent implements OnInit {
 
   cargarDatos(): void {
     this.loading.set(true);
-    
+
     this.categoriaService.obtenerCategorias().subscribe({
       next: (categorias) => {
         this.categorias.set(categorias);
@@ -84,7 +84,7 @@ export class CartaAdminComponent implements OnInit {
   // ============================================
   filtrarProductos(): void {
     const termino = this.terminoBusqueda().toLowerCase().trim();
-    
+
     if (!termino) {
       this.productosFiltrados.set(this.productos());
       return;
@@ -93,22 +93,22 @@ export class CartaAdminComponent implements OnInit {
     const filtrados = this.productos().filter(producto => {
       // Buscar por nombre
       const nombreMatch = producto.nombre.toLowerCase().includes(termino);
-      
+
       // Buscar por categoría
       const categoria = this.categorias().find(c => c.id === producto.categoria_id);
       const categoriaMatch = categoria?.nombre.toLowerCase().includes(termino) || false;
-      
+
       // Buscar por precio (si el término es numérico)
       let precioMatch = false;
       const precioNum = parseFloat(termino.replace('s/', '').replace('s', '').trim());
       if (!isNaN(precioNum)) {
-        precioMatch = producto.precio === precioNum || 
+        precioMatch = producto.precio === precioNum ||
                       producto.precio.toString().includes(termino.replace('s/', '').trim());
       }
-      
+
       // Buscar por ID
       const idMatch = producto.id.toString().includes(termino);
-      
+
       // Buscar por estado (agotado/disponible)
       const estadoMatch = termino === 'agotado' ? producto.agotado === true :
                          termino === 'disponible' ? producto.agotado === false : false;
@@ -132,12 +132,12 @@ export class CartaAdminComponent implements OnInit {
     if (!this.mostrarFormulario()) {
       this.editando.set(false);
       this.productoEdit.set(null);
-      this.nuevoProducto.set({ 
-        categoria_id: this.categorias()[0]?.id || 0, 
-        nombre: '', 
-        precio: 0, 
-        descripcion: '', 
-        stock: 0 
+      this.nuevoProducto.set({
+        categoria_id: this.categorias()[0]?.id || 0,
+        nombre: '',
+        precio: 0,
+        descripcion: '',
+        stock: 0
       });
     }
   }

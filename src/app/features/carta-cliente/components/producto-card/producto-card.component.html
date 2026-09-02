@@ -1,9 +1,9 @@
-<!-- producto-card.component.html -->
+<!-- src/app/features/carta-cliente/components/producto-card/producto-card.component.html -->
 <div class="producto-card" [class.disponible]="estaDisponible" [class.no-disponible]="!estaDisponible">
-  
+
   <div class="producto-imagen">
-    <img 
-      [src]="imagenUrl" 
+    <img
+      [src]="imagenUrl"
       [alt]="producto.nombre"
       loading="lazy"
       (error)="onImageError($event)"
@@ -36,8 +36,8 @@
     <p class="producto-descripcion" *ngIf="producto.descripcion">{{ producto.descripcion }}</p>
     <div class="producto-footer">
       <span class="producto-precio">{{ formatearPrecio(producto.precio) }}</span>
-      <button 
-        class="btn-agregar" 
+      <button
+        class="btn-agregar"
         [class.agregando]="agregando()"
         [disabled]="!estaDisponible"
         (click)="onAgregar()"

@@ -1,4 +1,4 @@
-// ticket.component.ts (COMPLETO Y CORREGIDO)
+// src/app/features/mesero/ticket/ticket.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -70,7 +70,7 @@ export class TicketComponent implements OnInit {
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
-    
+
     const rutas: { [key: string]: string } = {
       'carta': '/mesero/carta',
       'mesas': '/mesero/mesas',
@@ -80,7 +80,7 @@ export class TicketComponent implements OnInit {
       'tickets': '/mesero/tickets',
       'dashboard': '/mesero/dashboard'
     };
-    
+
     const ruta = rutas[opcion];
     if (ruta) {
       this.router.navigate([ruta]);

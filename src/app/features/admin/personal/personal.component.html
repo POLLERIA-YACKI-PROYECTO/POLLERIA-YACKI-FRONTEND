@@ -1,4 +1,4 @@
-<!-- personal.component.html -->
+<!-- src/app/features/admin/personal/personal.component.html -->
 <div class="personal-container" [class.tema-oscuro]="temaOscuro()">
   <div class="personal-content">
     <div class="page-header">
@@ -169,7 +169,7 @@
         </div>
         <span class="total-items">{{ personal().length }} registros</span>
       </div>
-      
+
       <div class="tabla-scroll">
         <table class="tabla-personal">
           <thead>
@@ -193,7 +193,7 @@
                 </td>
                 <td>{{ persona.dni }}</td>
                 <td>
-                  <span class="rol-badge {{ getRolClass(persona.rol) }}" 
+                  <span class="rol-badge {{ getRolClass(persona.rol) }}"
                         [innerHTML]="getRolSvg(persona.rol)">
                   </span>
                   <span class="rol-text">{{ getRolDisplay(persona.rol) }}</span>

@@ -1,78 +1,40 @@
-// reportes.component.ts
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+// src/app/features/admin/reportes/reportes.component.ts
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Router } from '@angular/router';
 
 // ============================================
-// CATÁLOGO DE REPORTES (escalable: agregar aquí)
+// TIPOS E INTERFACES
 // ============================================
-const TIPOS_REPORTE: { id: string; nombre: string }[] = [
-  { id: 'ventas', nombre: 'Reporte de Ventas' },
-  { id: 'pendientes', nombre: 'Pedidos Pendientes' },
-  { id: 'diario', nombre: 'Venta Diaria' },
-  { id: 'cajero', nombre: 'Diario de Cajero' },
-  { id: 'totales', nombre: 'Ventas Totales' },
-  { id: 'pago', nombre: 'Forma de Pago' },
-  { id: 'mozo', nombre: 'Ventas por Mozo' },
-  { id: 'cliente', nombre: 'Ventas por Cliente' },
-  { id: 'motorizada', nombre: 'Venta Motorizada' }
-];
 
-// ============================================
-// MAPAS DE PRESENTACIÓN (Local / Motorizado)
-// ============================================
-const ETIQUETA_TIPO: Record<string, string> = {
-  'local': 'Local',
-  'delivery': 'Motorizado',
-  'paraLlevar': 'Para Llevar',
-  'motorizada': 'Motorizado'
-};
+type TipoCelda =
+  | 'texto'
+  | 'numero'
+  | 'moneda'
+  | 'tipo'
+  | 'estado'
+  | 'id';
 
-const CLASE_TIPO: Record<string, string> = {
-  'local': 'tipo-local',
-  'delivery': 'tipo-delivery',
-  'paraLlevar': 'tipo-local',
-  'motorizada': 'tipo-delivery'
-};
+interface TipoReporte {
+  id: string;
+  nombre: string;
+}
 
-const TEXTO_ESTADO: Record<string, string> = {
-  'pendiente': 'Pendiente',
-  'preparando': 'Preparando',
-  'listo': 'Listo',
-  'entregado': 'Pagado',
-  'Pagado': 'Pagado',
-  'cancelado': 'Cancelado'
-};
-
-const CLASE_ESTADO: Record<string, string> = {
-  'pendiente': 'estado-pendiente',
-  'preparando': 'estado-preparando',
-  'listo': 'estado-listo',
-  'entregado': 'estado-pagado',
-  'Pagado': 'estado-pagado',
-  'cancelado': 'estado-cancelado'
-};
-
-// ============================================
-// MODELO DE FILA (estáticos: se calculan una vez por fila)
-// ============================================
-interface FilaReporte {
-  id: any;
-  fecha: string;
-  cliente: string;
-  items: number;
-  usuario: string;
-  total: number;
-  tipo_entrega: string;
-  estado: string;
-  tipo_texto: string;
-  tipo_clase: string;
-  estado_texto: string;
-  estado_clase: string;
+interface ColumnaReporte {
+  clave: keyof FilaReporte;
+  titulo: string;
+  tipo: TipoCelda;
 }
 
 interface DesgloseTipo {
@@ -80,662 +42,2659 @@ interface DesgloseTipo {
   total: number;
 }
 
+interface FilaReporte {
+  id: string | number;
+
+  fecha?: string;
+  dia?: string;
+
+  cliente?: string;
+  items?: number;
+  usuario?: string;
+  rol?: string;
+
+  ventas?: number;
+  transacciones?: number;
+  cantidad?: number;
+
+  categoria?: string;
+  metodo_pago?: string;
+
+  tipo_entrega?: string;
+  tipo_texto?: string;
+  tipo_clase?: string;
+
+  estado?: string;
+  estado_texto?: string;
+  estado_clase?: string;
+
+  total: number;
+  promedio?: number;
+}
+
+// ============================================
+// CATÁLOGO DE REPORTES
+// ============================================
+
+const TIPOS_REPORTE: TipoReporte[] = [
+  {
+    id: 'ventas',
+    nombre: 'Reporte de Ventas'
+  },
+  {
+    id: 'pendientes',
+    nombre: 'Pedidos Pendientes'
+  },
+  {
+    id: 'diario',
+    nombre: 'Venta Diaria'
+  },
+  {
+    id: 'semanal',
+    nombre: 'Venta por Semana'
+  },
+  {
+    id: 'cajero',
+    nombre: 'Diario de Cajero'
+  },
+  {
+    id: 'totales',
+    nombre: 'Ventas Totales'
+  },
+  {
+    id: 'pago',
+    nombre: 'Forma de Pago'
+  },
+  {
+    id: 'mozo',
+    nombre: 'Ventas por Mozo'
+  },
+  {
+    id: 'cliente',
+    nombre: 'Ventas por Cliente'
+  },
+  {
+    id: 'motorizada',
+    nombre: 'Venta Motorizada'
+  }
+];
+
+// ============================================
+// MÉTODOS DE PAGO
+// ============================================
+
+const ETIQUETA_METODO_PAGO: Record<string, string> = {
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta',
+  yape: 'Yape',
+  plin: 'Plin',
+  transferencia: 'Transferencia',
+  izipay: 'Tarjeta (Izipay)',
+  no_especificado: 'No especificado'
+};
+
+// ============================================
+// COMPONENTE
+// ============================================
+
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule
+  ],
   templateUrl: './reportes.component.html',
   styleUrls: ['./reportes.component.scss']
 })
 export class ReportesComponent implements OnInit {
+
   private pedidoService = inject(PedidoService);
   private ventaService = inject(VentaService);
   private authService = inject(AuthService);
-  private router = inject(Router);
 
-  loading = signal(false);
-  reporteSeleccionado = signal('ventas');
-  menuAbierto = signal(false);
-  fechaInicio = signal('');
-  fechaFin = signal('');
+  // ==========================================
+  // ESTADO GENERAL
+  // ==========================================
 
-  pedidos = signal<any[]>([]);
-  ventas = signal<any[]>([]);
-  datosReporte = signal<FilaReporte[]>([]);
-  resumenReporte = signal<any>({});
+  loading = signal<boolean>(false);
+
+  reporteSeleccionado = signal<string>('ventas');
+
+  menuAbierto = signal<boolean>(false);
+
+  fechaInicio = signal<string>('');
+
+  fechaFin = signal<string>('');
+
   usuario = signal<any>(null);
 
-  ventasLocal = signal<any[]>([]);
-  ventasDelivery = signal<any[]>([]);
+  ventas = signal<any[]>([]);
+
   pedidosPendientes = signal<any[]>([]);
 
-  // Lista estática de reportes disponibles (no muta)
+  datosReporte = signal<FilaReporte[]>([]);
+
+  resumenReporte = signal<any>({});
+
   reportes = TIPOS_REPORTE;
 
-  nombreReporte = computed(() => {
-    const found = TIPOS_REPORTE.find(r => r.id === this.reporteSeleccionado());
-    return found ? found.nombre : 'Reporte';
+  // ==========================================
+  // NOMBRE DEL REPORTE
+  // ==========================================
+
+  nombreReporte = computed<string>(() => {
+    const reporte = TIPOS_REPORTE.find(
+      item => item.id === this.reporteSeleccionado()
+    );
+
+    return reporte?.nombre || 'Reporte';
   });
 
-  ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
+  // ==========================================
+  // COLUMNAS DINÁMICAS
+  // ==========================================
 
-    const today = new Date();
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 7);
-    this.fechaInicio.set(sevenDaysAgo.toISOString().split('T')[0]);
-    this.fechaFin.set(today.toISOString().split('T')[0]);
+  columnasReporte = computed<ColumnaReporte[]>(() => {
+    switch (this.reporteSeleccionado()) {
+
+      case 'ventas':
+      case 'pendientes':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'fecha',
+            titulo: 'Fecha',
+            tipo: 'texto'
+          },
+          {
+            clave: 'cliente',
+            titulo: 'Cliente',
+            tipo: 'texto'
+          },
+          {
+            clave: 'items',
+            titulo: 'Items',
+            tipo: 'numero'
+          },
+          {
+            clave: 'usuario',
+            titulo: 'Usuario',
+            tipo: 'texto'
+          },
+          {
+            clave: 'tipo_entrega',
+            titulo: 'Tipo',
+            tipo: 'tipo'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'estado',
+            titulo: 'Estado',
+            tipo: 'estado'
+          }
+        ];
+
+      case 'diario':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'fecha',
+            titulo: 'Fecha',
+            tipo: 'texto'
+          },
+          {
+            clave: 'ventas',
+            titulo: 'Ventas',
+            tipo: 'numero'
+          },
+          {
+            clave: 'items',
+            titulo: 'Items',
+            tipo: 'numero'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'promedio',
+            titulo: 'Promedio',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'semanal':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'dia',
+            titulo: 'Día',
+            tipo: 'texto'
+          },
+          {
+            clave: 'fecha',
+            titulo: 'Fecha',
+            tipo: 'texto'
+          },
+          {
+            clave: 'ventas',
+            titulo: 'Ventas',
+            tipo: 'numero'
+          },
+          {
+            clave: 'tipo_entrega',
+            titulo: 'Tipo',
+            tipo: 'tipo'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'cajero':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'fecha',
+            titulo: 'Fecha',
+            tipo: 'texto'
+          },
+          {
+            clave: 'transacciones',
+            titulo: 'Transacciones',
+            tipo: 'numero'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'promedio',
+            titulo: 'Promedio',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'totales':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'categoria',
+            titulo: 'Tipo de Venta',
+            tipo: 'texto'
+          },
+          {
+            clave: 'cantidad',
+            titulo: 'Cantidad',
+            tipo: 'numero'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'promedio',
+            titulo: 'Promedio',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'pago':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'metodo_pago',
+            titulo: 'Forma de Pago',
+            tipo: 'texto'
+          },
+          {
+            clave: 'transacciones',
+            titulo: 'Transacciones',
+            tipo: 'numero'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'promedio',
+            titulo: 'Promedio',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'mozo':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'usuario',
+            titulo: 'Mozo',
+            tipo: 'texto'
+          },
+          {
+            clave: 'rol',
+            titulo: 'Rol',
+            tipo: 'texto'
+          },
+          {
+            clave: 'ventas',
+            titulo: 'Cantidad de Ventas',
+            tipo: 'numero'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'promedio',
+            titulo: 'Promedio',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'cliente':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'cliente',
+            titulo: 'Cliente',
+            tipo: 'texto'
+          },
+          {
+            clave: 'ventas',
+            titulo: 'Cantidad de Ventas',
+            tipo: 'numero'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'promedio',
+            titulo: 'Promedio',
+            tipo: 'moneda'
+          }
+        ];
+
+      case 'motorizada':
+        return [
+          {
+            clave: 'id',
+            titulo: 'ID',
+            tipo: 'id'
+          },
+          {
+            clave: 'fecha',
+            titulo: 'Fecha',
+            tipo: 'texto'
+          },
+          {
+            clave: 'cliente',
+            titulo: 'Cliente',
+            tipo: 'texto'
+          },
+          {
+            clave: 'items',
+            titulo: 'Items',
+            tipo: 'numero'
+          },
+          {
+            clave: 'tipo_entrega',
+            titulo: 'Tipo',
+            tipo: 'tipo'
+          },
+          {
+            clave: 'total',
+            titulo: 'Total',
+            tipo: 'moneda'
+          },
+          {
+            clave: 'estado',
+            titulo: 'Estado',
+            tipo: 'estado'
+          }
+        ];
+
+      default:
+        return [];
+    }
+  });
+
+  // ==========================================
+  // INICIALIZACIÓN
+  // ==========================================
+
+  ngOnInit(): void {
+    this.usuario.set(
+      this.authService.getUsuarioActual()
+    );
+
+    const hoy = new Date();
+
+    const haceSieteDias = new Date(hoy);
+
+    haceSieteDias.setDate(
+      hoy.getDate() - 7
+    );
+
+    this.fechaInicio.set(
+      this.fechaClave(haceSieteDias)
+    );
+
+    this.fechaFin.set(
+      this.fechaClave(hoy)
+    );
 
     this.cargarDatos();
   }
 
+  // ==========================================
+  // MENÚ
+  // ==========================================
+
   toggleMenu(): void {
-    this.menuAbierto.set(!this.menuAbierto());
+    this.menuAbierto.update(
+      valor => !valor
+    );
   }
 
   seleccionarReporte(id: string): void {
     this.reporteSeleccionado.set(id);
+
     this.menuAbierto.set(false);
+
     this.generarReporte();
   }
 
-  // ============================================
-  // CARGA DE DATOS
-  // ============================================
+  // ==========================================
+  // FECHAS
+  // ==========================================
+
+  actualizarFechaInicio(valor: string): void {
+    this.fechaInicio.set(valor);
+
+    this.validarRangoFechas();
+
+    this.generarReporte();
+  }
+
+  actualizarFechaFin(valor: string): void {
+    this.fechaFin.set(valor);
+
+    this.validarRangoFechas();
+
+    this.generarReporte();
+  }
+
+  private validarRangoFechas(): void {
+    if (
+      this.fechaInicio() &&
+      this.fechaFin() &&
+      this.fechaInicio() > this.fechaFin()
+    ) {
+      this.fechaFin.set(
+        this.fechaInicio()
+      );
+    }
+  }
+
+  // ==========================================
+  // CARGAR DATOS
+  // ==========================================
+
   cargarDatos(): void {
+    if (this.loading()) {
+      return;
+    }
+
     this.loading.set(true);
 
-    let solicitudesCompletadas = 0;
-    const totalSolicitudes = 3;
-    const verificarFinalizado = () => {
-      solicitudesCompletadas++;
-      if (solicitudesCompletadas >= totalSolicitudes) {
+    let solicitudesFinalizadas = 0;
+
+    const totalSolicitudes = 2;
+
+    const verificarFinalizacion = (): void => {
+      solicitudesFinalizadas++;
+
+      if (
+        solicitudesFinalizadas >= totalSolicitudes
+      ) {
         this.generarReporte();
+
         this.loading.set(false);
       }
     };
 
-    this.pedidoService.obtenerPedidos().subscribe({
-      next: (pedidos: any[]) => {
-        this.pedidos.set(pedidos || []);
-        verificarFinalizado();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar pedidos:', err);
-        verificarFinalizado();
-      }
-    });
-
     this.ventaService.obtenerVentas().subscribe({
       next: (ventas: any[]) => {
-        const ventasArray = ventas || [];
-        this.ventas.set(ventasArray);
-        const local = ventasArray.filter((v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
-        const delivery = ventasArray.filter((v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
-        this.ventasLocal.set(local);
-        this.ventasDelivery.set(delivery);
-        verificarFinalizado();
+        this.ventas.set(
+          Array.isArray(ventas)
+            ? ventas
+            : []
+        );
+
+        verificarFinalizacion();
       },
-      error: (err: any) => {
-        console.error('Error al cargar ventas:', err);
-        verificarFinalizado();
+
+      error: error => {
+        console.error(
+          'Error al cargar ventas:',
+          error
+        );
+
+        this.ventas.set([]);
+
+        verificarFinalizacion();
       }
     });
 
-    this.pedidoService.obtenerPedidosPendientes().subscribe({
-      next: (pendientes: any[]) => {
-        this.pedidosPendientes.set(pendientes || []);
-        verificarFinalizado();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar pedidos pendientes:', err);
-        verificarFinalizado();
-      }
-    });
+    this.pedidoService
+      .obtenerPedidosPendientes()
+      .subscribe({
+        next: (pedidos: any[]) => {
+          this.pedidosPendientes.set(
+            Array.isArray(pedidos)
+              ? pedidos
+              : []
+          );
+
+          verificarFinalizacion();
+        },
+
+        error: error => {
+          console.error(
+            'Error al cargar pedidos pendientes:',
+            error
+          );
+
+          this.pedidosPendientes.set([]);
+
+          verificarFinalizacion();
+        }
+      });
   }
 
-  // ============================================
-  // GENERAR REPORTE
-  // ============================================
+  // ==========================================
+  // GENERAR REPORTE SELECCIONADO
+  // ==========================================
+
   generarReporte(): void {
+    if (
+      !this.fechaInicio() ||
+      !this.fechaFin()
+    ) {
+      this.datosReporte.set([]);
+
+      this.resumenReporte.set({});
+
+      return;
+    }
+
     try {
-      const tipo = this.reporteSeleccionado();
-      const fechaInicio = this.fechaInicio();
-      const fechaFin = this.fechaFin();
+      switch (this.reporteSeleccionado()) {
 
-      let datos: FilaReporte[] = [];
-      let resumen: any = {};
-
-      switch (tipo) {
         case 'ventas':
-          const ventasFiltradas = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          datos = ventasFiltradas.map((v: any) => this.armarFila({
-            id: v.id,
-            fecha: v.fecha_venta ? new Date(v.fecha_venta).toLocaleString() : '--',
-            cliente: v.cliente_nombre || v.cliente || 'Consumidor Final',
-            items: v.items?.length || 0,
-            usuario: v.usuario_nombre || 'Desconocido',
-            total: parseFloat(v.total) || 0,
-            tipo_entrega: v.tipo_entrega || 'local',
-            estado: 'Pagado'
-          }));
-
-          const totalVentas = datos.length;
-          const totalRecaudado = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas,
-            totalRecaudado,
-            promedio: totalVentas > 0 ? totalRecaudado / totalVentas : 0,
-            local: this.desglosePorTipo(ventasFiltradas).local,
-            motorizado: this.desglosePorTipo(ventasFiltradas).motorizado
-          };
+          this.generarReporteVentas();
           break;
 
         case 'pendientes':
-          const pendientesFiltrados = this.pedidosPendientes().filter((p: any) => {
-            const fecha = new Date(p.created_at).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          datos = pendientesFiltrados.map((p: any) => this.armarFila({
-            id: p.id,
-            fecha: p.created_at ? new Date(p.created_at).toLocaleString() : '--',
-            cliente: p.cliente_nombre || p.cliente_nombre_real || 'Consumidor Final',
-            items: p.items?.length || 0,
-            usuario: p.usuario_nombre || 'Desconocido',
-            total: parseFloat(p.total) || 0,
-            tipo_entrega: p.tipo_entrega || 'local',
-            estado: p.estado || 'pendiente'
-          }));
-
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: datos.reduce((sum, d) => sum + d.total, 0),
-            promedio: datos.length > 0 ? datos.reduce((sum, d) => sum + d.total, 0) / datos.length : 0,
-            local: this.desglosePorTipo(pendientesFiltrados).local,
-            motorizado: this.desglosePorTipo(pendientesFiltrados).motorizado
-          };
+          this.generarReportePendientes();
           break;
 
         case 'diario':
-          const ventasDiarias = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          const porDia: any = {};
-          ventasDiarias.forEach((v: any) => {
-            const fecha = v.fecha_venta ? new Date(v.fecha_venta).toISOString().split('T')[0] : '--';
-            if (!porDia[fecha]) {
-              porDia[fecha] = {
-                id: Object.keys(porDia).length + 1,
-                fecha: fecha,
-                cliente: 'Total del día',
-                items: 0,
-                usuario: 'Sistema',
-                total: 0
-              };
-            }
-            porDia[fecha].items += v.items?.length || 0;
-            porDia[fecha].total += parseFloat(v.total) || 0;
-          });
-          datos = Object.values(porDia).map((d: any) => this.armarFila(d));
-
-          const totalRecaudadoDiario = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: totalRecaudadoDiario,
-            promedio: datos.length > 0 ? totalRecaudadoDiario / datos.length : 0
-          };
+          this.generarReporteDiario();
           break;
 
-        case 'motorizada':
-          const motorizadas = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin &&
-                   (v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
-          });
-
-          datos = motorizadas.map((v: any) => this.armarFila({
-            id: v.id,
-            fecha: v.fecha_venta ? new Date(v.fecha_venta).toLocaleString() : '--',
-            cliente: v.cliente_nombre || v.cliente || 'Delivery',
-            items: v.items?.length || 0,
-            usuario: 'Motorizado',
-            total: parseFloat(v.total) || 0,
-            tipo_entrega: v.tipo_entrega || 'delivery',
-            estado: 'Pagado'
-          }));
-
-          const totalMotorizados = datos.length;
-          const totalRecaudadoMotorizado = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: totalMotorizados,
-            totalRecaudado: totalRecaudadoMotorizado,
-            promedio: totalMotorizados > 0 ? totalRecaudadoMotorizado / totalMotorizados : 0,
-            motorizado: { cantidad: totalMotorizados, total: totalRecaudadoMotorizado }
-          };
+        case 'semanal':
+          this.generarReporteSemanal();
           break;
 
         case 'cajero':
-          const ventasCajero = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          const porDiaCajero: any = {};
-          ventasCajero.forEach((v: any) => {
-            const fecha = v.fecha_venta ? new Date(v.fecha_venta).toISOString().split('T')[0] : '--';
-            const metodo = v.metodo_pago || 'efectivo';
-            if (!porDiaCajero[fecha]) {
-              porDiaCajero[fecha] = { fecha, total: 0, transacciones: 0 };
-            }
-            porDiaCajero[fecha].total += parseFloat(v.total) || 0;
-            porDiaCajero[fecha].transacciones += 1;
-          });
-
-          datos = Object.entries(porDiaCajero)
-            .sort((a: any, b: any) => a[1].fecha.localeCompare(b[1].fecha))
-            .map(([fecha, info]: any) => this.armarFila({
-              id: fecha,
-              fecha: info.fecha,
-              cliente: 'Total del día',
-              items: info.transacciones,
-              usuario: 'Cajero',
-              total: info.total,
-              tipo_entrega: 'local',
-              estado: 'Pagado'
-            }));
-
-          const totalCajero = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.length,
-            totalRecaudado: totalCajero,
-            promedio: datos.length > 0 ? totalCajero / datos.length : 0
-          };
+          this.generarReporteCajero();
           break;
 
         case 'totales':
-          const ventasTotales = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          const desgloseTotales = this.desglosePorTipo(ventasTotales);
-          const totalLocal = desgloseTotales.local.total;
-          const totalMotion = desgloseTotales.motorizado.total;
-
-          datos = [
-            this.armarFila({
-              id: 1,
-              fecha: 'Local',
-              cliente: 'Ventas en la pollería',
-              items: desgloseTotales.local.cantidad,
-              usuario: 'Sistema',
-              total: totalLocal,
-              tipo_entrega: 'local',
-              estado: 'Pagado'
-            }),
-            this.armarFila({
-              id: 2,
-              fecha: 'Motorizado',
-              cliente: 'Ventas por motorizado',
-              items: desgloseTotales.motorizado.cantidad,
-              usuario: 'Sistema',
-              total: totalMotion,
-              tipo_entrega: 'delivery',
-              estado: 'Pagado'
-            })
-          ];
-
-          const totalVentasTodos = ventasTotales.length;
-          const totalRecaudadoTodos = totalLocal + totalMotion;
-          resumen = {
-            totalVentas: totalVentasTodos,
-            totalRecaudado: totalRecaudadoTodos,
-            promedio: totalVentasTodos > 0 ? totalRecaudadoTodos / totalVentasTodos : 0,
-            local: desgloseTotales.local,
-            motorizado: desgloseTotales.motorizado
-          };
+          this.generarReporteTotales();
           break;
 
         case 'pago':
-          const ventasPago = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          const etiquetasMetodo: any = {
-            'efectivo': 'Efectivo',
-            'tarjeta': 'Tarjeta',
-            'yape': 'Yape',
-            'plin': 'Plin',
-            'transferencia': 'Transferencia',
-            'izipay': 'Tarjeta (Izipay)'
-          };
-
-          const porMetodo: any = {};
-          ventasPago.forEach((v: any) => {
-            const metodo = v.metodo_pago || 'efectivo';
-            if (!porMetodo[metodo]) {
-              porMetodo[metodo] = { total: 0, cantidad: 0 };
-            }
-            porMetodo[metodo].total += parseFloat(v.total) || 0;
-            porMetodo[metodo].cantidad += 1;
-          });
-
-          datos = Object.entries(porMetodo).map(([metodo, info]: any, i) => this.armarFila({
-            id: i + 1,
-            fecha: etiquetasMetodo[metodo] || metodo,
-            cliente: 'Forma de pago',
-            items: info.cantidad,
-            usuario: 'Sistema',
-            total: info.total,
-            tipo_entrega: 'local',
-            estado: 'Pagado'
-          }));
-
-          const totalPago = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.reduce((sum, d) => sum + d.items, 0),
-            totalRecaudado: totalPago,
-            promedio: datos.length > 0 ? totalPago / datos.length : 0
-          };
+          this.generarReportePago();
           break;
 
         case 'mozo':
-          const ventasMozo = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
-
-          const porMozo: any = {};
-          ventasMozo.forEach((v: any) => {
-            const nombre = v.usuario_nombre || 'Desconocido';
-            if (!porMozo[nombre]) {
-              porMozo[nombre] = { total: 0, cantidad: 0 };
-            }
-            porMozo[nombre].total += parseFloat(v.total) || 0;
-            porMozo[nombre].cantidad += 1;
-          });
-
-          datos = Object.entries(porMozo)
-            .sort((a: any, b: any) => b[1].total - a[1].total)
-            .map(([nombre, info]: any, i) => this.armarFila({
-              id: i + 1,
-              fecha: nombre,
-              cliente: 'Mesero',
-              items: info.cantidad,
-              usuario: nombre,
-              total: info.total,
-              tipo_entrega: 'local',
-              estado: 'Pagado'
-            }));
-
-          const totalMozo = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.reduce((sum, d) => sum + d.items, 0),
-            totalRecaudado: totalMozo,
-            promedio: datos.length > 0 ? totalMozo / datos.length : 0
-          };
+          this.generarReporteMozo();
           break;
 
         case 'cliente':
-          const ventasCliente = this.ventas().filter((v: any) => {
-            const fecha = new Date(v.fecha_venta).toISOString().split('T')[0];
-            return fecha >= fechaInicio && fecha <= fechaFin;
-          });
+          this.generarReporteCliente();
+          break;
 
-          const porCliente: any = {};
-          ventasCliente.forEach((v: any) => {
-            const nombre = v.cliente_nombre_real || v.cliente_nombre || 'Consumidor Final';
-            if (!porCliente[nombre]) {
-              porCliente[nombre] = { total: 0, cantidad: 0 };
-            }
-            porCliente[nombre].total += parseFloat(v.total) || 0;
-            porCliente[nombre].cantidad += 1;
-          });
-
-          datos = Object.entries(porCliente)
-            .sort((a: any, b: any) => b[1].total - a[1].total)
-            .map(([nombre, info]: any, i) => this.armarFila({
-              id: i + 1,
-              fecha: nombre,
-              cliente: nombre,
-              items: info.cantidad,
-              usuario: 'Cliente',
-              total: info.total,
-              tipo_entrega: 'local',
-              estado: 'Pagado'
-            }));
-
-          const totalCliente = datos.reduce((sum, d) => sum + d.total, 0);
-          resumen = {
-            totalVentas: datos.reduce((sum, d) => sum + d.items, 0),
-            totalRecaudado: totalCliente,
-            promedio: datos.length > 0 ? totalCliente / datos.length : 0
-          };
+        case 'motorizada':
+          this.generarReporteMotorizada();
           break;
 
         default:
-          datos = [];
+          this.datosReporte.set([]);
+
+          this.resumenReporte.set({});
+          break;
       }
-
-      this.datosReporte.set(datos);
-      this.resumenReporte.set(resumen);
-
     } catch (error) {
-      console.error('Error al generar reporte:', error);
+      console.error(
+        'Error al generar reporte:',
+        error
+      );
+
       this.datosReporte.set([]);
+
       this.resumenReporte.set({});
     }
   }
 
-  // ============================================
-  // UTILIDADES
-  // ============================================
-  // Desglose Local vs Motorizado sobre registros en crudo
-  private desglosePorTipo(registros: any[]): { local: DesgloseTipo; motorizado: DesgloseTipo } {
-    const local: DesgloseTipo = { cantidad: 0, total: 0 };
-    const motorizado: DesgloseTipo = { cantidad: 0, total: 0 };
+  // ==========================================
+  // REPORTE GENERAL DE VENTAS
+  // ==========================================
 
-    registros.forEach((r: any) => {
-      const tipo = r.tipo_entrega || 'local';
-      const suma = parseFloat(r.total) || 0;
-      if (tipo === 'local' || tipo === 'paraLlevar') {
-        local.cantidad++;
-        local.total += suma;
-      } else {
-        motorizado.cantidad++;
-        motorizado.total += suma;
+  private generarReporteVentas(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const filas =
+      ventasFiltradas.map(
+        venta => this.armarFilaVenta(venta)
+      );
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length,
+      this.desglosePorTipo(ventasFiltradas)
+    );
+  }
+
+  // ==========================================
+  // PEDIDOS PENDIENTES
+  // ==========================================
+
+  private generarReportePendientes(): void {
+    const pedidosFiltrados =
+      this.filtrarPorRango(
+        this.pedidosPendientes(),
+        'created_at'
+      );
+
+    const filas: FilaReporte[] =
+      pedidosFiltrados.map(pedido => {
+        return this.armarFilaVenta({
+          ...pedido,
+          fecha_venta: pedido.created_at,
+          estado: pedido.estado || 'pendiente'
+        });
+      });
+
+    this.publicarReporte(
+      filas,
+      pedidosFiltrados.length,
+      this.desglosePorTipo(pedidosFiltrados)
+    );
+  }
+
+  // ==========================================
+  // VENTA DIARIA
+  // ==========================================
+
+  private generarReporteDiario(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const agrupacion: Record<
+      string,
+      {
+        ventas: number;
+        items: number;
+        total: number;
       }
+    > = {};
+
+    ventasFiltradas.forEach(venta => {
+      const fecha =
+        this.obtenerFechaComparacion(
+          venta.fecha_venta
+        );
+
+      if (!fecha) {
+        return;
+      }
+
+      if (!agrupacion[fecha]) {
+        agrupacion[fecha] = {
+          ventas: 0,
+          items: 0,
+          total: 0
+        };
+      }
+
+      agrupacion[fecha].ventas++;
+
+      agrupacion[fecha].items +=
+        this.contarItems(
+          venta.items
+        );
+
+      agrupacion[fecha].total +=
+        this.numeroSeguro(
+          venta.total
+        );
     });
 
-    return { local, motorizado };
+    const filas: FilaReporte[] =
+      Object.entries(agrupacion)
+        .sort(
+          ([fechaA], [fechaB]) =>
+            fechaB.localeCompare(fechaA)
+        )
+        .map(
+          ([fecha, informacion], indice) => {
+            return {
+              id: indice + 1,
+
+              fecha:
+                this.formatearFechaSoloDia(
+                  fecha
+                ),
+
+              ventas:
+                informacion.ventas,
+
+              items:
+                informacion.items,
+
+              total:
+                informacion.total,
+
+              promedio:
+                this.calcularPromedio(
+                  informacion.total,
+                  informacion.ventas
+                )
+            };
+          }
+        );
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length
+    );
   }
 
-  // Construye una fila con sus campos de presentación calculados una sola vez
-  private armarFila(origen: any): FilaReporte {
-    const tipo = origen.tipo_entrega || 'local';
-    const estado = origen.estado || 'Pagado';
-    return {
-      id: origen.id,
-      fecha: origen.fecha || '--',
-      cliente: origen.cliente || 'Consumidor Final',
-      items: origen.items || 0,
-      usuario: origen.usuario || '-',
-      total: parseFloat(origen.total) || 0,
-      tipo_entrega: tipo,
-      estado: estado,
-      tipo_texto: ETIQUETA_TIPO[tipo] || 'Local',
-      tipo_clase: CLASE_TIPO[tipo] || 'tipo-local',
-      estado_texto: TEXTO_ESTADO[estado] || estado,
-      estado_clase: CLASE_ESTADO[estado] || 'estado-pendiente'
-    };
-  }
+  // ==========================================
+  // VENTA POR SEMANA
+  // ==========================================
+  // La semana se muestra de lunes a domingo.
+  // Se incluyen los días sin ventas.
+  // ==========================================
 
-  calcularTotal(): number {
-    return this.datosReporte().reduce((sum, item) => sum + item.total, 0);
-  }
+  private generarReporteSemanal(): void {
+    const fechaInicioSeleccionada =
+      this.crearFechaLocal(
+        this.fechaInicio()
+      );
 
-  // ============================================
-  // EXPORTAR A PDF (imprimir del navegador)
-  // ============================================
-  exportarPDF(): void {
-    this.loading.set(true);
+    const fechaFinSeleccionada =
+      this.crearFechaLocal(
+        this.fechaFin()
+      );
 
-    setTimeout(() => {
-      const contenido = this.generarContenidoReporte();
-      const ventana = window.open('', '_blank');
-      if (ventana) {
-        ventana.document.write(`
-          <html>
-            <head>
-              <title>${this.nombreReporte()}</title>
-              <style>
-                body { font-family: Arial, sans-serif; padding: 40px; }
-                h1 { color: #5e412f; border-bottom: 2px solid #ce8329; padding-bottom: 10px; }
-                .resumen { background: #f5f0e8; padding: 15px; border-radius: 8px; margin: 20px 0; }
-                .resumen-item { display: inline-block; margin-right: 30px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th { background: #5e412f; color: #e9bd6e; padding: 10px; text-align: left; }
-                td { padding: 10px; border-bottom: 1px solid #ddd; }
-                .total { background: #f5f0e8; font-weight: bold; }
-                .footer { margin-top: 30px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
-              </style>
-            </head>
-            <body>
-              <h1>${this.nombreReporte()}</h1>
-              <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()}</p>
-              <p><strong>Período:</strong> ${this.fechaInicio() || 'N/A'} - ${this.fechaFin() || 'N/A'}</p>
-              ${this.generarResumenHTML()}
-              ${contenido}
-              <div class="footer">
-                <p>Polleria Yacky - Sistema de Administración</p>
-                <p>Reporte generado el ${new Date().toLocaleString()}</p>
-              </div>
-            </body>
-          </html>
-        `);
-        ventana.document.close();
-        ventana.print();
-      }
-      this.loading.set(false);
-    }, 500);
-  }
+    if (
+      !fechaInicioSeleccionada ||
+      !fechaFinSeleccionada
+    ) {
+      this.publicarReporte([], 0);
 
-  generarResumenHTML(): string {
-    const resumen = this.resumenReporte();
-    if (!resumen.totalVentas && !resumen.totalRecaudado) return '';
-
-    return `
-      <div class="resumen">
-        <div class="resumen-item">
-          <strong>Total Ventas:</strong> ${resumen.totalVentas || 0}
-        </div>
-        <div class="resumen-item">
-          <strong>Total Recaudado:</strong> S/ ${(resumen.totalRecaudado || 0).toFixed(2)}
-        </div>
-        <div class="resumen-item">
-          <strong>Promedio:</strong> S/ ${(resumen.promedio || 0).toFixed(2)}
-        </div>
-      </div>
-    `;
-  }
-
-  generarContenidoReporte(): string {
-    if (this.datosReporte().length === 0) {
-      return '<p style="text-align:center;color:#888;">No hay datos disponibles</p>';
-    }
-
-    let html = `
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Fecha</th>
-            <th>Cliente</th>
-            <th>Items</th>
-            <th>Usuario</th>
-            <th>Tipo</th>
-            <th>Total</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    this.datosReporte().forEach(item => {
-      html += `
-        <tr>
-          <td>${item.id || '-'}</td>
-          <td>${item.fecha || '-'}</td>
-          <td>${item.cliente || '-'}</td>
-          <td>${item.items || 0}</td>
-          <td>${item.usuario || '-'}</td>
-          <td>${item.tipo_texto || 'Local'}</td>
-          <td>S/ ${(item.total || 0).toFixed(2)}</td>
-          <td>${item.estado_texto || 'Pagado'}</td>
-        </tr>
-      `;
-    });
-
-    html += `
-        </tbody>
-        <tfoot>
-          <tr class="total">
-            <td colspan="6"><strong>Total General</strong></td>
-            <td colspan="2"><strong>S/ ${this.calcularTotal().toFixed(2)}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
-    `;
-
-    return html;
-  }
-
-  // ============================================
-  // EXPORTAR A EXCEL (CSV)
-  // ============================================
-  exportarExcel(): void {
-    const datos = this.datosReporte();
-    if (datos.length === 0) {
-      alert('No hay datos para exportar');
       return;
     }
 
-    const filas = [
-      ['ID', 'Fecha', 'Cliente', 'Items', 'Usuario', 'Tipo', 'Total (S/)', 'Estado'],
-      ...datos.map((d: any) => [
-        d.id ?? '',
-        d.fecha ?? '',
-        d.cliente ?? '',
-        d.items ?? 0,
-        d.usuario ?? '',
-        d.tipo_texto || 'Local',
-        (Number(d.total) || 0).toFixed(2),
-        d.estado_texto ?? ''
-      ]),
-      [],
-      ['TOTAL GENERAL', '', '', '', '', '', this.calcularTotal().toFixed(2), '']
+    const inicioSemana =
+      this.obtenerLunesSemana(
+        fechaInicioSeleccionada
+      );
+
+    const finSemana =
+      this.obtenerDomingoSemana(
+        fechaFinSeleccionada
+      );
+
+    const inicioTexto =
+      this.fechaClave(inicioSemana);
+
+    const finTexto =
+      this.fechaClave(finSemana);
+
+    const ventasFiltradas =
+      this.ventas().filter(venta => {
+        const fecha =
+          this.obtenerFechaComparacion(
+            venta.fecha_venta ||
+            venta.created_at
+          );
+
+        if (!fecha) {
+          return false;
+        }
+
+        return (
+          fecha >= inicioTexto &&
+          fecha <= finTexto
+        );
+      });
+
+    const agrupacion: Record<
+      string,
+      {
+        ventas: number;
+        total: number;
+        cantidadLocal: number;
+        cantidadMotorizado: number;
+      }
+    > = {};
+
+    ventasFiltradas.forEach(venta => {
+      const fecha =
+        this.obtenerFechaComparacion(
+          venta.fecha_venta ||
+          venta.created_at
+        );
+
+      if (!fecha) {
+        return;
+      }
+
+      if (!agrupacion[fecha]) {
+        agrupacion[fecha] = {
+          ventas: 0,
+          total: 0,
+          cantidadLocal: 0,
+          cantidadMotorizado: 0
+        };
+      }
+
+      const tipo =
+        this.normalizarTipo(
+          venta.tipo_entrega ||
+          venta.tipo
+        );
+
+      agrupacion[fecha].ventas++;
+
+      agrupacion[fecha].total +=
+        this.numeroSeguro(
+          venta.total
+        );
+
+      if (tipo === 'delivery') {
+        agrupacion[fecha]
+          .cantidadMotorizado++;
+      } else {
+        agrupacion[fecha]
+          .cantidadLocal++;
+      }
+    });
+
+    const filas: FilaReporte[] = [];
+
+    const fechaActual =
+      new Date(inicioSemana);
+
+    while (
+      fechaActual.getTime() <=
+      finSemana.getTime()
+    ) {
+      const claveFecha =
+        this.fechaClave(fechaActual);
+
+      const informacion =
+        agrupacion[claveFecha] || {
+          ventas: 0,
+          total: 0,
+          cantidadLocal: 0,
+          cantidadMotorizado: 0
+        };
+
+      const tipoDia =
+        this.obtenerTipoDelDia(
+          informacion.cantidadLocal,
+          informacion.cantidadMotorizado
+        );
+
+      filas.push({
+        id: filas.length + 1,
+
+        dia:
+          this.obtenerNombreDia(
+            fechaActual
+          ),
+
+        fecha:
+          this.formatearFechaSoloDia(
+            claveFecha
+          ),
+
+        ventas:
+          informacion.ventas,
+
+        tipo_entrega:
+          tipoDia.clave,
+
+        tipo_texto:
+          tipoDia.texto,
+
+        tipo_clase:
+          tipoDia.clase,
+
+        total:
+          informacion.total
+      });
+
+      fechaActual.setDate(
+        fechaActual.getDate() + 1
+      );
+    }
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length,
+      this.desglosePorTipo(ventasFiltradas)
+    );
+  }
+
+  // ==========================================
+  // DIARIO DE CAJERO
+  // ==========================================
+
+  private generarReporteCajero(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const agrupacion: Record<
+      string,
+      {
+        transacciones: number;
+        total: number;
+      }
+    > = {};
+
+    ventasFiltradas.forEach(venta => {
+      const fecha =
+        this.obtenerFechaComparacion(
+          venta.fecha_venta
+        );
+
+      if (!fecha) {
+        return;
+      }
+
+      if (!agrupacion[fecha]) {
+        agrupacion[fecha] = {
+          transacciones: 0,
+          total: 0
+        };
+      }
+
+      agrupacion[fecha].transacciones++;
+
+      agrupacion[fecha].total +=
+        this.numeroSeguro(
+          venta.total
+        );
+    });
+
+    const filas: FilaReporte[] =
+      Object.entries(agrupacion)
+        .sort(
+          ([fechaA], [fechaB]) =>
+            fechaB.localeCompare(fechaA)
+        )
+        .map(
+          ([fecha, informacion], indice) => {
+            return {
+              id: indice + 1,
+
+              fecha:
+                this.formatearFechaSoloDia(
+                  fecha
+                ),
+
+              transacciones:
+                informacion.transacciones,
+
+              total:
+                informacion.total,
+
+              promedio:
+                this.calcularPromedio(
+                  informacion.total,
+                  informacion.transacciones
+                )
+            };
+          }
+        );
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length
+    );
+  }
+
+  // ==========================================
+  // VENTAS TOTALES
+  // ==========================================
+  // Solamente muestra Local o Motorizado.
+  // Para llevar se clasifica como Local.
+  // ==========================================
+
+  private generarReporteTotales(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const desglose =
+      this.desglosePorTipo(
+        ventasFiltradas
+      );
+
+    const filas: FilaReporte[] = [];
+
+    if (
+      desglose.local.cantidad > 0
+    ) {
+      filas.push({
+        id: filas.length + 1,
+
+        categoria: 'Local',
+
+        cantidad:
+          desglose.local.cantidad,
+
+        total:
+          desglose.local.total,
+
+        promedio:
+          this.calcularPromedio(
+            desglose.local.total,
+            desglose.local.cantidad
+          )
+      });
+    }
+
+    if (
+      desglose.motorizado.cantidad > 0
+    ) {
+      filas.push({
+        id: filas.length + 1,
+
+        categoria: 'Motorizado',
+
+        cantidad:
+          desglose.motorizado.cantidad,
+
+        total:
+          desglose.motorizado.total,
+
+        promedio:
+          this.calcularPromedio(
+            desglose.motorizado.total,
+            desglose.motorizado.cantidad
+          )
+      });
+    }
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length,
+      desglose
+    );
+  }
+
+  // ==========================================
+  // FORMAS DE PAGO
+  // ==========================================
+
+  private generarReportePago(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const agrupacion: Record<
+      string,
+      {
+        transacciones: number;
+        total: number;
+      }
+    > = {};
+
+    ventasFiltradas.forEach(venta => {
+      const metodo = String(
+        venta.metodo_pago ||
+        'no_especificado'
+      )
+        .trim()
+        .toLowerCase();
+
+      if (!agrupacion[metodo]) {
+        agrupacion[metodo] = {
+          transacciones: 0,
+          total: 0
+        };
+      }
+
+      agrupacion[metodo]
+        .transacciones++;
+
+      agrupacion[metodo].total +=
+        this.numeroSeguro(
+          venta.total
+        );
+    });
+
+    const filas: FilaReporte[] =
+      Object.entries(agrupacion)
+        .sort(
+          (
+            [, informacionA],
+            [, informacionB]
+          ) =>
+            informacionB.total -
+            informacionA.total
+        )
+        .map(
+          ([metodo, informacion], indice) => {
+            return {
+              id: indice + 1,
+
+              metodo_pago:
+                ETIQUETA_METODO_PAGO[
+                  metodo
+                ] ||
+                this.capitalizar(
+                  metodo
+                ),
+
+              transacciones:
+                informacion.transacciones,
+
+              total:
+                informacion.total,
+
+              promedio:
+                this.calcularPromedio(
+                  informacion.total,
+                  informacion.transacciones
+                )
+            };
+          }
+        );
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length
+    );
+  }
+
+  // ==========================================
+  // VENTAS POR MOZO
+  // ==========================================
+
+  private generarReporteMozo(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const agrupacion: Record<
+      string,
+      {
+        usuario: string;
+        rol: string;
+        ventas: number;
+        total: number;
+      }
+    > = {};
+
+    ventasFiltradas.forEach(venta => {
+      const usuarioId = String(
+        venta.usuario_id ??
+        venta.usuario_nombre ??
+        'desconocido'
+      );
+
+      if (!agrupacion[usuarioId]) {
+        agrupacion[usuarioId] = {
+          usuario:
+            venta.usuario_nombre ||
+            venta.mesero_nombre ||
+            'Desconocido',
+
+          rol:
+            this.obtenerRolVisible(
+              venta.usuario_rol ||
+              venta.rol ||
+              'mesero'
+            ),
+
+          ventas: 0,
+
+          total: 0
+        };
+      }
+
+      agrupacion[usuarioId].ventas++;
+
+      agrupacion[usuarioId].total +=
+        this.numeroSeguro(
+          venta.total
+        );
+    });
+
+    const filas: FilaReporte[] =
+      Object.values(agrupacion)
+        .sort(
+          (a, b) =>
+            b.total - a.total
+        )
+        .map(
+          (informacion, indice) => {
+            return {
+              id: indice + 1,
+
+              usuario:
+                informacion.usuario,
+
+              rol:
+                informacion.rol,
+
+              ventas:
+                informacion.ventas,
+
+              total:
+                informacion.total,
+
+              promedio:
+                this.calcularPromedio(
+                  informacion.total,
+                  informacion.ventas
+                )
+            };
+          }
+        );
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length
+    );
+  }
+
+  // ==========================================
+  // VENTAS POR CLIENTE
+  // ==========================================
+
+  private generarReporteCliente(): void {
+    const ventasFiltradas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      );
+
+    const agrupacion: Record<
+      string,
+      {
+        cliente: string;
+        ventas: number;
+        total: number;
+      }
+    > = {};
+
+    ventasFiltradas.forEach(venta => {
+      const cliente =
+        venta.cliente_nombre_real ||
+        venta.cliente_nombre ||
+        venta.cliente ||
+        'Consumidor Final';
+
+      const clienteId = String(
+        venta.cliente_id ??
+        cliente.toLowerCase()
+      );
+
+      if (!agrupacion[clienteId]) {
+        agrupacion[clienteId] = {
+          cliente,
+          ventas: 0,
+          total: 0
+        };
+      }
+
+      agrupacion[clienteId].ventas++;
+
+      agrupacion[clienteId].total +=
+        this.numeroSeguro(
+          venta.total
+        );
+    });
+
+    const filas: FilaReporte[] =
+      Object.values(agrupacion)
+        .sort(
+          (a, b) =>
+            b.total - a.total
+        )
+        .map(
+          (informacion, indice) => {
+            return {
+              id: indice + 1,
+
+              cliente:
+                informacion.cliente,
+
+              ventas:
+                informacion.ventas,
+
+              total:
+                informacion.total,
+
+              promedio:
+                this.calcularPromedio(
+                  informacion.total,
+                  informacion.ventas
+                )
+            };
+          }
+        );
+
+    this.publicarReporte(
+      filas,
+      ventasFiltradas.length
+    );
+  }
+
+  // ==========================================
+  // VENTAS MOTORIZADAS
+  // ==========================================
+
+  private generarReporteMotorizada(): void {
+    const ventasMotorizadas =
+      this.filtrarPorRango(
+        this.ventas(),
+        'fecha_venta'
+      ).filter(venta => {
+        return this.normalizarTipo(
+          venta.tipo_entrega ||
+          venta.tipo
+        ) === 'delivery';
+      });
+
+    const filas =
+      ventasMotorizadas.map(
+        venta => this.armarFilaVenta(venta)
+      );
+
+    this.publicarReporte(
+      filas,
+      ventasMotorizadas.length,
+      {
+        local: {
+          cantidad: 0,
+          total: 0
+        },
+        motorizado: {
+          cantidad:
+            ventasMotorizadas.length,
+
+          total:
+            ventasMotorizadas.reduce(
+              (suma, venta) =>
+                suma +
+                this.numeroSeguro(
+                  venta.total
+                ),
+              0
+            )
+        }
+      }
+    );
+  }
+
+  // ==========================================
+  // PUBLICAR RESULTADOS
+  // ==========================================
+
+  private publicarReporte(
+    filas: FilaReporte[],
+    totalVentas: number,
+    desglose?: {
+      local: DesgloseTipo;
+      motorizado: DesgloseTipo;
+    }
+  ): void {
+    const totalRecaudado =
+      filas.reduce(
+        (suma, fila) =>
+          suma +
+          this.numeroSeguro(
+            fila.total
+          ),
+        0
+      );
+
+    this.datosReporte.set(filas);
+
+    this.resumenReporte.set({
+      totalVentas,
+
+      totalRecaudado,
+
+      promedio:
+        this.calcularPromedio(
+          totalRecaudado,
+          totalVentas
+        ),
+
+      ...(desglose || {})
+    });
+  }
+
+  // ==========================================
+  // CONSTRUIR FILA DE VENTA
+  // ==========================================
+
+  private armarFilaVenta(
+    venta: any
+  ): FilaReporte {
+    const tipo =
+      this.normalizarTipo(
+        venta.tipo_entrega ||
+        venta.tipo
+      );
+
+    const estado =
+      this.normalizarEstado(
+        venta.estado ||
+        'completada'
+      );
+
+    return {
+      id: venta.id,
+
+      fecha:
+        this.formatearFechaHora(
+          venta.fecha_venta ||
+          venta.created_at
+        ),
+
+      cliente:
+        venta.cliente_nombre_real ||
+        venta.cliente_nombre ||
+        venta.cliente ||
+        'Consumidor Final',
+
+      items:
+        this.contarItems(
+          venta.items
+        ),
+
+      usuario:
+        venta.usuario_nombre ||
+        venta.mesero_nombre ||
+        'Desconocido',
+
+      tipo_entrega:
+        tipo,
+
+      tipo_texto:
+        tipo === 'delivery'
+          ? 'Motorizado'
+          : 'Local',
+
+      tipo_clase:
+        tipo === 'delivery'
+          ? 'tipo-delivery'
+          : 'tipo-local',
+
+      estado,
+
+      estado_texto:
+        this.obtenerTextoEstado(
+          estado
+        ),
+
+      estado_clase:
+        this.obtenerClaseEstado(
+          estado
+        ),
+
+      total:
+        this.numeroSeguro(
+          venta.total
+        )
+    };
+  }
+
+  // ==========================================
+  // NORMALIZAR TIPO
+  // ==========================================
+  // Solo devuelve local o delivery.
+  // Para llevar se clasifica como Local.
+  // ==========================================
+
+  private normalizarTipo(
+    valor: unknown
+  ): 'local' | 'delivery' {
+    const tipo = String(
+      valor || 'local'
+    )
+      .trim()
+      .toLowerCase();
+
+    if (
+      tipo === 'delivery' ||
+      tipo === 'motorizada' ||
+      tipo === 'motorizado'
+    ) {
+      return 'delivery';
+    }
+
+    return 'local';
+  }
+
+  // ==========================================
+  // TIPO DEL DÍA SEMANAL
+  // ==========================================
+
+  private obtenerTipoDelDia(
+    cantidadLocal: number,
+    cantidadMotorizado: number
+  ): {
+    clave: string;
+    texto: string;
+    clase: string;
+  } {
+    if (
+      cantidadLocal === 0 &&
+      cantidadMotorizado === 0
+    ) {
+      return {
+        clave: 'sin-ventas',
+        texto: 'Sin ventas',
+        clase: 'tipo-local'
+      };
+    }
+
+    if (
+      cantidadLocal > 0 &&
+      cantidadMotorizado > 0
+    ) {
+      return {
+        clave: 'mixto',
+        texto: 'Local / Motorizado',
+        clase: 'tipo-local'
+      };
+    }
+
+    if (cantidadMotorizado > 0) {
+      return {
+        clave: 'delivery',
+        texto: 'Motorizado',
+        clase: 'tipo-delivery'
+      };
+    }
+
+    return {
+      clave: 'local',
+      texto: 'Local',
+      clase: 'tipo-local'
+    };
+  }
+
+  // ==========================================
+  // TIPO GENERAL DE LA SEMANA
+  // ==========================================
+
+  obtenerTipoTotalSemanal(): string {
+    const filas =
+      this.datosReporte();
+
+    const tieneLocal =
+      filas.some(
+        fila =>
+          fila.tipo_entrega === 'local' ||
+          fila.tipo_entrega === 'mixto'
+      );
+
+    const tieneMotorizado =
+      filas.some(
+        fila =>
+          fila.tipo_entrega === 'delivery' ||
+          fila.tipo_entrega === 'mixto'
+      );
+
+    if (
+      tieneLocal &&
+      tieneMotorizado
+    ) {
+      return 'Local / Motorizado';
+    }
+
+    if (tieneLocal) {
+      return 'Local';
+    }
+
+    if (tieneMotorizado) {
+      return 'Motorizado';
+    }
+
+    return 'Sin ventas';
+  }
+
+  // ==========================================
+  // DESGLOSE LOCAL Y MOTORIZADO
+  // ==========================================
+
+  private desglosePorTipo(
+    registros: any[]
+  ): {
+    local: DesgloseTipo;
+    motorizado: DesgloseTipo;
+  } {
+    const local: DesgloseTipo = {
+      cantidad: 0,
+      total: 0
+    };
+
+    const motorizado: DesgloseTipo = {
+      cantidad: 0,
+      total: 0
+    };
+
+    registros.forEach(registro => {
+      const tipo =
+        this.normalizarTipo(
+          registro.tipo_entrega ||
+          registro.tipo
+        );
+
+      const total =
+        this.numeroSeguro(
+          registro.total
+        );
+
+      if (tipo === 'delivery') {
+        motorizado.cantidad++;
+
+        motorizado.total += total;
+      } else {
+        local.cantidad++;
+
+        local.total += total;
+      }
+    });
+
+    return {
+      local,
+      motorizado
+    };
+  }
+
+  // ==========================================
+  // FECHAS
+  // ==========================================
+
+  private filtrarPorRango(
+    registros: any[],
+    campoFecha: string
+  ): any[] {
+    return registros.filter(registro => {
+      const fecha =
+        this.obtenerFechaComparacion(
+          registro?.[campoFecha]
+        );
+
+      if (!fecha) {
+        return false;
+      }
+
+      return (
+        fecha >= this.fechaInicio() &&
+        fecha <= this.fechaFin()
+      );
+    });
+  }
+
+  private obtenerFechaComparacion(
+    valor: unknown
+  ): string | null {
+    if (!valor) {
+      return null;
+    }
+
+    const texto =
+      String(valor).trim();
+
+    const coincidencia =
+      texto.match(
+        /^(\d{4})-(\d{2})-(\d{2})/
+      );
+
+    if (coincidencia) {
+      return (
+        `${coincidencia[1]}-` +
+        `${coincidencia[2]}-` +
+        `${coincidencia[3]}`
+      );
+    }
+
+    const fecha =
+      new Date(texto);
+
+    if (isNaN(fecha.getTime())) {
+      return null;
+    }
+
+    return this.fechaClave(fecha);
+  }
+
+  private crearFechaLocal(
+    valor: string
+  ): Date | null {
+    const coincidencia =
+      valor.match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+      );
+
+    if (!coincidencia) {
+      return null;
+    }
+
+    const fecha =
+      new Date(
+        Number(coincidencia[1]),
+        Number(coincidencia[2]) - 1,
+        Number(coincidencia[3]),
+        0,
+        0,
+        0,
+        0
+      );
+
+    if (isNaN(fecha.getTime())) {
+      return null;
+    }
+
+    return fecha;
+  }
+
+  private fechaClave(
+    fecha: Date
+  ): string {
+    const anio =
+      fecha.getFullYear();
+
+    const mes =
+      String(
+        fecha.getMonth() + 1
+      ).padStart(2, '0');
+
+    const dia =
+      String(
+        fecha.getDate()
+      ).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  private formatearFechaSoloDia(
+    fecha: string
+  ): string {
+    const partes =
+      fecha.split('-');
+
+    if (partes.length !== 3) {
+      return fecha;
+    }
+
+    return (
+      `${partes[2]}/` +
+      `${partes[1]}/` +
+      `${partes[0]}`
+    );
+  }
+
+  private formatearFechaHora(
+    valor: unknown
+  ): string {
+    if (!valor) {
+      return '--';
+    }
+
+    const fecha =
+      new Date(
+        String(valor)
+      );
+
+    if (isNaN(fecha.getTime())) {
+      return String(valor);
+    }
+
+    return fecha.toLocaleString(
+      'es-PE'
+    );
+  }
+
+  private obtenerLunesSemana(
+    fecha: Date
+  ): Date {
+    const resultado =
+      new Date(fecha);
+
+    const diaSemana =
+      resultado.getDay();
+
+    const diferencia =
+      diaSemana === 0
+        ? -6
+        : 1 - diaSemana;
+
+    resultado.setDate(
+      resultado.getDate() +
+      diferencia
+    );
+
+    resultado.setHours(
+      0,
+      0,
+      0,
+      0
+    );
+
+    return resultado;
+  }
+
+  private obtenerDomingoSemana(
+    fecha: Date
+  ): Date {
+    const resultado =
+      this.obtenerLunesSemana(
+        fecha
+      );
+
+    resultado.setDate(
+      resultado.getDate() + 6
+    );
+
+    resultado.setHours(
+      23,
+      59,
+      59,
+      999
+    );
+
+    return resultado;
+  }
+
+  private obtenerNombreDia(
+    fecha: Date
+  ): string {
+    const dias = [
+      'Domingo',
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado'
     ];
 
-    const csv = filas
-      .map(fila => fila.map(celda => `"${String(celda).replace(/"/g, '""')}"`).join(';'))
-      .join('\r\n');
+    return dias[
+      fecha.getDay()
+    ];
+  }
 
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${this.nombreReporte().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  // ==========================================
+  // ITEMS
+  // ==========================================
+
+  private contarItems(
+    valor: unknown
+  ): number {
+    let items: any[] = [];
+
+    if (Array.isArray(valor)) {
+      items = valor;
+    } else if (
+      typeof valor === 'string'
+    ) {
+      try {
+        const resultado =
+          JSON.parse(valor);
+
+        items =
+          Array.isArray(resultado)
+            ? resultado
+            : [];
+      } catch {
+        items = [];
+      }
+    }
+
+    return items.reduce(
+      (total, item) => {
+        const cantidad =
+          Number(
+            item?.cantidad
+          );
+
+        if (
+          Number.isFinite(cantidad) &&
+          cantidad > 0
+        ) {
+          return total + cantidad;
+        }
+
+        return total + 1;
+      },
+      0
+    );
+  }
+
+  // ==========================================
+  // ESTADOS
+  // ==========================================
+
+  private normalizarEstado(
+    valor: unknown
+  ): string {
+    return String(
+      valor || 'pendiente'
+    )
+      .trim()
+      .toLowerCase();
+  }
+
+  private obtenerTextoEstado(
+    estado: string
+  ): string {
+    if (
+      estado === 'completada' ||
+      estado === 'entregado' ||
+      estado === 'pagado'
+    ) {
+      return 'Pagado';
+    }
+
+    if (
+      estado === 'cancelada' ||
+      estado === 'cancelado'
+    ) {
+      return 'Cancelado';
+    }
+
+    return this.capitalizar(
+      estado
+    );
+  }
+
+  private obtenerClaseEstado(
+    estado: string
+  ): string {
+    if (
+      estado === 'completada' ||
+      estado === 'entregado' ||
+      estado === 'pagado'
+    ) {
+      return 'estado-pagado';
+    }
+
+    if (
+      estado === 'cancelada' ||
+      estado === 'cancelado'
+    ) {
+      return 'estado-cancelado';
+    }
+
+    if (
+      estado === 'preparando'
+    ) {
+      return 'estado-preparando';
+    }
+
+    if (estado === 'listo') {
+      return 'estado-listo';
+    }
+
+    return 'estado-pendiente';
+  }
+
+  // ==========================================
+  // UTILIDADES
+  // ==========================================
+
+  private numeroSeguro(
+    valor: unknown
+  ): number {
+    const numero =
+      Number(valor);
+
+    return Number.isFinite(numero)
+      ? numero
+      : 0;
+  }
+
+  private calcularPromedio(
+    total: number,
+    cantidad: number
+  ): number {
+    return cantidad > 0
+      ? total / cantidad
+      : 0;
+  }
+
+  private capitalizar(
+    valor: string
+  ): string {
+    if (!valor) {
+      return '-';
+    }
+
+    return (
+      valor.charAt(0).toUpperCase() +
+      valor.slice(1)
+    );
+  }
+
+  private obtenerRolVisible(
+    rol: unknown
+  ): string {
+    const valor =
+      String(
+        rol || 'mesero'
+      )
+        .trim()
+        .toLowerCase();
+
+    const roles: Record<
+      string,
+      string
+    > = {
+      admin: 'Administrador',
+      cajero: 'Cajero',
+      mesero: 'Mesero',
+      cocinero: 'Cocinero',
+      delivery: 'Motorizado'
+    };
+
+    return (
+      roles[valor] ||
+      this.capitalizar(valor)
+    );
+  }
+
+  // ==========================================
+  // VALORES PARA EL HTML
+  // ==========================================
+
+  obtenerValor(
+    fila: FilaReporte,
+    clave: keyof FilaReporte
+  ): string | number {
+    const valor =
+      fila[clave];
+
+    if (
+      valor === undefined ||
+      valor === null ||
+      valor === ''
+    ) {
+      return '-';
+    }
+
+    return valor as string | number;
+  }
+
+  obtenerValorNumerico(
+    fila: FilaReporte,
+    clave: keyof FilaReporte
+  ): number {
+    return this.numeroSeguro(
+      fila[clave]
+    );
+  }
+
+  calcularTotal(): number {
+    return this.datosReporte().reduce(
+      (suma, fila) =>
+        suma +
+        this.numeroSeguro(
+          fila.total
+        ),
+      0
+    );
+  }
+
+  calcularTotalVentasReporte(): number {
+    return this.datosReporte().reduce(
+      (suma, fila) =>
+        suma +
+        this.numeroSeguro(
+          fila.ventas
+        ),
+      0
+    );
+  }
+
+  // ==========================================
+  // EXPORTAR EXCEL COMO CSV
+  // ==========================================
+
+  exportarExcel(): void {
+    const datos =
+      this.datosReporte();
+
+    const columnas =
+      this.columnasReporte();
+
+    if (datos.length === 0) {
+      alert(
+        'No hay datos para exportar'
+      );
+
+      return;
+    }
+
+    const filas: Array<
+      Array<string | number>
+    > = [];
+
+    filas.push(
+      columnas.map(
+        columna =>
+          columna.titulo
+      )
+    );
+
+    datos.forEach(fila => {
+      filas.push(
+        columnas.map(columna => {
+          return this.obtenerValorExportacion(
+            fila,
+            columna
+          );
+        })
+      );
+    });
+
+    filas.push([]);
+
+    if (
+      this.reporteSeleccionado() ===
+      'semanal'
+    ) {
+      filas.push([
+        'TOTAL GENERAL',
+        '',
+        '',
+        this.calcularTotalVentasReporte(),
+        this.obtenerTipoTotalSemanal(),
+        this.calcularTotal().toFixed(2)
+      ]);
+    } else {
+      const filaTotal:
+        Array<string | number> =
+        new Array(
+          columnas.length
+        ).fill('');
+
+      filaTotal[0] =
+        'TOTAL GENERAL';
+
+      filaTotal[
+        columnas.length - 1
+      ] =
+        this.calcularTotal().toFixed(2);
+
+      filas.push(filaTotal);
+    }
+
+    const csv =
+      filas.map(fila => {
+        return fila
+          .map(celda => {
+            const texto =
+              String(
+                celda ?? ''
+              ).replace(
+                /"/g,
+                '""'
+              );
+
+            return `"${texto}"`;
+          })
+          .join(';');
+      }).join('\r\n');
+
+    const blob =
+      new Blob(
+        ['\ufeff' + csv],
+        {
+          type:
+            'text/csv;charset=utf-8;'
+        }
+      );
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+    const enlace =
+      document.createElement(
+        'a'
+      );
+
+    enlace.href = url;
+
+    enlace.download =
+      `${this.nombreReporte()
+        .replace(/\s+/g, '_')}_` +
+      `${this.fechaInicio()}_` +
+      `${this.fechaFin()}.csv`;
+
+    document.body.appendChild(
+      enlace
+    );
+
+    enlace.click();
+
+    document.body.removeChild(
+      enlace
+    );
+
+    URL.revokeObjectURL(
+      url
+    );
+  }
+
+  // ==========================================
+  // EXPORTAR PDF MEDIANTE IMPRESIÓN
+  // ==========================================
+
+  exportarPDF(): void {
+    if (
+      this.datosReporte().length === 0
+    ) {
+      alert(
+        'No hay datos para exportar'
+      );
+
+      return;
+    }
+
+    const ventana =
+      window.open(
+        '',
+        '_blank'
+      );
+
+    if (!ventana) {
+      alert(
+        'El navegador bloqueó la ventana de impresión'
+      );
+
+      return;
+    }
+
+    const columnas =
+      this.columnasReporte();
+
+    const encabezados =
+      columnas.map(columna => {
+        return `
+          <th>
+            ${this.escaparHTML(
+              columna.titulo
+            )}
+          </th>
+        `;
+      }).join('');
+
+    const filas =
+      this.datosReporte()
+        .map(fila => {
+          const celdas =
+            columnas.map(columna => {
+              return `
+                <td>
+                  ${this.escaparHTML(
+                    this.obtenerValorExportacion(
+                      fila,
+                      columna
+                    )
+                  )}
+                </td>
+              `;
+            }).join('');
+
+          return `
+            <tr>
+              ${celdas}
+            </tr>
+          `;
+        }).join('');
+
+    const filaTotal =
+      this.reporteSeleccionado() ===
+      'semanal'
+        ? `
+          <tr class="total">
+            <td colspan="3">
+              Total General
+            </td>
+
+            <td>
+              ${this.calcularTotalVentasReporte()}
+            </td>
+
+            <td>
+              ${this.escaparHTML(
+                this.obtenerTipoTotalSemanal()
+              )}
+            </td>
+
+            <td>
+              S/ ${this.calcularTotal().toFixed(2)}
+            </td>
+          </tr>
+        `
+        : `
+          <tr class="total">
+            <td colspan="${columnas.length - 1}">
+              Total General
+            </td>
+
+            <td>
+              S/ ${this.calcularTotal().toFixed(2)}
+            </td>
+          </tr>
+        `;
+
+    ventana.document.write(`
+      <!DOCTYPE html>
+
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+
+          <title>
+            ${this.escaparHTML(
+              this.nombreReporte()
+            )}
+          </title>
+
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              color: #2e2e2e;
+            }
+
+            h1 {
+              color: #5e412f;
+              border-bottom: 2px solid #ce8329;
+              padding-bottom: 10px;
+            }
+
+            .resumen {
+              background: #f5f0e8;
+              border-radius: 8px;
+              padding: 15px;
+              margin: 20px 0;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+              font-size: 12px;
+            }
+
+            th {
+              background: #5e412f;
+              color: #e9bd6e;
+              padding: 10px;
+              text-align: left;
+            }
+
+            td {
+              padding: 10px;
+              border-bottom: 1px solid #dddddd;
+            }
+
+            .total {
+              background: #f5f0e8;
+              font-weight: bold;
+            }
+
+            .footer {
+              margin-top: 30px;
+              border-top: 1px solid #dddddd;
+              padding-top: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #666666;
+            }
+          </style>
+        </head>
+
+        <body>
+          <h1>
+            ${this.escaparHTML(
+              this.nombreReporte()
+            )}
+          </h1>
+
+          <p>
+            <strong>Período:</strong>
+
+            ${this.escaparHTML(
+              this.fechaInicio()
+            )}
+
+            al
+
+            ${this.escaparHTML(
+              this.fechaFin()
+            )}
+          </p>
+
+          <div class="resumen">
+            <strong>Total ventas:</strong>
+            ${this.numeroSeguro(
+              this.resumenReporte().totalVentas
+            )}
+
+            &nbsp;&nbsp;
+
+            <strong>Total recaudado:</strong>
+            S/
+            ${this.numeroSeguro(
+              this.resumenReporte().totalRecaudado
+            ).toFixed(2)}
+
+            &nbsp;&nbsp;
+
+            <strong>Promedio:</strong>
+            S/
+            ${this.numeroSeguro(
+              this.resumenReporte().promedio
+            ).toFixed(2)}
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                ${encabezados}
+              </tr>
+            </thead>
+
+            <tbody>
+              ${filas}
+            </tbody>
+
+            <tfoot>
+              ${filaTotal}
+            </tfoot>
+          </table>
+
+          <div class="footer">
+            Pollería Yacky - Sistema de Administración
+          </div>
+        </body>
+      </html>
+    `);
+
+    ventana.document.close();
+
+    setTimeout(() => {
+      ventana.focus();
+
+      ventana.print();
+    }, 250);
+  }
+
+  private obtenerValorExportacion(
+    fila: FilaReporte,
+    columna: ColumnaReporte
+  ): string {
+    if (
+      columna.tipo === 'tipo'
+    ) {
+      return (
+        fila.tipo_texto ||
+        'Local'
+      );
+    }
+
+    if (
+      columna.tipo === 'estado'
+    ) {
+      return (
+        fila.estado_texto ||
+        '-'
+      );
+    }
+
+    if (
+      columna.tipo === 'moneda'
+    ) {
+      return this.numeroSeguro(
+        fila[columna.clave]
+      ).toFixed(2);
+    }
+
+    const valor =
+      fila[columna.clave];
+
+    if (
+      valor === undefined ||
+      valor === null ||
+      valor === ''
+    ) {
+      return '-';
+    }
+
+    return String(valor);
+  }
+
+  private escaparHTML(
+    valor: unknown
+  ): string {
+    return String(
+      valor ?? ''
+    )
+      .replace(
+        /&/g,
+        '&amp;'
+      )
+      .replace(
+        /</g,
+        '&lt;'
+      )
+      .replace(
+        />/g,
+        '&gt;'
+      )
+      .replace(
+        /"/g,
+        '&quot;'
+      )
+      .replace(
+        /'/g,
+        '&#039;'
+      );
   }
 }

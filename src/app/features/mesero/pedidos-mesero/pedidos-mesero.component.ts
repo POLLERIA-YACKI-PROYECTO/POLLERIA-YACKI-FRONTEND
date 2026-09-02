@@ -1,4 +1,4 @@
-// pedidos-mesero.component.ts
+// src/app/features/mesero/pedidos-mesero/pedidos-mesero.component.ts
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -54,7 +54,7 @@ export class PedidosMeseroComponent implements OnInit {
   mostrarModalProductos = signal<boolean>(false);
   tipoEntrega = signal<string>('local');
   filtroTipo = signal<string>('todos');
-  
+
   totalPedido = computed(() => {
     return this.itemsPedido().reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
   });
@@ -86,7 +86,7 @@ export class PedidosMeseroComponent implements OnInit {
   // ============================================
   cargarDatos(): void {
     this.loading.set(true);
-    
+
     this.categoriaService.obtenerCategorias().subscribe({
       next: (categorias: any[]) => {
         this.categorias.set(categorias);
@@ -122,7 +122,7 @@ export class PedidosMeseroComponent implements OnInit {
     const pedidos = this.pedidos();
     this.pedidosLocal.set(pedidos.filter(p => p.tipo_entrega === 'local' || p.tipo_entrega === 'paraLlevar'));
     this.pedidosDelivery.set(pedidos.filter(p => p.tipo_entrega === 'delivery' || p.tipo_entrega === 'motorizada'));
-    
+
     if (this.filtroTipo() === 'local') {
       this.pedidosFiltrados.set(this.pedidosLocal());
     } else if (this.filtroTipo() === 'delivery') {
@@ -144,7 +144,7 @@ export class PedidosMeseroComponent implements OnInit {
   cargarProductos(categoriaId: number): void {
     this.cargandoProductos.set(true);
     this.categoriaSeleccionada.set(categoriaId);
-    
+
     this.productoService.obtenerPorCategoria(categoriaId).subscribe({
       next: (productos: any[]) => {
         this.productos.set(productos);
@@ -238,7 +238,7 @@ export class PedidosMeseroComponent implements OnInit {
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
-    
+
     const rutas: { [key: string]: string } = {
       'carta': '/mesero/carta',
       'mesas': '/mesero/mesas',
@@ -248,7 +248,7 @@ export class PedidosMeseroComponent implements OnInit {
       'tickets': '/mesero/tickets',
       'dashboard': '/mesero/dashboard'
     };
-    
+
     const ruta = rutas[opcion];
     if (ruta) {
       this.router.navigate([ruta]);
@@ -283,8 +283,8 @@ export class PedidosMeseroComponent implements OnInit {
       return;
     }
 
-    const encontrados = this.clientes().filter((c: any) => 
-      c.nombre.toLowerCase().includes(termino) || 
+    const encontrados = this.clientes().filter((c: any) =>
+      c.nombre.toLowerCase().includes(termino) ||
       (c.dni && c.dni.includes(termino))
     );
     this.clientesEncontrados.set(encontrados.slice(0, 5));

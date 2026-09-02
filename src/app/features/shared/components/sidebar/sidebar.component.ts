@@ -1,4 +1,4 @@
-// shared/components/sidebar/sidebar.component.ts
+// src/app/features/shared/components/sidebar/sidebar.component.ts
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -12,39 +12,39 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 })
 export class SidebarComponent {
   menuItems = signal([
-    { 
+    {
       icon: 'dashboard',
-      label: 'Dashboard', 
+      label: 'Dashboard',
       route: '/admin/dashboard-admin'
     },
-    { 
+    {
       icon: 'ventas',
-      label: 'Ventas', 
+      label: 'Ventas',
       route: '/admin/ventas-admin'
     },
-    { 
+    {
       icon: 'carta',
-      label: 'Carta', 
+      label: 'Carta',
       route: '/admin/carta-admin'
     },
-    { 
+    {
       icon: 'precios',
-      label: 'Precios', 
+      label: 'Precios',
       route: '/admin/precios-admin'
     },
-    { 
+    {
       icon: 'mantenimiento',
-      label: 'Mantenimiento', 
+      label: 'Mantenimiento',
       route: '/admin/mantenimiento'
     },
-    { 
+    {
       icon: 'personal',
-      label: 'Personal', 
+      label: 'Personal',
       route: '/admin/personal'
     },
-    { 
+    {
       icon: 'reportes',
-      label: 'Reportes', 
+      label: 'Reportes',
       route: '/admin/reportes'
     }
   ]);

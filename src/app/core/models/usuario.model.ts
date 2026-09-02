@@ -1,3 +1,5 @@
+// src/app/core/models/usuario.model.ts
+
 export interface Usuario {
   id: number;
   dni: string;

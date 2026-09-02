@@ -1,4 +1,4 @@
-// dashboard-mesero.component.ts
+// src/app/features/mesero/dashboard-mesero/dashboard-mesero.component.ts
 import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -23,7 +23,7 @@ export class DashboardMeseroComponent implements OnInit {
   temaOscuro = signal<boolean>(true);
   menuAbierto = signal<boolean>(false);
   opcionSeleccionada = signal<string>('');
-  
+
   mostrarBienvenida = signal<boolean>(false);
   esPrimeraVez = signal<boolean>(false);
   nombreUsuario = signal<string>('');
@@ -56,16 +56,16 @@ export class DashboardMeseroComponent implements OnInit {
 
     const nombre = this.usuario()?.nombre || 'Usuario';
     this.nombreUsuario.set(nombre);
-    
+
     const claveVisita = `visitado_${this.usuario()?.id}`;
     const yaVisitado = localStorage.getItem(claveVisita);
-    
+
     if (!yaVisitado) {
       this.esPrimeraVez.set(true);
       this.mensajeBienvenida.set(`Bienvenido ${nombre}`);
       localStorage.setItem(claveVisita, 'true');
       this.mostrarBienvenida.set(true);
-      
+
       setTimeout(() => {
         this.mostrarBienvenida.set(false);
       }, 3000);
@@ -73,7 +73,7 @@ export class DashboardMeseroComponent implements OnInit {
       this.esPrimeraVez.set(false);
       this.mensajeBienvenida.set(`Gusto volver a verte ${nombre}`);
       this.mostrarBienvenida.set(true);
-      
+
       setTimeout(() => {
         this.mostrarBienvenida.set(false);
       }, 2000);
@@ -91,7 +91,7 @@ export class DashboardMeseroComponent implements OnInit {
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
-    
+
     const rutas: { [key: string]: string } = {
       'carta': '/mesero/carta',
       'mesas': '/mesero/mesas',
@@ -101,7 +101,7 @@ export class DashboardMeseroComponent implements OnInit {
       'tickets': '/mesero/tickets',
       'dashboard': '/mesero/dashboard'
     };
-    
+
     const ruta = rutas[opcion];
     if (ruta) {
       this.router.navigate([ruta]);

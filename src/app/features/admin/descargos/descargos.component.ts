@@ -1,3 +1,5 @@
+// src/app/features/admin/descargos/descargos.component.ts
+
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';

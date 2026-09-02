@@ -1,4 +1,4 @@
-<!-- precios-admin.component.html -->
+<!-- src/app/features/admin/precios-admin/precios-admin.component.html -->
 <div class="precios-admin-container" [class.tema-oscuro]="temaOscuro()">
   <div class="precios-content">
     <div class="precios-header">
@@ -49,11 +49,11 @@
             <polyline points="6 9 12 15 18 9"/>
           </svg>
         </button>
-        
+
         @if (categoriaMenuAbierto()) {
           <div class="categoria-dropdown-menu">
             @for (cat of categorias(); track cat.id) {
-              <button 
+              <button
                 class="categoria-dropdown-item"
                 [class.active]="categoriaSeleccionada() === cat.id"
                 (click)="seleccionarCategoria(cat.id)"
@@ -90,10 +90,10 @@
                 <div class="edit-group">
                   <div class="precio-input-wrapper">
                     <span class="precio-simbolo">S/</span>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       class="precio-input"
-                      [(ngModel)]="precioEdit" 
+                      [(ngModel)]="precioEdit"
                       step="0.01"
                       min="0"
                       (keyup.enter)="guardarPrecio(producto.id)"

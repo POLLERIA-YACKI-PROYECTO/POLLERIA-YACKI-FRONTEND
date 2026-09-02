@@ -1,4 +1,4 @@
-// venta.service.ts
+// src\app\core\services\venta.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';

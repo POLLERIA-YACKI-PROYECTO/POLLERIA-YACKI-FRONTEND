@@ -1,4 +1,4 @@
-// core/services/mesa.service.ts
+// src\app\core\services\mesa.service.ts
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';

@@ -1,7 +1,7 @@
-<!-- carta-mesero.component.html -->
+<!-- src/app/features/mesero/carta-mesero/carta-mesero.component.html -->
 <div class="carta-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
-  
+
   <div class="carta-content">
     <div class="carta-header">
       <div class="header-top">
@@ -131,8 +131,8 @@
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input 
-          type="text" 
+        <input
+          type="text"
           class="buscador-input"
           placeholder="Buscar productos por nombre, categoría o precio..."
           [(ngModel)]="terminoBusqueda"
@@ -183,7 +183,7 @@
         @if (categoriaMenuAbierto()) {
           <div class="categoria-dropdown-menu">
             @for (cat of categorias(); track cat.id) {
-              <button 
+              <button
                 class="categoria-dropdown-item"
                 [class.active]="categoriaSeleccionada() === cat.id"
                 (click)="seleccionarCategoria(cat.id)"
@@ -223,7 +223,7 @@
                 <span class="badge-agotado">Agotado</span>
               }
             </div>
-            <button 
+            <button
               class="btn-agregar"
               [disabled]="producto.agotado"
               (click)="agregarAlPedido(producto)"

@@ -1,3 +1,4 @@
+// src/app/features/carta-cliente/mesa.model.ts
 export interface Mesa {
   id: number;
   numero: number;

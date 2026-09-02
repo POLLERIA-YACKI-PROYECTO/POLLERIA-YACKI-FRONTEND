@@ -1,4 +1,4 @@
-<!-- dashboard-admin.component.html -->
+<!-- src/app/features/admin/dashboard-admin/dashboard-admin.component.html -->
 <div class="dashboard-admin-container">
   <div class="dashboard-content">
     <!-- Header -->
@@ -178,7 +178,7 @@
                   <td>
                     <span class="tipo-badge {{ venta.tipo }}">
                       <span class="tipo-icon" [innerHTML]="getTipoSvg(venta.tipo)"></span>
-                      {{ venta.tipo === 'delivery' ? 'Motorizado' : 
+                      {{ venta.tipo === 'delivery' ? 'Motorizado' :
                          venta.tipo === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
                     </span>
                   </td>

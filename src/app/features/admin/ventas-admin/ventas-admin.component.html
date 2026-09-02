@@ -1,4 +1,4 @@
-<!-- ventas-admin.component.html -->
+<!-- src/app/features/admin/ventas-admin/ventas-admin.component.html -->
 <div class="ventas-admin-container">
   <div class="page-header">
     <div class="header-left">
@@ -107,7 +107,7 @@
               <td>
                 <span class="tipo-badge {{ pedido.tipo_entrega }}">
                   <span class="tipo-icon" [innerHTML]="getTipoEntregaSvg(pedido.tipo_entrega)"></span>
-                  {{ pedido.tipo_entrega === 'delivery' ? 'Motorizado' : 
+                  {{ pedido.tipo_entrega === 'delivery' ? 'Motorizado' :
                      pedido.tipo_entrega === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
                 </span>
               </td>

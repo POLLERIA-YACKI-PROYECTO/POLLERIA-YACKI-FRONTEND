@@ -1,4 +1,4 @@
-// personal.component.ts
+// src/app/features/admin/personal/personal.component.ts
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,24 +21,24 @@ export class PersonalComponent implements OnInit {
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
   loading = signal(true);
-  
+
   personal = signal<any[]>([]);
   roles = ['admin', 'cajero', 'mesero'];
   mostrarFormulario = signal(false);
   editando = signal(false);
   personalEdit = signal<any>(null);
-  
-  nuevoPersonal = signal({ 
-    nombre: '', 
+
+  nuevoPersonal = signal({
+    nombre: '',
     apellido: '',
-    dni: '', 
-    rol: 'mesero', 
-    telefono: '', 
+    dni: '',
+    rol: 'mesero',
+    telefono: '',
     email: '',
     fecha_contratacion: '',
     salario: null
   });
-  
+
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
     if (!this.usuario() || this.usuario()?.rol !== 'admin') {
@@ -89,12 +89,12 @@ export class PersonalComponent implements OnInit {
     if (!this.mostrarFormulario()) {
       this.editando.set(false);
       this.personalEdit.set(null);
-      this.nuevoPersonal.set({ 
-        nombre: '', 
+      this.nuevoPersonal.set({
+        nombre: '',
         apellido: '',
-        dni: '', 
-        rol: 'mesero', 
-        telefono: '', 
+        dni: '',
+        rol: 'mesero',
+        telefono: '',
         email: '',
         fecha_contratacion: '',
         salario: null
@@ -117,7 +117,7 @@ export class PersonalComponent implements OnInit {
     });
     this.mostrarFormulario.set(true);
   }
-  
+
   guardarPersonal(): void {
     if (!this.nuevoPersonal().nombre || !this.nuevoPersonal().dni) {
       alert('Por favor complete todos los campos obligatorios');
@@ -128,7 +128,7 @@ export class PersonalComponent implements OnInit {
       alert('El DNI debe tener 8 dígitos');
       return;
     }
-    
+
     if (this.editando()) {
       this.usuarioService.actualizarUsuario(this.personalEdit().id, this.nuevoPersonal()).subscribe({
         next: () => {
@@ -155,14 +155,14 @@ export class PersonalComponent implements OnInit {
       });
     }
   }
-  
+
   eliminarPersonal(id: number): void {
     const persona = this.personal().find(p => p.id === id);
     if (persona && persona.rol === 'admin' && persona.id === 1) {
       alert('No se puede eliminar al administrador principal');
       return;
     }
-    
+
     if (confirm(`¿Está seguro de eliminar a ${persona?.nombre}?`)) {
       this.usuarioService.eliminarUsuario(id).subscribe({
         next: () => {

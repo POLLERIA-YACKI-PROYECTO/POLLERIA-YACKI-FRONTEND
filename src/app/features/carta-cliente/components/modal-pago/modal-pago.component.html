@@ -1,4 +1,4 @@
-<!-- modal-pago.component.html -->
+<!-- src/app/features/carta-cliente/components/modal-pago/modal-pago.component.html -->
 <div class="modal-overlay" [class.active]="visible" (click)="cerrarModal()"></div>
 
 <div class="modal-pago" [class.active]="visible">
@@ -33,8 +33,8 @@
       <div class="tipo-entrega">
         <span class="tipo-label">Tipo de entrega</span>
         <div class="tipo-opciones">
-          <button 
-            class="tipo-btn" 
+          <button
+            class="tipo-btn"
             [class.active]="tipoEntrega() === 'local'"
             (click)="tipoEntrega.set('local')"
             [disabled]="cargando"
@@ -45,8 +45,8 @@
             </svg>
             Local
           </button>
-          <button 
-            class="tipo-btn" 
+          <button
+            class="tipo-btn"
             [class.active]="tipoEntrega() === 'delivery'"
             (click)="tipoEntrega.set('delivery')"
             [disabled]="cargando"
@@ -68,9 +68,9 @@
         <div class="metodos-grid">
           <label class="metodo-item" *ngFor="let metodo of metodosPago"
                  [class.active]="metodoPago() === metodo.id">
-            <input 
-              type="radio" 
-              name="metodoPago" 
+            <input
+              type="radio"
+              name="metodoPago"
               [value]="metodo.id"
               [(ngModel)]="metodoPago"
               [disabled]="cargando"
@@ -84,9 +84,9 @@
       <div class="datos-cliente">
         <div class="campo">
           <label>Tu nombre (opcional)</label>
-          <input 
-            type="text" 
-            [(ngModel)]="clienteNombre" 
+          <input
+            type="text"
+            [(ngModel)]="clienteNombre"
             placeholder="¿Cómo te llamamos?"
             class="input-text"
             [disabled]="cargando"
@@ -94,8 +94,8 @@
         </div>
         <div class="campo">
           <label>Observaciones (opcional)</label>
-          <textarea 
-            [(ngModel)]="observaciones" 
+          <textarea
+            [(ngModel)]="observaciones"
             placeholder="Ej: Sin ají, con extra papas..."
             class="input-textarea"
             rows="2"

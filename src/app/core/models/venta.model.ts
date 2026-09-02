@@ -1,3 +1,5 @@
+// src/app/core/models/venta.model.ts
+
 export interface Venta {
   id: number;
   fecha: Date;

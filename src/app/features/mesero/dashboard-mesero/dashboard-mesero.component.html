@@ -1,4 +1,4 @@
-<!-- dashboard-mesero.component.html -->
+<!-- src/app/features/mesero/dashboard-mesero/dashboard-mesero.component.html -->
 <div class="dashboard-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -110,10 +110,10 @@
           </button>
         </div>
       </div>
-      
+
       <div class="mesas-grid">
         @for (mesa of mesas(); track mesa.numero) {
-          <div 
+          <div
             class="mesa-item"
             [class.ocupada]="mesa.ocupada"
             (click)="seleccionarMesa(mesa.numero)"
@@ -146,7 +146,7 @@
         <span class="accion-label">Carta</span>
         <span class="accion-desc">Ver productos</span>
       </button>
-      
+
       <button class="accion-btn" (click)="irMesas()">
         <div class="accion-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -157,7 +157,7 @@
         <span class="accion-label">Mesas</span>
         <span class="accion-desc">Gestionar mesas</span>
       </button>
-      
+
       <button class="accion-btn" (click)="irPedidos()">
         <div class="accion-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -170,7 +170,7 @@
         <span class="accion-label">Pedidos</span>
         <span class="accion-desc">Ver pedidos</span>
       </button>
-      
+
       <button class="accion-btn" (click)="irPrecios()">
         <div class="accion-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -181,7 +181,7 @@
         <span class="accion-label">Precios</span>
         <span class="accion-desc">Lista de precios</span>
       </button>
-      
+
       <button class="accion-btn" (click)="irVentas()">
         <div class="accion-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,7 +195,7 @@
         <span class="accion-label">Ventas</span>
         <span class="accion-desc">Historial de ventas</span>
       </button>
-      
+
       <button class="accion-btn" (click)="irTicket()">
         <div class="accion-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

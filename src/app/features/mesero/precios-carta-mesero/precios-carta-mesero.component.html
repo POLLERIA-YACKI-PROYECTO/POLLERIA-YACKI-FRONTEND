@@ -1,4 +1,4 @@
-<!-- precios-carta-mesero.component.html -->
+<!-- src/app/features/mesero/precios-carta-mesero/precios-carta-mesero.component.html -->
 <div class="precios-mesero-container" [class.tema-claro]="!temaOscuro()">
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
@@ -126,8 +126,8 @@
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input 
-          type="text" 
+        <input
+          type="text"
           class="buscador-input"
           placeholder="Buscar productos por nombre, categoría o precio..."
           [(ngModel)]="terminoBusqueda"

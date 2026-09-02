@@ -1,4 +1,4 @@
-// core/guards/mesero.guard.ts
+// src\app\core\guards\admin.guard.ts
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';

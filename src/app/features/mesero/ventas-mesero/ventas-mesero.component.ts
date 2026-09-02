@@ -1,4 +1,4 @@
-// ventas-mesero.component.ts
+// src/app/features/mesero/ventas-mesero/ventas-mesero.component.ts
 import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -54,7 +54,7 @@ export class VentasMeseroComponent implements OnInit {
 
   cargarDatos(): void {
     this.loading.set(true);
-    
+
     // Obtener ventas del usuario actual
     this.ventaService.obtenerVentasPorUsuario(this.usuario().id).subscribe({
       next: (ventas) => {
@@ -73,7 +73,7 @@ export class VentasMeseroComponent implements OnInit {
   organizarVentas(ventas: any[]): void {
     const local = ventas.filter(v => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
     const delivery = ventas.filter(v => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
-    
+
     this.ventasLocal.set(local);
     this.ventasDelivery.set(delivery);
   }
@@ -100,7 +100,7 @@ export class VentasMeseroComponent implements OnInit {
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
-    
+
     const rutas: { [key: string]: string } = {
       'carta': '/mesero/carta',
       'mesas': '/mesero/mesas',
@@ -110,7 +110,7 @@ export class VentasMeseroComponent implements OnInit {
       'tickets': '/mesero/tickets',
       'dashboard': '/mesero/dashboard'
     };
-    
+
     const ruta = rutas[opcion];
     if (ruta) {
       this.router.navigate([ruta]);
