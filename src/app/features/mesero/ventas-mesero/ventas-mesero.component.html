@@ -3,6 +3,7 @@
   <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
 
   <div class="ventas-content">
+    <!-- HEADER -->
     <div class="ventas-header">
       <div>
         <h1>
@@ -18,6 +19,7 @@
         <p class="subtitle">Historial de ventas realizadas</p>
       </div>
       <div class="header-buttons">
+        <!-- Menú -->
         <div class="menu-container">
           <button class="menu-toggle" (click)="toggleMenu()">
             <span class="menu-toggle-text">
@@ -129,163 +131,186 @@
       </div>
     </div>
 
-    <!-- Resumen de Ventas -->
-    <div class="resumen-ventas">
-      <div class="resumen-item">
-        <span class="resumen-label">Total Ventas</span>
-        <span class="resumen-valor">{{ ventas().length }}</span>
+    <!-- STATS PRINCIPALES -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">📊</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalVentas() }}</span>
+          <span class="stat-label">Total Ventas</span>
+        </div>
       </div>
-      <div class="resumen-item local">
-        <span class="resumen-label">Ventas Local</span>
-        <span class="resumen-valor">{{ ventasLocal().length }}</span>
+      <div class="stat-card local">
+        <span class="stat-icon">🏠</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalVentasLocal() }}</span>
+          <span class="stat-label">Ventas Local</span>
+        </div>
       </div>
-      <div class="resumen-item delivery">
-        <span class="resumen-label">Ventas Motorizadas</span>
-        <span class="resumen-valor">{{ ventasDelivery().length }}</span>
+      <div class="stat-card delivery">
+        <span class="stat-icon">🛵</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalVentasDelivery() }}</span>
+          <span class="stat-label">Ventas Motorizadas</span>
+        </div>
+      </div>
+      <div class="stat-card total">
+        <span class="stat-icon">💰</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ formatearPrecio(totalRecaudado()) }}</span>
+          <span class="stat-label">Total Recaudado</span>
+        </div>
       </div>
     </div>
 
-    <!-- Totales Recaudados -->
-    <div class="totales-recaudados">
-      <div class="total-item">
-        <span class="total-label">Total Recaudado</span>
-        <span class="total-valor">S/ {{ totalGeneral() | number:'1.2-2' }}</span>
+    <!-- RESUMEN POR TIPO -->
+    <div class="resumen-tipos">
+      <div class="resumen-card local">
+        <div class="resumen-header">
+          <span class="resumen-icon">🏠</span>
+          <span class="resumen-title">Local</span>
+        </div>
+        <div class="resumen-body">
+          <div class="resumen-item">
+            <span class="resumen-label">Ventas</span>
+            <span class="resumen-value">{{ totalVentasLocal() }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Recaudado</span>
+            <span class="resumen-value">{{ formatearPrecio(totalRecaudadoLocal()) }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Promedio</span>
+            <span class="resumen-value">{{ formatearPrecio(totalVentasLocal() > 0 ? totalRecaudadoLocal() / totalVentasLocal() : 0) }}</span>
+          </div>
+        </div>
       </div>
-      <div class="total-item local">
-        <span class="total-label">Recaudado Local</span>
-        <span class="total-valor">S/ {{ totalLocal() | number:'1.2-2' }}</span>
+
+      <div class="resumen-card delivery">
+        <div class="resumen-header">
+          <span class="resumen-icon">🛵</span>
+          <span class="resumen-title">Motorizado</span>
+        </div>
+        <div class="resumen-body">
+          <div class="resumen-item">
+            <span class="resumen-label">Ventas</span>
+            <span class="resumen-value">{{ totalVentasDelivery() }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Recaudado</span>
+            <span class="resumen-value">{{ formatearPrecio(totalRecaudadoDelivery()) }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Promedio</span>
+            <span class="resumen-value">{{ formatearPrecio(totalVentasDelivery() > 0 ? totalRecaudadoDelivery() / totalVentasDelivery() : 0) }}</span>
+          </div>
+        </div>
       </div>
-      <div class="total-item delivery">
-        <span class="total-label">Recaudado Motorizado</span>
-        <span class="total-valor">S/ {{ totalDelivery() | number:'1.2-2' }}</span>
+
+      <div class="resumen-card general">
+        <div class="resumen-header">
+          <span class="resumen-icon">📋</span>
+          <span class="resumen-title">General</span>
+        </div>
+        <div class="resumen-body">
+          <div class="resumen-item">
+            <span class="resumen-label">Total Ventas</span>
+            <span class="resumen-value">{{ totalVentas() }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Total Recaudado</span>
+            <span class="resumen-value">{{ formatearPrecio(totalRecaudado()) }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Promedio por Venta</span>
+            <span class="resumen-value">{{ formatearPrecio(promedioVenta()) }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- LOADING -->
     @if (loading()) {
       <div class="loading-spinner">
         <div class="spinner"></div>
-        <p>Cargando ventas...</p>
+        <p>Cargando tus ventas...</p>
       </div>
     }
 
-    @if (!loading()) {
-      <!-- Ventas Local -->
-      @if (ventasLocal().length > 0) {
-        <div class="tabla-container">
-          <div class="tabla-header">
-            <h3>🏠 Ventas en Local</h3>
-            <span class="total-items">{{ ventasLocal().length }} ventas</span>
-          </div>
-          <div class="tabla-scroll">
-            <table class="tabla-ventas">
-              <thead>
+    <!-- TABLA DE VENTAS RECIENTES -->
+    @if (!loading() && ventasRecientes().length > 0) {
+      <div class="tabla-container">
+        <div class="tabla-header">
+          <h3>Últimas Ventas</h3>
+          <span class="total-items">{{ ventasRecientes().length }} ventas recientes</span>
+        </div>
+        <div class="tabla-scroll">
+          <table class="ventas-tabla">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Items</th>
+                <th>Tipo</th>
+                <th>Método</th>
+                <th>Total</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (venta of ventasRecientes(); track venta.id) {
                 <tr>
-                  <th>ID</th>
-                  <th>Cliente</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Fecha</th>
-                  <th>Método</th>
-                  <th>Estado</th>
+                  <td><span class="id-badge">#{{ venta.id }}</span></td>
+                  <td class="cliente-cell">{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
+                  <td>{{ venta.items?.length || 0 }}</td>
+                  <td>
+                    <span class="tipo-badge" [class.tipo-local]="venta.tipo_entrega === 'local' || venta.tipo_entrega === 'paraLlevar'" [class.tipo-delivery]="venta.tipo_entrega === 'delivery' || venta.tipo_entrega === 'motorizada'">
+                      <span [innerHTML]="getTipoEntregaSvg(venta.tipo_entrega)"></span>
+                      {{ getTipoEntregaLabel(venta.tipo_entrega) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="metodo-badge" [class.metodo-efectivo]="venta.metodo_pago === 'efectivo'" [class.metodo-tarjeta]="venta.metodo_pago === 'tarjeta'" [class.metodo-digital]="venta.metodo_pago === 'yape' || venta.metodo_pago === 'plin'">
+                      <span [innerHTML]="getMetodoPagoSvg(venta.metodo_pago)"></span>
+                      {{ getMetodoPagoLabel(venta.metodo_pago) }}
+                    </span>
+                  </td>
+                  <td class="total-col">{{ formatearPrecio(venta.total) }}</td>
+                  <td class="fecha-col">{{ formatearFecha(venta.fecha_venta || venta.created_at) }}</td>
+                  <td>
+                    <span class="estado-badge {{ getEstadoClass(venta.estado) }}">
+                      <span [innerHTML]="getEstadoSvg(venta.estado)"></span>
+                      {{ getEstadoTexto(venta.estado) }}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                @for (venta of ventasLocal(); track venta.id) {
-                  <tr>
-                    <td><span class="id-badge">#{{ venta.id }}</span></td>
-                    <td>{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
-                    <td>{{ venta.items?.length || 0 }}</td>
-                    <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
-                    <td>{{ venta.fecha_venta | date:'short' }}</td>
-                    <td>
-                      <span class="metodo-badge {{ venta.metodo_pago }}">
-                        {{ getMetodoPagoIcono(venta.metodo_pago) }} {{ venta.metodo_pago | titlecase }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="estado-badge {{ getEstadoClass(venta.estado) }}">
-                        {{ getEstadoIcono(venta.estado) }} {{ getEstadoTexto(venta.estado) }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-              <tfoot>
-                <tr class="total-row">
-                  <td colspan="3"><strong>Total Local</strong></td>
-                  <td colspan="4"><strong>S/ {{ totalLocal() | number:'1.2-2' }}</strong></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="5"><strong>Total General</strong></td>
+                <td colspan="3"><strong>{{ formatearPrecio(totalRecaudado()) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-      }
+      </div>
+    }
 
-      <!-- Ventas Motorizadas -->
-      @if (ventasDelivery().length > 0) {
-        <div class="tabla-container" style="margin-top: 20px;">
-          <div class="tabla-header">
-            <h3>🛵 Ventas Motorizadas</h3>
-            <span class="total-items">{{ ventasDelivery().length }} ventas</span>
-          </div>
-          <div class="tabla-scroll">
-            <table class="tabla-ventas">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Cliente</th>
-                  <th>Items</th>
-                  <th>Total</th>
-                  <th>Fecha</th>
-                  <th>Método</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (venta of ventasDelivery(); track venta.id) {
-                  <tr>
-                    <td><span class="id-badge">#{{ venta.id }}</span></td>
-                    <td>{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
-                    <td>{{ venta.items?.length || 0 }}</td>
-                    <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
-                    <td>{{ venta.fecha_venta | date:'short' }}</td>
-                    <td>
-                      <span class="metodo-badge {{ venta.metodo_pago }}">
-                        {{ getMetodoPagoIcono(venta.metodo_pago) }} {{ venta.metodo_pago | titlecase }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="estado-badge {{ getEstadoClass(venta.estado) }}">
-                        {{ getEstadoIcono(venta.estado) }} {{ getEstadoTexto(venta.estado) }}
-                      </span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-              <tfoot>
-                <tr class="total-row">
-                  <td colspan="3"><strong>Total Motorizado</strong></td>
-                  <td colspan="4"><strong>S/ {{ totalDelivery() | number:'1.2-2' }}</strong></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      }
-
-      @if (ventas().length === 0) {
-        <div class="empty-message">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="7" width="20" height="14" rx="2"/>
-            <line x1="2" y1="11" x2="22" y2="11"/>
-            <line x1="2" y1="16" x2="22" y2="16"/>
-            <circle cx="16" cy="13" r="1"/>
-            <circle cx="8" cy="18" r="1"/>
-          </svg>
-          <p>No hay ventas registradas</p>
-          <span class="empty-sub">Realiza pedidos para ver tus ventas aquí</span>
-        </div>
-      }
+    <!-- EMPTY STATE -->
+    @if (!loading() && ventas().length === 0) {
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <line x1="2" y1="11" x2="22" y2="11"/>
+          <line x1="2" y1="16" x2="22" y2="16"/>
+          <circle cx="16" cy="13" r="1"/>
+          <circle cx="8" cy="18" r="1"/>
+        </svg>
+        <p>No hay ventas registradas</p>
+        <span>Realiza pedidos para ver tus ventas aquí</span>
+      </div>
     }
   </div>
 </div>

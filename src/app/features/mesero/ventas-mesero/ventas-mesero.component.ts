@@ -25,22 +25,37 @@ export class VentasMeseroComponent implements OnInit {
   opcionSeleccionada = signal<string>('');
   loading = signal<boolean>(true);
 
+  // Datos de ventas
   ventas = signal<any[]>([]);
   ventasLocal = signal<any[]>([]);
   ventasDelivery = signal<any[]>([]);
-  resumen = signal<any>({});
 
-  // Totales calculados
-  totalLocal = computed(() => {
-    return this.ventasLocal().reduce((sum, v) => sum + v.total, 0);
+  // Estadísticas
+  totalVentas = computed(() => this.ventas().length);
+  totalVentasLocal = computed(() => this.ventasLocal().length);
+  totalVentasDelivery = computed(() => this.ventasDelivery().length);
+
+  totalRecaudado = computed(() => {
+    return this.ventas().reduce((sum, v) => sum + (parseFloat(v.total) || 0), 0);
   });
 
-  totalDelivery = computed(() => {
-    return this.ventasDelivery().reduce((sum, v) => sum + v.total, 0);
+  totalRecaudadoLocal = computed(() => {
+    return this.ventasLocal().reduce((sum, v) => sum + (parseFloat(v.total) || 0), 0);
   });
 
-  totalGeneral = computed(() => {
-    return this.totalLocal() + this.totalDelivery();
+  totalRecaudadoDelivery = computed(() => {
+    return this.ventasDelivery().reduce((sum, v) => sum + (parseFloat(v.total) || 0), 0);
+  });
+
+  // Promedios
+  promedioVenta = computed(() => {
+    const total = this.totalVentas();
+    return total > 0 ? this.totalRecaudado() / total : 0;
+  });
+
+  // Últimas 10 ventas
+  ventasRecientes = computed(() => {
+    return this.ventas().slice(0, 10);
   });
 
   ngOnInit(): void {
@@ -55,12 +70,21 @@ export class VentasMeseroComponent implements OnInit {
   cargarDatos(): void {
     this.loading.set(true);
 
-    // Obtener ventas del usuario actual
     this.ventaService.obtenerVentasPorUsuario(this.usuario().id).subscribe({
-      next: (ventas) => {
-        this.ventas.set(ventas);
-        this.organizarVentas(ventas);
-        this.cargarResumen();
+      next: (ventas: any[]) => {
+        // Parsear items de cada venta
+        const ventasParseadas = ventas.map((v: any) => {
+          if (v.items && typeof v.items === 'string') {
+            try {
+              v.items = JSON.parse(v.items);
+            } catch (e) {
+              v.items = [];
+            }
+          }
+          return v;
+        });
+        this.ventas.set(ventasParseadas);
+        this.organizarVentas(ventasParseadas);
         this.loading.set(false);
       },
       error: (err) => {
@@ -71,22 +95,18 @@ export class VentasMeseroComponent implements OnInit {
   }
 
   organizarVentas(ventas: any[]): void {
-    const local = ventas.filter(v => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
-    const delivery = ventas.filter(v => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
+    const local = ventas.filter(v => 
+      v.tipo_entrega === 'local' || 
+      v.tipo_entrega === 'paraLlevar' ||
+      v.tipo_entrega === 'local'
+    );
+    const delivery = ventas.filter(v => 
+      v.tipo_entrega === 'delivery' || 
+      v.tipo_entrega === 'motorizada'
+    );
 
     this.ventasLocal.set(local);
     this.ventasDelivery.set(delivery);
-  }
-
-  cargarResumen(): void {
-    this.ventaService.obtenerResumenPorUsuario(this.usuario().id).subscribe({
-      next: (resumen) => {
-        this.resumen.set(resumen);
-      },
-      error: (err) => {
-        console.error('Error al cargar resumen:', err);
-      }
-    });
   }
 
   toggleTema(): void {
@@ -117,6 +137,16 @@ export class VentasMeseroComponent implements OnInit {
     }
   }
 
+  // ✅ MÉTODOS PARA SVG
+  getEstadoSvg(estado: string): string {
+    const svgs: any = {
+      'completada': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg>`,
+      'pendiente': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,
+      'cancelada': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+    };
+    return svgs[estado] || svgs['pendiente'];
+  }
+
   getEstadoClass(estado: string): string {
     const clases: any = {
       'completada': 'estado-completada',
@@ -135,24 +165,36 @@ export class VentasMeseroComponent implements OnInit {
     return textos[estado] || estado;
   }
 
-  getEstadoIcono(estado: string): string {
-    const iconos: any = {
-      'completada': '✅',
-      'pendiente': '⏳',
-      'cancelada': '❌'
+  getMetodoPagoSvg(metodo: string): string {
+    const svgs: any = {
+      'efectivo': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/></svg>`,
+      'tarjeta': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`,
+      'yape': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`,
+      'plin': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`,
+      'transferencia': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/></svg>`
     };
-    return iconos[estado] || '📋';
+    return svgs[metodo] || svgs['efectivo'];
   }
 
-  getMetodoPagoIcono(metodo: string): string {
-    const iconos: any = {
-      'efectivo': '💵',
-      'tarjeta': '💳',
-      'yape': '📱',
-      'plin': '📱',
-      'transferencia': '🏦'
+  getMetodoPagoLabel(metodo: string): string {
+    const labels: any = {
+      'efectivo': 'Efectivo',
+      'tarjeta': 'Tarjeta',
+      'yape': 'Yape',
+      'plin': 'Plin',
+      'transferencia': 'Transferencia'
     };
-    return iconos[metodo] || '💰';
+    return labels[metodo] || metodo;
+  }
+
+  getTipoEntregaSvg(tipo: string): string {
+    const svgs: any = {
+      'local': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+      'delivery': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="15" height="13" rx="2"/><polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/></svg>`,
+      'paraLlevar': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+      'motorizada': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="15" height="13" rx="2"/><polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/></svg>`
+    };
+    return svgs[tipo] || svgs['local'];
   }
 
   getTipoEntregaLabel(tipo: string): string {
@@ -162,17 +204,29 @@ export class VentasMeseroComponent implements OnInit {
       'paraLlevar': 'Para Llevar',
       'motorizada': 'Motorizado'
     };
-    return labels[tipo] || tipo;
+    return labels[tipo] || 'Local';
   }
 
-  getTipoEntregaIcono(tipo: string): string {
-    const iconos: any = {
-      'local': '🏠',
-      'delivery': '🛵',
-      'paraLlevar': '📦',
-      'motorizada': '🛵'
-    };
-    return iconos[tipo] || '🏠';
+  formatearFecha(fecha: string): string {
+    try {
+      if (!fecha) return '--/--/----';
+      const d = new Date(fecha);
+      if (isNaN(d.getTime())) return '--/--/----';
+      return d.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return '--/--/----';
+    }
+  }
+
+  formatearPrecio(valor: number | string): string {
+    const num = typeof valor === 'string' ? parseFloat(valor) : (valor || 0);
+    return `S/ ${num.toFixed(2)}`;
   }
 
   verDetalle(id: number): void {

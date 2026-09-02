@@ -222,14 +222,8 @@
 }
 
 @keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* FECHAS */
@@ -706,12 +700,10 @@
 /* ============================================
    RESPONSIVE
    ============================================ */
-
 @media (max-width: 1024px) {
   .reportes-grid {
     grid-template-columns: 1fr;
   }
-
   .config-panel {
     position: relative;
     top: 0;
@@ -719,269 +711,67 @@
 }
 
 @media (max-width: 768px) {
-  .page-header h2 {
-    font-size: 20px;
-  }
-
-  .header-icon {
-    width: 22px;
-    height: 22px;
-  }
-
-  .resultados-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .resultados-title {
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  .resultados-resumen {
-    justify-content: center;
-  }
-
-  .form-fechas {
-    gap: 8px;
-  }
-
-  .btn-group {
-    grid-template-columns: 1fr;
-  }
-
-  .tabla-reportes {
-    font-size: 12px;
-  }
-
-  .tabla-reportes th,
-  .tabla-reportes td {
-    padding: 8px 10px;
-  }
-
-  .menu-toggle {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-
-  .menu-dropdown {
-    min-width: 100%;
-  }
-
-  .config-panel {
-    padding: 16px;
-  }
-
-  .resumen-item {
-    padding: 2px 10px;
-  }
-
-  .resumen-valor {
-    font-size: 13px;
-  }
-
-  .tabla-wrapper {
-    padding: 12px 14px 14px 14px;
-  }
-
-  .btn-refresh {
-    width: 36px;
-    height: 36px;
-  }
-
-  .btn-refresh svg {
-    width: 18px;
-    height: 18px;
-  }
+  .page-header h2 { font-size: 20px; }
+  .header-icon { width: 22px; height: 22px; }
+  .resultados-header { flex-direction: column; align-items: stretch; gap: 8px; }
+  .resultados-title { justify-content: center; flex-wrap: wrap; }
+  .resultados-resumen { justify-content: center; }
+  .form-fechas { gap: 8px; }
+  .btn-group { grid-template-columns: 1fr; }
+  .tabla-reportes { font-size: 12px; }
+  .tabla-reportes th, .tabla-reportes td { padding: 8px 10px; }
+  .menu-toggle { font-size: 12px; padding: 8px 12px; }
+  .menu-dropdown { min-width: 100%; }
+  .config-panel { padding: 16px; }
+  .resumen-item { padding: 2px 10px; }
+  .resumen-valor { font-size: 13px; }
+  .tabla-wrapper { padding: 12px 14px 14px 14px; }
+  .btn-refresh { width: 36px; height: 36px; }
+  .btn-refresh svg { width: 18px; height: 18px; }
 }
 
 @media (max-width: 480px) {
-  .reportes-container {
-    padding: 0 4px;
-  }
-
-  .page-header h2 {
-    font-size: 17px;
-  }
-
-  .header-icon {
-    width: 18px;
-    height: 18px;
-  }
-
-  .config-panel {
-    padding: 12px;
-  }
-
-  .config-panel h3 {
-    font-size: 14px;
-    text-align: center;
-  }
-
-  .resultados-header {
-    padding: 12px 14px;
-  }
-
-  .resultados-title h3 {
-    font-size: 14px;
-  }
-
-  .resultados-title {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .resultados-resumen {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .resumen-item {
-    padding: 2px 8px;
-  }
-
-  .resumen-valor {
-    font-size: 12px;
-  }
-
-  .tabla-reportes {
-    font-size: 11px;
-  }
-
-  .tabla-reportes th,
-  .tabla-reportes td {
-    padding: 6px 8px;
-  }
-
-  .menu-toggle {
-    font-size: 11px;
-    padding: 6px 10px;
-  }
-
-  .menu-item {
-    font-size: 12px;
-    padding: 8px 10px;
-  }
-
-  .btn-generar {
-    font-size: 13px;
-    padding: 8px 12px;
-  }
-
-  .btn-excel,
-  .btn-pdf {
-    font-size: 11px;
-    padding: 6px 10px;
-  }
-
-  .btn-excel svg,
-  .btn-pdf svg {
-    width: 12px;
-    height: 12px;
-  }
-
-  .empty-state {
-    padding: 30px 12px;
-  }
-
-  .empty-state svg {
-    width: 36px;
-    height: 36px;
-  }
-
-  .empty-state p {
-    font-size: 12px;
-  }
-
-  .tabla-wrapper {
-    padding: 8px 10px 10px 10px;
-  }
-
-  .input-wrapper input {
-    font-size: 12px;
-    padding: 6px 8px 6px 0;
-  }
-
-  .input-icon {
-    width: 14px;
-    height: 14px;
-    margin: 0 6px 0 8px;
-  }
-
-  .input-wrapper {
-    border-radius: 4px;
-  }
-
-  .btn-refresh {
-    width: 32px;
-    height: 32px;
-  }
-
-  .btn-refresh svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .id-badge {
-    font-size: 10px;
-    padding: 1px 6px;
-  }
-
-  .estado-badge {
-    font-size: 10px;
-    padding: 2px 8px;
-  }
-
-  .total-row td:last-child {
-    font-size: 13px;
-  }
+  .reportes-container { padding: 0 4px; }
+  .page-header h2 { font-size: 17px; }
+  .header-icon { width: 18px; height: 18px; }
+  .config-panel { padding: 12px; }
+  .config-panel h3 { font-size: 14px; text-align: center; }
+  .resultados-header { padding: 12px 14px; }
+  .resultados-title h3 { font-size: 14px; }
+  .resultados-title { flex-direction: column; gap: 4px; }
+  .resultados-resumen { flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .resumen-item { padding: 2px 8px; }
+  .resumen-valor { font-size: 12px; }
+  .tabla-reportes { font-size: 11px; }
+  .tabla-reportes th, .tabla-reportes td { padding: 6px 8px; }
+  .menu-toggle { font-size: 11px; padding: 6px 10px; }
+  .menu-item { font-size: 12px; padding: 8px 10px; }
+  .btn-generar { font-size: 13px; padding: 8px 12px; }
+  .btn-excel, .btn-pdf { font-size: 11px; padding: 6px 10px; }
+  .btn-excel svg, .btn-pdf svg { width: 12px; height: 12px; }
+  .empty-state { padding: 30px 12px; }
+  .empty-state svg { width: 36px; height: 36px; }
+  .empty-state p { font-size: 12px; }
+  .tabla-wrapper { padding: 8px 10px 10px 10px; }
+  .input-wrapper input { font-size: 12px; padding: 6px 8px 6px 0; }
+  .input-icon { width: 14px; height: 14px; margin: 0 6px 0 8px; }
+  .input-wrapper { border-radius: 4px; }
+  .btn-refresh { width: 32px; height: 32px; }
+  .btn-refresh svg { width: 16px; height: 16px; }
+  .id-badge { font-size: 10px; padding: 1px 6px; }
+  .estado-badge { font-size: 10px; padding: 2px 8px; }
+  .total-row td:last-child { font-size: 13px; }
 }
 
 @media (max-width: 360px) {
-  .resultados-resumen {
-    flex-direction: column;
-    gap: 6px;
-    align-items: stretch;
-  }
-
-  .resumen-item {
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 4px 10px;
-  }
-
-  .resumen-label {
-    font-size: 11px;
-  }
-
-  .resumen-valor {
-    font-size: 12px;
-  }
-
-  .tabla-reportes {
-    font-size: 10px;
-  }
-
-  .tabla-reportes th,
-  .tabla-reportes td {
-    padding: 4px 6px;
-  }
-
-  .menu-dropdown {
-    max-height: 180px;
-  }
-
-  .cliente-nombre {
-    font-size: 10px;
-  }
-
-  .total-col {
-    font-size: 10px;
-  }
-
-  .total-row td:last-child {
-    font-size: 11px;
-  }
+  .resultados-resumen { flex-direction: column; gap: 6px; align-items: stretch; }
+  .resumen-item { flex-direction: row; justify-content: space-between; padding: 4px 10px; }
+  .resumen-label { font-size: 11px; }
+  .resumen-valor { font-size: 12px; }
+  .tabla-reportes { font-size: 10px; }
+  .tabla-reportes th, .tabla-reportes td { padding: 4px 6px; }
+  .menu-dropdown { max-height: 180px; }
+  .cliente-nombre { font-size: 10px; }
+  .total-col { font-size: 10px; }
+  .total-row td:last-child { font-size: 11px; }
 }

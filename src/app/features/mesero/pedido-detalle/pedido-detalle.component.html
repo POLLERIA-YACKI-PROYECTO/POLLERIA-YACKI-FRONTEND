@@ -1,0 +1,163 @@
+<!-- pedido-detalle.component.html - Actualizar con signals -->
+<div class="modal-overlay" [class.active]="visible" (click)="cerrarModal()">
+  <div class="modal-content" (click)="onModalClick($event)">
+    <!-- HEADER -->
+    <div class="modal-header">
+      <div class="header-info">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <circle cx="16" cy="15" r="1"/>
+            <circle cx="8" cy="15" r="1"/>
+          </svg>
+          Pedido #{{ pedido?.id }}
+        </h2>
+        <span class="pedido-estado {{ getEstadoClass(pedido?.estado) }}">
+          <span [innerHTML]="getEstadoSvg(pedido?.estado)"></span>
+          {{ getEstadoTexto(pedido?.estado) }}
+        </span>
+      </div>
+      <button class="btn-cerrar" (click)="cerrarModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- INFORMACIÓN DEL PEDIDO -->
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Cliente
+          </span>
+          <span class="info-value">{{ clienteNombre() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            Tipo de Entrega
+          </span>
+          <span class="info-value tipo-entrega {{ pedido?.tipo_entrega || 'local' }}">
+            {{ getTipoEntregaIcono(pedido?.tipo_entrega) }}
+            {{ getTipoEntregaLabel(pedido?.tipo_entrega) }}
+          </span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Mesero
+          </span>
+          <span class="info-value">{{ usuarioNombre() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Fecha
+          </span>
+          <span class="info-value">{{ formatearFecha(fechaPedido()) }}</span>
+        </div>
+        <div class="info-item" *ngIf="pedido?.mesa_numero">
+          <span class="info-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            Mesa
+          </span>
+          <span class="info-value">Mesa #{{ pedido?.mesa_numero }}</span>
+        </div>
+        <div class="info-item" *ngIf="pedido?.observaciones">
+          <span class="info-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Observaciones
+          </span>
+          <span class="info-value observaciones">{{ pedido?.observaciones }}</span>
+        </div>
+      </div>
+
+      <!-- PRODUCTOS -->
+      <div class="productos-section">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <circle cx="16" cy="15" r="1"/>
+            <circle cx="8" cy="15" r="1"/>
+          </svg>
+          Productos ({{ totalItems() }})
+        </h3>
+        <div class="productos-lista">
+          <div class="producto-item" *ngFor="let item of itemsPedido(); let i = index">
+            <span class="item-numero">{{ i + 1 }}</span>
+            <span class="item-nombre">{{ item.nombre || 'Producto' }}</span>
+            <span class="item-cantidad">x{{ item.cantidad || 1 }}</span>
+            <span class="item-precio">{{ formatearPrecio(item.precio || 0) }}</span>
+            <span class="item-subtotal">{{ formatearPrecio((item.precio || 0) * (item.cantidad || 1)) }}</span>
+          </div>
+          <div *ngIf="itemsPedido().length === 0" class="sin-items">
+            No hay productos en este pedido
+          </div>
+        </div>
+
+        <!-- TOTALES -->
+        <div class="totales">
+          <div class="total-line">
+            <span>Subtotal</span>
+            <span>{{ formatearPrecio(subtotal()) }}</span>
+          </div>
+          <div class="total-line">
+            <span>IGV (18%)</span>
+            <span>{{ formatearPrecio(igv()) }}</span>
+          </div>
+          <div class="total-line total-final">
+            <span>Total</span>
+            <span>{{ formatearPrecio(total()) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCIONES - CAMBIAR ESTADO -->
+      <div class="acciones-section">
+        <h3>Cambiar Estado</h3>
+        <div class="estados-buttons">
+          <button
+            *ngFor="let estado of estadosDisponibles"
+            class="estado-btn"
+            [class.active]="pedido?.estado === estado.value"
+            [class.estado-pendiente]="estado.value === 'pendiente'"
+            [class.estado-preparando]="estado.value === 'preparando'"
+            [class.estado-listo]="estado.value === 'listo'"
+            [class.estado-entregado]="estado.value === 'entregado'"
+            [class.estado-cancelado]="estado.value === 'cancelado'"
+            (click)="cambiarEstado(estado.value)"
+          >
+            <span [innerHTML]="getEstadoSvg(estado.value)"></span>
+            {{ estado.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cerrar-modal" (click)="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>

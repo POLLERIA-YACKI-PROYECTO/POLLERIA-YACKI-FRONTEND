@@ -17,7 +17,7 @@
           </svg>
           Tickets Generados
         </h1>
-        <p class="subtitle">Historial de tickets</p>
+        <p class="subtitle">Historial de tickets de pedidos pagados</p>
       </div>
       <div class="header-buttons">
         <div class="menu-container">
@@ -124,6 +124,24 @@
       </div>
     </div>
 
+    <!-- STATS -->
+    <div class="stats-tickets">
+      <div class="stat-card">
+        <span class="stat-icon">🎫</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalTickets() }}</span>
+          <span class="stat-label">Total Tickets</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">💰</span>
+        <div class="stat-info">
+          <span class="stat-value">S/ {{ totalRecaudado() | number:'1.2-2' }}</span>
+          <span class="stat-label">Total Recaudado</span>
+        </div>
+      </div>
+    </div>
+
     @if (loading()) {
       <div class="loading-spinner">
         <div class="spinner"></div>
@@ -135,47 +153,55 @@
       <div class="tickets-grid">
         @for (ticket of tickets(); track ticket.id) {
           <div class="ticket-card">
-            <div class="ticket-id">{{ ticket.id }}</div>
-            <div class="ticket-info">
-              <span class="ticket-mesa">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <rect x="2" y="7" width="20" height="14" rx="2"/>
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                </svg>
-                Mesa {{ ticket.mesa }}
-              </span>
-              <span class="ticket-cliente">
+            <div class="ticket-header-card">
+              <span class="ticket-id">#{{ ticket.id }}</span>
+              <span class="ticket-fecha">{{ ticket.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="ticket-body">
+              <div class="ticket-cliente">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
                 {{ ticket.cliente }}
-              </span>
+              </div>
+              <div class="ticket-info-row">
+                <span class="ticket-items">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                  </svg>
+                  {{ ticket.totalItems }} productos
+                </span>
+                <span class="ticket-tipo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                  </svg>
+                  {{ ticket.tipo_entrega === 'delivery' || ticket.tipo_entrega === 'motorizada' ? 'Motorizado' : 'Local' }}
+                </span>
+                <span class="ticket-metodo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+                  </svg>
+                  {{ ticket.metodo_pago | titlecase }}
+                </span>
+              </div>
+              <div class="ticket-total">
+                <span>Total</span>
+                <span>S/ {{ ticket.total | number:'1.2-2' }}</span>
+              </div>
             </div>
-            <div class="ticket-details">
-              <span class="ticket-items">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <rect x="2" y="7" width="20" height="14" rx="2"/>
-                  <line x1="2" y1="12" x2="22" y2="12"/>
+            <div class="ticket-footer">
+              <button class="btn-ver" (click)="verTicket(ticket)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
                 </svg>
-                {{ ticket.items }} productos
-              </span>
-              <span class="ticket-total">S/ {{ ticket.total | number:'1.2-2' }}</span>
+                Ver Ticket
+              </button>
             </div>
-            <div class="ticket-date">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              {{ ticket.fecha }}
-            </div>
-            <button class="btn-ver" (click)="verTicket(ticket.id)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              Ver Ticket
-            </button>
           </div>
         }
         @empty {
@@ -190,9 +216,136 @@
               <path d="M20 20L16 16"/>
             </svg>
             <p>No hay tickets generados</p>
+            <span>Los pedidos pagados aparecerán aquí</span>
           </div>
         }
       </div>
     }
   </div>
 </div>
+
+<!-- MODAL DETALLE TICKET -->
+@if (mostrarDetalleTicket() && ticketSeleccionado()) {
+  <div class="modal-overlay" (click)="cerrarDetalle()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🎫 Ticket #{{ ticketSeleccionado()?.id }}</h2>
+        <button class="btn-cerrar" (click)="cerrarDetalle()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body ticket-detalle">
+        <!-- Header del Ticket -->
+        <div class="ticket-print-header">
+          <div class="ticket-empresa">
+            <h3>🍗 Doña Yacki</h3>
+            <p>Sabor que enamora</p>
+            <p class="ticket-direccion">Mz M2 Lt 33, Jardines de Chillón</p>
+            <p class="ticket-telefono">Tel: 902 458 936</p>
+          </div>
+          <div class="ticket-separador">─────────────────</div>
+        </div>
+
+        <!-- Información del Ticket -->
+        <div class="ticket-info">
+          <div class="info-line">
+            <span><strong>Ticket #{{ ticketSeleccionado()?.id }}</strong></span>
+            <span>{{ ticketSeleccionado()?.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="info-line">
+            <span><strong>Cliente:</strong> {{ ticketSeleccionado()?.cliente }}</span>
+            <span><strong>Mesa:</strong> {{ ticketSeleccionado()?.mesa || '--' }}</span>
+          </div>
+          <div class="info-line">
+            <span><strong>Mesero:</strong> {{ ticketSeleccionado()?.usuario_nombre }}</span>
+            <span><strong>Tipo:</strong> {{ ticketSeleccionado()?.tipo_entrega === 'delivery' || ticketSeleccionado()?.tipo_entrega === 'motorizada' ? 'Motorizado' : 'Local' }}</span>
+          </div>
+          <div class="info-line">
+            <span><strong>Método:</strong> <span class="metodo-pago">{{ ticketSeleccionado()?.metodo_pago | titlecase }}</span></span>
+          </div>
+          @if (ticketSeleccionado()?.observaciones) {
+            <div class="observaciones">
+              📝 {{ ticketSeleccionado()?.observaciones }}
+            </div>
+          }
+        </div>
+
+        <div class="ticket-separador">─────────────────</div>
+
+        <!-- Tabla de Productos -->
+        <div class="ticket-productos">
+          <table class="ticket-tabla">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Producto</th>
+                <th class="text-right">Cant</th>
+                <th class="text-right">Precio</th>
+                <th class="text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of ticketSeleccionado()?.items; track $index) {
+                <tr>
+                  <td>{{ $index + 1 }}</td>
+                  <td>{{ item.nombre || 'Producto' }}</td>
+                  <td class="text-right">{{ item.cantidad || 1 }}</td>
+                  <td class="text-right">S/ {{ (item.precio || 0) | number:'1.2-2' }}</td>
+                  <td class="text-right">S/ {{ ((item.precio || 0) * (item.cantidad || 1)) | number:'1.2-2' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="ticket-separador">─────────────────</div>
+
+        <!-- Totales -->
+        <div class="ticket-totales">
+          <div class="total-line">
+            <span>Subtotal</span>
+            <span>S/ {{ ticketSeleccionado()?.subtotal | number:'1.2-2' }}</span>
+          </div>
+          <div class="total-line">
+            <span>IGV (18%)</span>
+            <span>S/ {{ ticketSeleccionado()?.igv | number:'1.2-2' }}</span>
+          </div>
+          <div class="total-line total-final">
+            <span><strong>TOTAL</strong></span>
+            <span><strong>S/ {{ ticketSeleccionado()?.total | number:'1.2-2' }}</strong></span>
+          </div>
+          <div class="total-items-info">
+            Total Items: {{ ticketSeleccionado()?.totalItems }}
+          </div>
+        </div>
+
+        <div class="ticket-separador">─────────────────</div>
+
+        <!-- Footer -->
+        <div class="ticket-footer-print">
+          <p>¡Gracias por tu preferencia!</p>
+          <p style="font-size:12px;color:#888;">Ticket generado el {{ fechaActual }}</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cerrar-modal" (click)="cerrarDetalle()">Cerrar</button>
+        <button class="btn-imprimir" (click)="imprimirTicket()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M18 9H6"/>
+            <rect x="6" y="14" width="12" height="8"/>
+            <line x1="10" y1="17" x2="14" y2="17"/>
+            <line x1="10" y1="19" x2="14" y2="19"/>
+            <rect x="8" y="11" width="8" height="2"/>
+          </svg>
+          Imprimir Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+}

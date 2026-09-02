@@ -1,4 +1,4 @@
-// src\app\core\services\pedido.service.ts
+// src/app/core/services/pedido.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -21,7 +21,9 @@ export class PedidoService {
     });
   }
 
+  // ✅ Obtener TODOS los pedidos del usuario autenticado
   obtenerPedidos(): Observable<any[]> {
+    console.log('📤 Solicitando todos los pedidos');
     return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
@@ -31,6 +33,13 @@ export class PedidoService {
 
   obtenerPedidosPagados(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/pagados`, { headers: this.getHeaders() });
+  }
+
+  obtenerPedidosPagadosMesero(): Observable<any[]> {
+    console.log('📤 Solicitando pedidos pagados del mesero');
+    return this.http.get<any[]>(`${this.apiUrl}/mesero/pagados`, { 
+      headers: this.getHeaders() 
+    });
   }
 
   obtenerPedidosPorTipo(tipo: string): Observable<any[]> {
@@ -49,7 +58,6 @@ export class PedidoService {
     return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
   }
 
-  // ✅ MÉTODO PARA MARCAR PAGADO
   marcarPagado(id: number, metodo_pago: string): Observable<any> {
     console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
     return this.http.put(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });

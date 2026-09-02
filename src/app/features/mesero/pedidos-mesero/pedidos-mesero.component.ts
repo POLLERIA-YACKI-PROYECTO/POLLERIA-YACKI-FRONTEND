@@ -9,11 +9,12 @@ import { ProductoService } from '../../../core/services/producto.service';
 import { ClienteService } from '../../../core/services/cliente.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
+import { PedidoDetalleComponent } from '../pedido-detalle/pedido-detalle.component';
 
 @Component({
   selector: 'app-pedidos-mesero',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, HeaderComponent, PedidoDetalleComponent],
   templateUrl: './pedidos-mesero.component.html',
   styleUrls: ['./pedidos-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
@@ -54,6 +55,10 @@ export class PedidosMeseroComponent implements OnInit {
   mostrarModalProductos = signal<boolean>(false);
   tipoEntrega = signal<string>('local');
   filtroTipo = signal<string>('todos');
+
+  // ✅ Modal Detalle Pedido
+  pedidoSeleccionado = signal<any>(null);
+  mostrarDetalle = signal<boolean>(false);
 
   totalPedido = computed(() => {
     return this.itemsPedido().reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
@@ -100,7 +105,18 @@ export class PedidosMeseroComponent implements OnInit {
 
     this.pedidoService.obtenerPedidos().subscribe({
       next: (pedidos: any[]) => {
-        this.pedidos.set(pedidos);
+        // Parsear items de cada pedido
+        const pedidosParseados = pedidos.map((p: any) => {
+          if (p.items && typeof p.items === 'string') {
+            try {
+              p.items = JSON.parse(p.items);
+            } catch (e) {
+              p.items = [];
+            }
+          }
+          return p;
+        });
+        this.pedidos.set(pedidosParseados);
         this.filtrarPedidosPorTipo();
         this.loading.set(false);
       },
@@ -219,9 +235,74 @@ export class PedidosMeseroComponent implements OnInit {
     return labels[tipo] || 'Local';
   }
 
-  verDetalle(id: number): void {
-    console.log(`📋 Ver detalle del pedido #${id}`);
-    alert(`📋 Ver detalle del pedido #${id}`);
+ // pedidos-mesero.component.ts - Reemplazar el método verDetalle
+
+// ✅ MÉTODO VER DETALLE - CORREGIDO
+verDetalle(pedido: any): void {
+  console.log('📋 === VER DETALLE PEDIDO ===');
+  console.log('📋 Pedido completo:', JSON.stringify(pedido, null, 2));
+  console.log('📋 Items raw:', pedido.items);
+  console.log('📋 Tipo de items:', typeof pedido.items);
+  
+  // Hacer una copia profunda del pedido
+  const pedidoCopia = JSON.parse(JSON.stringify(pedido));
+  
+  // ✅ Parsear items correctamente
+  if (pedidoCopia.items) {
+    if (typeof pedidoCopia.items === 'string') {
+      try {
+        pedidoCopia.items = JSON.parse(pedidoCopia.items);
+        console.log('📋 Items parseados desde string:', pedidoCopia.items);
+      } catch (e) {
+        console.error('❌ Error al parsear items:', e);
+        pedidoCopia.items = [];
+      }
+    } else if (!Array.isArray(pedidoCopia.items)) {
+      pedidoCopia.items = [];
+    }
+  } else {
+    pedidoCopia.items = [];
+  }
+  
+  // ✅ Asegurar que los campos tengan valores por defecto
+  pedidoCopia.cliente_nombre = pedidoCopia.cliente_nombre || 
+                               pedidoCopia.cliente_nombre_real || 
+                               'Cliente';
+  
+  pedidoCopia.usuario_nombre = pedidoCopia.usuario_nombre || 
+                               pedidoCopia.mesero_nombre || 
+                               'Desconocido';
+  
+  pedidoCopia.created_at = pedidoCopia.created_at || 
+                           pedidoCopia.fecha || 
+                           new Date().toISOString();
+  
+  console.log('📋 Pedido procesado para modal:', pedidoCopia);
+  console.log('📋 Items finales:', pedidoCopia.items);
+  console.log('📋 Total items:', pedidoCopia.items.length);
+  
+  this.pedidoSeleccionado.set(pedidoCopia);
+  this.mostrarDetalle.set(true);
+}
+  // ✅ CERRAR DETALLE
+  cerrarDetalle(): void {
+    this.mostrarDetalle.set(false);
+    this.pedidoSeleccionado.set(null);
+  }
+
+  // ✅ ACTUALIZAR ESTADO DEL PEDIDO DESDE EL MODAL
+  actualizarEstadoPedido(event: { id: number, estado: string }): void {
+    this.pedidoService.cambiarEstado(event.id, event.estado).subscribe({
+      next: () => {
+        alert(`✅ Pedido #${event.id} actualizado a "${this.getEstadoTexto(event.estado)}"`);
+        this.cerrarDetalle();
+        this.cargarDatos();
+      },
+      error: (err) => {
+        console.error('Error al actualizar estado:', err);
+        alert('❌ Error al actualizar el estado del pedido');
+      }
+    });
   }
 
   // ============================================
@@ -335,9 +416,9 @@ export class PedidosMeseroComponent implements OnInit {
       this.itemsPedido.update((items: any[]) => [...items, {
         id: producto.id,
         nombre: producto.nombre,
-        precio: producto.precio,
+        precio: typeof producto.precio === 'string' ? parseFloat(producto.precio) : producto.precio,
         cantidad: cantidad,
-        subtotal: producto.precio * cantidad
+        subtotal: (typeof producto.precio === 'string' ? parseFloat(producto.precio) : producto.precio) * cantidad
       }]);
     }
 
@@ -434,13 +515,13 @@ export class PedidosMeseroComponent implements OnInit {
   crearPedido(pedidoData: any): void {
     this.pedidoService.crearPedido(pedidoData).subscribe({
       next: (response: any) => {
-        alert('Pedido creado correctamente');
+        alert('✅ Pedido creado correctamente');
         this.cerrarModal();
         this.cargarDatos();
       },
       error: (err: any) => {
         console.error('Error al crear pedido:', err);
-        alert('Error al crear pedido: ' + (err.error?.detalle || err.message));
+        alert('❌ Error al crear pedido: ' + (err.error?.detalle || err.message));
       }
     });
   }
