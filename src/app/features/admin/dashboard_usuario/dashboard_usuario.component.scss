@@ -1,0 +1,113 @@
+:host {
+  --neon-green: #3ddc74;
+  --neon-yellow: #f5e642;
+  --neon-pink: #ec2f6e;
+  --bg-black: #0d0d0d;
+}
+
+.dashboard { 
+  min-height: 100vh; 
+  background: #111; 
+  color: #fff; 
+  padding: 20px; 
+}
+
+header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 20px; 
+}
+
+.brand { 
+  width: 90px; 
+}
+
+.header-actions { 
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+  font-size: 0.9rem; 
+}
+
+.header-actions a { 
+  color: var(--neon-yellow); 
+  text-decoration: none; 
+}
+
+.header-actions button { 
+  background: var(--neon-pink); 
+  border: none; 
+  color: #fff; 
+  padding: 6px 12px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+}
+
+h1 { 
+  font-size: 1.2rem; 
+  margin-bottom: 14px; 
+}
+
+.board { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+  gap: 14px; 
+}
+
+.order-card { 
+  background: #1a1a1a; 
+  border-radius: 12px; 
+  padding: 14px; 
+  border-left: 4px solid #444; 
+}
+
+.order-card.status-pendiente_pago { border-color: #888; }
+.order-card.status-pagado { border-color: var(--neon-green); }
+.order-card.status-en_preparacion { border-color: var(--neon-yellow); }
+.order-card.status-entregado { border-color: #4a9dff; }
+
+.row { 
+  display: flex; 
+  justify-content: space-between; 
+  margin-bottom: 6px; 
+}
+
+.row.muted { 
+  color: #999; 
+  font-size: 0.85rem; 
+}
+
+.status-badge { 
+  font-size: 0.75rem; 
+  padding: 2px 8px; 
+  border-radius: 999px; 
+  background: #262626; 
+}
+
+.actions { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 10px; 
+}
+
+.actions button { 
+  flex: 1; 
+  padding: 8px; 
+  border: none; 
+  border-radius: 8px; 
+  font-size: 0.8rem; 
+  cursor: pointer; 
+  background: var(--neon-green); 
+  font-weight: 700; 
+}
+
+.actions .secondary { 
+  background: #333; 
+  color: #fff; 
+}
+
+.actions button:disabled { 
+  opacity: 0.4; 
+  cursor: not-allowed; 
+}
