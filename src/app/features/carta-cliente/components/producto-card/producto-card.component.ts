@@ -19,6 +19,7 @@ export class ProductoCardComponent {
   get imagenUrl(): string {
     if (!this.producto?.imagen) return 'assets/images/default-product.png';
     if (this.producto.imagen.startsWith('http')) return this.producto.imagen;
+    if (this.producto.imagen.startsWith('assets/')) return this.producto.imagen;
     return `assets/images/${this.producto.imagen}`;
   }
 
@@ -35,7 +36,7 @@ export class ProductoCardComponent {
   get stockLabel(): string {
     const stock = this.producto?.stock ?? 0;
     if (stock === 0) return 'Agotado';
-    if (stock < 5) return `Últimas ${stock}`;
+    if (stock < 5) return `Ultimas ${stock}`;
     return '';
   }
 
@@ -49,10 +50,16 @@ export class ProductoCardComponent {
     if (!this.estaDisponible) return;
     this.agregando.set(true);
     this.agregar.emit(this.producto);
-    setTimeout(() => this.agregando.set(false), 300);
+    
+    // Reset después de la animación
+    setTimeout(() => {
+      this.agregando.set(false);
+    }, 500);
   }
 
   onImageError(event: Event): void {
-    (event.target as HTMLImageElement).src = 'assets/images/default-product.png';
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/images/default-product.png';
+    img.onerror = null;
   }
 }

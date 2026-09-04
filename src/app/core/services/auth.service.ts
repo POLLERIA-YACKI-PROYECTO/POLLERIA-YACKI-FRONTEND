@@ -1,4 +1,5 @@
-// src\app\core\services\auth.service.ts
+// src/app/core/services/auth.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
@@ -16,9 +17,13 @@ export class AuthService {
   loginAdmin(dni: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/login-admin`, { dni }).pipe(
       tap((response: any) => {
+        console.log('🔐 Login response:', response);
         if (response.token) {
           localStorage.setItem(this.tokenKey, response.token);
           localStorage.setItem(this.usuarioKey, JSON.stringify(response));
+          console.log('✅ Token guardado:', response.token.substring(0, 20) + '...');
+        } else {
+          console.warn('⚠️ No se recibió token en la respuesta');
         }
       })
     );
@@ -36,7 +41,9 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    const token = localStorage.getItem(this.tokenKey);
+    console.log('🔐 Token recuperado:', token ? token.substring(0, 20) + '...' : '❌ No existe');
+    return token;
   }
 
   getUsuarioActual(): any {

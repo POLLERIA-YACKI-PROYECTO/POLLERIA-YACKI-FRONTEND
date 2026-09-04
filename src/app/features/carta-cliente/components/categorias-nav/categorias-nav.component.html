@@ -1,0 +1,38 @@
+<!-- src/app/features/carta-cliente/components/categorias-nav/categorias-nav.component.html -->
+<nav class="categorias-nav">
+  <div class="categorias-container">
+    <!-- Botón principal - Muestra la categoría seleccionada -->
+    <button 
+      class="categoria-selector" 
+      (click)="toggleDropdown()"
+      [class.open]="dropdownAbierto()"
+      aria-label="Seleccionar categoría"
+    >
+      <span class="selector-icon" [innerHTML]="getCategoriaIcon(categoriaActual?.nombre || 'Brasas')"></span>
+      <span class="selector-nombre">{{ categoriaActual?.nombre || 'Brasas' }}</span>
+      <span class="selector-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </span>
+    </button>
+
+    <!-- Dropdown con todas las categorías -->
+    <div class="dropdown-menu" [class.open]="dropdownAbierto()">
+      <button
+        *ngFor="let cat of categorias"
+        class="dropdown-item"
+        [class.active]="categoriaSeleccionada === cat.id"
+        (click)="seleccionarCategoria(cat.id)"
+      >
+        <span class="dropdown-icon" [innerHTML]="getCategoriaIcon(cat.nombre)"></span>
+        <span class="dropdown-nombre">{{ cat.nombre }}</span>
+        <span class="dropdown-check" *ngIf="categoriaSeleccionada === cat.id">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+  </div>
+</nav>

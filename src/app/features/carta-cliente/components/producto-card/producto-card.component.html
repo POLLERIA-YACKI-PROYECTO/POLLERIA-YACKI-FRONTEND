@@ -1,6 +1,6 @@
 <!-- src/app/features/carta-cliente/components/producto-card/producto-card.component.html -->
 <div class="producto-card" [class.disponible]="estaDisponible" [class.no-disponible]="!estaDisponible">
-
+  
   <div class="producto-imagen">
     <img
       [src]="imagenUrl"
@@ -9,13 +9,13 @@
       (error)="onImageError($event)"
     >
     <span class="badge destacado" *ngIf="producto.destacado">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
       Destacado
     </span>
     <span class="badge agotado" *ngIf="!estaDisponible">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
         <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -23,7 +23,7 @@
       Agotado
     </span>
     <span class="badge stock-bajo" *ngIf="estaDisponible && stockLabel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 6v6l4 2"/>
       </svg>
@@ -34,8 +34,11 @@
   <div class="producto-info">
     <h3 class="producto-nombre">{{ producto.nombre }}</h3>
     <p class="producto-descripcion" *ngIf="producto.descripcion">{{ producto.descripcion }}</p>
+    
     <div class="producto-footer">
-      <span class="producto-precio">{{ formatearPrecio(producto.precio) }}</span>
+      <div class="precio-wrapper">
+        <span class="producto-precio">{{ formatearPrecio(producto.precio) }}</span>
+      </div>
       <button
         class="btn-agregar"
         [class.agregando]="agregando()"
@@ -43,16 +46,17 @@
         (click)="onAgregar()"
       >
         <span *ngIf="!agregando()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Agregar
+          <span class="btn-text">Agregar</span>
         </span>
-        <span *ngIf="agregando()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+        <span *ngIf="agregando()" class="agregado-confirm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
+          <span class="btn-text">¡Listo!</span>
         </span>
       </button>
     </div>

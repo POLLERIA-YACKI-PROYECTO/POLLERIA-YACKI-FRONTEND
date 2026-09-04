@@ -1,0 +1,435 @@
+// src/app/features/carta-cliente/components/categorias-nav/categorias-nav.component.scss
+.categorias-nav {
+  background: #ffffff;
+  padding: 10px 16px;
+  border-bottom: 2px solid #f0ece4;
+  position: sticky;
+  top: 70px;
+  z-index: 90;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+
+  .categorias-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  // ============================================
+  // BOTÓN SELECTOR PRINCIPAL
+  // ============================================
+  .categoria-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    width: 100%;
+    max-width: 320px;
+    background: #f8f6f3;
+    border: 2px solid #e8e0d6;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: #2d1f14;
+    position: relative;
+
+    .selector-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+
+      svg {
+        width: 24px;
+        height: 24px;
+        stroke: #c5302a;
+        fill: none;
+      }
+    }
+
+    .selector-nombre {
+      flex: 1;
+      text-align: left;
+      font-weight: 600;
+      color: #2d1f14;
+    }
+
+    .selector-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        stroke: #999;
+      }
+    }
+
+    &:hover {
+      border-color: #c5302a;
+      background: rgba(197, 48, 42, 0.04);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(197, 48, 42, 0.08);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    &.open {
+      border-color: #c5302a;
+      background: rgba(197, 48, 42, 0.06);
+      box-shadow: 0 4px 20px rgba(197, 48, 42, 0.12);
+
+      .selector-arrow {
+        transform: rotate(180deg);
+
+        svg {
+          stroke: #c5302a;
+        }
+      }
+
+      .selector-icon svg {
+        stroke: #c5302a;
+      }
+    }
+  }
+
+  // ============================================
+  // DROPDOWN MENU
+  // ============================================
+  .dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    max-width: 320px;
+    background: #ffffff;
+    border: 2px solid #e8e0d6;
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+
+    &.open {
+      max-height: 420px;
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      overflow-y: auto;
+    }
+
+    // Scrollbar personalizado
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f0ece4;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c5302a;
+      border-radius: 4px;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 18px;
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #f5f0ea;
+      background: transparent;
+      color: #555;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      font-family: inherit;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .dropdown-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+
+        svg {
+          width: 24px;
+          height: 24px;
+          stroke: currentColor;
+          fill: none;
+          transition: stroke 0.2s ease;
+        }
+      }
+
+      .dropdown-nombre {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .dropdown-check {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+
+        svg {
+          width: 18px;
+          height: 18px;
+          stroke: #01a850;
+        }
+      }
+
+      &:hover {
+        background: rgba(197, 48, 42, 0.05);
+        color: #c5302a;
+
+        .dropdown-icon svg {
+          stroke: #c5302a;
+        }
+      }
+
+      &:active {
+        transform: scale(0.98);
+      }
+
+      &.active {
+        background: #c5302a;
+        color: #ffffff;
+        border-radius: 0;
+
+        .dropdown-icon svg {
+          stroke: #fef900;
+        }
+
+        .dropdown-nombre {
+          color: #ffffff;
+        }
+
+        .dropdown-check svg {
+          stroke: #fef900;
+        }
+
+        &:hover {
+          background: #a02822;
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+
+// PC y tablets grandes
+@media (min-width: 769px) {
+  .categorias-nav {
+    .categoria-selector {
+      max-width: 280px;
+      padding: 10px 16px;
+      font-size: 14px;
+
+      .selector-icon {
+        width: 24px;
+        height: 24px;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    .dropdown-menu {
+      max-width: 280px;
+
+      .dropdown-item {
+        padding: 10px 16px;
+        font-size: 13px;
+
+        .dropdown-icon {
+          width: 26px;
+          height: 26px;
+
+          svg {
+            width: 20px;
+            height: 20px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Tablets y móviles grandes
+@media (max-width: 768px) {
+  .categorias-nav {
+    padding: 8px 12px;
+    top: 62px;
+
+    .categoria-selector {
+      max-width: 100%;
+      padding: 10px 14px;
+      font-size: 14px;
+      border-radius: 10px;
+
+      .selector-icon {
+        width: 26px;
+        height: 26px;
+
+        svg {
+          width: 22px;
+          height: 22px;
+        }
+      }
+    }
+
+    .dropdown-menu {
+      max-width: 100%;
+      border-radius: 10px;
+
+      .dropdown-item {
+        padding: 12px 16px;
+        font-size: 14px;
+
+        .dropdown-icon {
+          width: 28px;
+          height: 28px;
+
+          svg {
+            width: 22px;
+            height: 22px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Móviles pequeños
+@media (max-width: 480px) {
+  .categorias-nav {
+    padding: 6px 10px;
+    top: 56px;
+
+    .categoria-selector {
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 8px;
+      gap: 10px;
+
+      .selector-icon {
+        width: 22px;
+        height: 22px;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .selector-arrow svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .dropdown-menu {
+      border-radius: 8px;
+
+      .dropdown-item {
+        padding: 10px 14px;
+        font-size: 13px;
+        gap: 12px;
+
+        .dropdown-icon {
+          width: 24px;
+          height: 24px;
+
+          svg {
+            width: 18px;
+            height: 18px;
+          }
+        }
+
+        .dropdown-nombre {
+          font-size: 13px;
+        }
+
+        .dropdown-check svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+}
+
+// Extra small
+@media (max-width: 360px) {
+  .categorias-nav {
+    .categoria-selector {
+      padding: 6px 10px;
+      font-size: 12px;
+      gap: 8px;
+
+      .selector-icon {
+        width: 18px;
+        height: 18px;
+
+        svg {
+          width: 15px;
+          height: 15px;
+        }
+      }
+
+      .selector-nombre {
+        font-size: 12px;
+      }
+    }
+
+    .dropdown-menu .dropdown-item {
+      padding: 8px 12px;
+      font-size: 12px;
+
+      .dropdown-icon {
+        width: 20px;
+        height: 20px;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .dropdown-nombre {
+        font-size: 12px;
+      }
+    }
+  }
+}

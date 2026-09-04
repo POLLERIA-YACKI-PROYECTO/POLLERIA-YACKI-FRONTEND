@@ -1,6 +1,6 @@
-// src\app\core\services\producto.service.ts
+// src/app/core/services/producto.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
@@ -21,9 +21,24 @@ export class ProductoService {
     });
   }
 
-  // Obtener todos los productos
+  // ✅ PÚBLICO - Sin autenticación
   obtenerProductos(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
+    return this.http.get<any[]>(this.apiUrl);
+  }
+
+  // ✅ PÚBLICO - Sin autenticación
+  obtenerProductosDisponibles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/disponibles`);
+  }
+
+  // ✅ PÚBLICO - Sin autenticación
+  obtenerPorCategoria(categoriaId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/categoria/${categoriaId}`);
+  }
+
+  // ✅ PÚBLICO - Sin autenticación
+  obtenerProducto(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`);
   }
 
   // Buscar productos por término (frontend)
@@ -35,50 +50,32 @@ export class ProductoService {
     const terminoLower = termino.toLowerCase().trim();
     
     return productos.filter(producto => {
-      // Buscar por nombre
-      const nombreMatch = producto.nombre.toLowerCase().includes(terminoLower);
-      
-      // Buscar por categoría (si está disponible)
+      const nombreMatch = producto.nombre?.toLowerCase().includes(terminoLower) || false;
       const categoriaMatch = producto.categoria_nombre?.toLowerCase().includes(terminoLower) || false;
+      const precioMatch = producto.precio?.toString().includes(terminoLower) || false;
+      const idMatch = producto.id?.toString().includes(terminoLower) || false;
+      const descripcionMatch = producto.descripcion?.toLowerCase().includes(terminoLower) || false;
       
-      // Buscar por precio
-      const precioMatch = producto.precio.toString().includes(terminoLower);
-      
-      // Buscar por ID
-      const idMatch = producto.id.toString().includes(terminoLower);
-      
-      return nombreMatch || categoriaMatch || precioMatch || idMatch;
+      return nombreMatch || categoriaMatch || precioMatch || idMatch || descripcionMatch;
     });
   }
 
-  // Obtener productos por categoría
-  obtenerPorCategoria(categoriaId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/categoria/${categoriaId}`, { 
-      headers: this.getHeaders() 
-    });
-  }
-
-  // Obtener producto por ID
-  obtenerProducto(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
-  }
-
-  // Crear producto (Admin)
+  // 🔒 REQUIERE AUTENTICACIÓN
   crearProducto(producto: any): Observable<any> {
     return this.http.post(this.apiUrl, producto, { headers: this.getHeaders() });
   }
 
-  // Actualizar producto (Admin)
+  // 🔒 REQUIERE AUTENTICACIÓN
   actualizarProducto(id: number, producto: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}`, producto, { headers: this.getHeaders() });
   }
 
-  // Toggle disponible (Mesero/Admin)
+  // 🔒 REQUIERE AUTENTICACIÓN
   toggleDisponible(id: number): Observable<any> {
     return this.http.patch(`${this.apiUrl}/${id}/toggle`, {}, { headers: this.getHeaders() });
   }
 
-  // Eliminar producto (Admin)
+  // 🔒 REQUIERE AUTENTICACIÓN
   eliminarProducto(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
