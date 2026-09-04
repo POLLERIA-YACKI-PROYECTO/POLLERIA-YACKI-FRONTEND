@@ -6,16 +6,19 @@ import { PedidoService } from '../../../core/services/pedido.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { AuthService } from '../../../core/services/auth.service';
 
-// --- Definición de tipos/interfaces ---
 export type OrderStatus = 'pendiente_pago' | 'pagado' | 'en_preparacion' | 'entregado' | 'cancelado' | 'expirado';
 
 export interface LiveOrder {
   id: number | string;
   orderCode?: string;
+  codigo?: string;
   status: OrderStatus;
+  estado?: string;
   customerName?: string;
+  cliente?: string;
   total: number;
-  [key: string]: any;
+  monto_total?: number;
+  [key: string]: any; // ✅ AÑADIR para propiedades dinámicas
 }
 
 @Component({
@@ -23,7 +26,7 @@ export interface LiveOrder {
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './dashboard_usuario.component.html',
-  styleUrl: './dashboard_usuario.component.scss',
+  styleUrls: ['./dashboard_usuario.component.scss'],
 })
 export class DashboardUsuarioComponent implements OnInit, OnDestroy {
   orders = signal<LiveOrder[]>([]);
@@ -51,17 +54,19 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
     this.loadOrders();
     this.socketService.joinAdminDashboard();
 
+    // ✅ CORREGIDO: usar any
     this.socketService
       .onNewOrder()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((o: LiveOrder) => {
-        this.orders.update((list) => [o, ...list]);
+      .subscribe((o: any) => {
+        this.orders.update((list) => [o as LiveOrder, ...list]);
       });
 
+    // ✅ CORREGIDO: usar any
     this.socketService
       .onOrderUpdated()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((updated: LiveOrder) => {
+      .subscribe((updated: any) => {
         this.orders.update((list) =>
           list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o))
         );
@@ -84,7 +89,8 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
     if (idx === -1 || idx === this.statusFlow.length - 1) return;
     const next = this.statusFlow[idx + 1];
 
-    this.orderService.updateOrderStatus(order.id, next).subscribe((updated: LiveOrder) => {
+    // ✅ CORREGIDO: convertir a number
+    this.orderService.updateOrderStatus(Number(order.id), next).subscribe((updated: LiveOrder) => {
       this.orders.update((list) =>
         list.map((o) => (o.id === updated.id ? { ...o, ...updated } : o))
       );
@@ -92,7 +98,8 @@ export class DashboardUsuarioComponent implements OnInit, OnDestroy {
   }
 
   reprint(order: LiveOrder): void {
-    this.orderService.reprintVoucher(order.id).subscribe((res: { pdfPath: string }) => {
+    // ✅ CORREGIDO: convertir a number
+    this.orderService.reprintVoucher(Number(order.id)).subscribe((res: { pdfPath: string }) => {
       if (res?.pdfPath) {
         window.open(res.pdfPath, '_blank');
       }

@@ -1,7 +1,8 @@
 // src/app/features/carta-cliente/components/producto-card/producto-card.component.ts
 import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Producto } from '../../../../core/models/interfaces';
+// ✅ CORREGIDO: usar Product
+import { Product } from '../../../../core/models/interfaces';
 
 @Component({
   selector: 'app-producto-card',
@@ -11,8 +12,9 @@ import { Producto } from '../../../../core/models/interfaces';
   styleUrls: ['./producto-card.component.scss']
 })
 export class ProductoCardComponent {
-  @Input() producto!: Producto;
-  @Output() agregar = new EventEmitter<Producto>();
+  // ✅ CORREGIDO: usar Product
+  @Input() producto!: Product;
+  @Output() agregar = new EventEmitter<Product>();
 
   agregando = signal(false);
 
@@ -24,18 +26,14 @@ export class ProductoCardComponent {
 
   get estaDisponible(): boolean {
     return this.producto?.disponible !== false &&
-           this.producto?.agotado !== true &&
-           (this.producto?.stock ?? 0) > 0;
+           this.producto?.agotado !== true;
   }
 
   get tieneStock(): boolean {
-    return (this.producto?.stock ?? 0) > 0;
+    return true;
   }
 
   get stockLabel(): string {
-    const stock = this.producto?.stock ?? 0;
-    if (stock === 0) return 'Agotado';
-    if (stock < 5) return `Últimas ${stock}`;
     return '';
   }
 

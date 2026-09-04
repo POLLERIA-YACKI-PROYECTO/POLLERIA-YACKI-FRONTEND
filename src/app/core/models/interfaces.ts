@@ -1,7 +1,4 @@
-/**
- * Interfaces y tipos compartidos para la gestión de productos, 
- * carrito y pedidos en Pollería Yacky.
- */
+// src/app/core/models/interfaces.ts
 
 // --- TIPOS Y ESTADOS ---
 export type OrderStatus =
@@ -17,25 +14,38 @@ export type OrderChannel = 'web' | 'local' | 'delivery';
 // --- PRODUCTOS Y CATEGORÍAS ---
 export interface Product {
   id: number;
-  name: string;
+  nombre: string;
+  name?: string;
+  descripcion?: string | null;
   description?: string | null;
-  category: string;
-  price: number | string; // Permite manejar conversion de MySQL (string/decimal) a número
+  categoria_id: number;
+  category?: string;
+  precio: number | string;
+  price?: number | string;
+  imagen?: string | null;
   imageUrl?: string | null;
+  disponible: boolean;
+  agotado?: boolean;
+  stock?: number;
+  destacado?: boolean;
+}
+
+export interface Categoria {
+  id: number;
+  nombre: string;
+  activo?: boolean;
+  orden?: number;
+}
+
+export interface ItemCarrito {
+  producto: Product;
+  cantidad: number;
 }
 
 export interface ProductCategory {
   code: string;
   label: string;
   items: Product[];
-}
-
-// --- CARRITO DE COMPRAS ---
-export interface CartItem {
-  productId: number;
-  productName: string;
-  unitPrice: number;
-  quantity: number;
 }
 
 // --- SOLICITUD Y RESPUESTA DE PEDIDOS ---
@@ -47,8 +57,17 @@ export interface OrderItemRequest {
 export interface CreateOrderRequest {
   customerName: string;
   customerPhone: string;
-  channelCode: OrderChannel;
+  channelCode: string;
   items: OrderItemRequest[];
+  subtotal?: number;
+  igv?: number;
+  total?: number;
+  tipo_entrega?: string;
+  metodo_pago?: string;
+  pagado?: boolean;
+  cliente_nombre?: string;
+  observaciones?: string;
+  estado?: string;
 }
 
 export interface CreateOrderResponse {
@@ -66,19 +85,7 @@ export interface OrderStatusResponse {
   total: number;
 }
 
-// --- COMPROBANTES Y VOUCHERS ---
-export interface VoucherItem {
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-}
-
-export interface VoucherDetails {
-  voucherCode: string;
-  pdfPath: string;
-}
-
+// ✅ AÑADIDO VoucherResponse
 export interface VoucherResponse {
   orderCode: string;
   total: number;
@@ -88,19 +95,33 @@ export interface VoucherResponse {
   voucher: VoucherDetails;
 }
 
-// --- MONITOREO Y PEDIDOS EN VIVO ---
-export interface LiveOrderItem {
+// ✅ AÑADIDO VoucherItem
+export interface VoucherItem {
   productName: string;
   quantity: number;
+  unitPrice: number;
+  lineTotal: number;
 }
 
+// ✅ AÑADIDO VoucherDetails
+export interface VoucherDetails {
+  voucherCode: string;
+  pdfPath: string;
+}
+
+// --- MONITOREO Y PEDIDOS EN VIVO ---
 export interface LiveOrder {
   id: number;
   orderCode: string;
+  codigo?: string;
   status: OrderStatus;
+  estado?: string;
   total: number;
+  monto_total?: number;
   customerName?: string;
+  cliente?: string;
   createdAt: string;
   updatedAt: string;
-  items?: LiveOrderItem[];
+  items?: any[];
+  [key: string]: any;
 }

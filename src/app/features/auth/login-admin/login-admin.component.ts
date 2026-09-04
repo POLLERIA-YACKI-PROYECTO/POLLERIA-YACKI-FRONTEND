@@ -33,8 +33,8 @@ export class LoginAdminComponent implements OnInit {
 
   ngOnInit(): void {
     const usuario = this.authService.getUsuarioActual();
-    if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
-      // ✅ CORREGIDO: Redirigir a /admin/dashboard-admin
+    // ✅ CORREGIDO: usuario.rol → usuario.role
+    if (usuario && (usuario.role === 'admin' || usuario.role === 'cajero')) {
       this.router.navigate(['/admin/dashboard-admin']);
     }
   }
@@ -58,11 +58,11 @@ export class LoginAdminComponent implements OnInit {
     this.authService.loginAdmin(dni).subscribe({
       next: (usuario) => {
         this.isLoading.set(false);
-        this.nombreUsuario.set(usuario.nombre);
+        // ✅ CORREGIDO: usuario.nombre → usuario['nombre']
+        this.nombreUsuario.set(usuario['nombre']);
         this.mostrarBienvenida.set(true);
 
         setTimeout(() => {
-          // ✅ CORREGIDO: Redirigir a /admin/dashboard-admin
           this.router.navigate(['/admin/dashboard-admin']);
         }, 1500);
       },

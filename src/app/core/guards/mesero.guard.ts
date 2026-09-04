@@ -1,4 +1,4 @@
-// src\app\core\guards\admin.guard.ts
+// src/app/core/guards/mesero.guard.ts
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -18,13 +18,14 @@ export const MeseroGuard = () => {
     return router.parseUrl('/login-mesero');
   }
 
-  if (usuario && usuario.rol === 'mesero') {
+  // ✅ CORREGIDO: usuario.rol → usuario.role
+  if (usuario && usuario.role === 'mesero') {
     console.log('MeseroGuard - Acceso permitido para mesero');
     return true;
   }
 
-  // Si es admin, redirigir a su dashboard
-  if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
+  // ✅ CORREGIDO: usuario.rol → usuario.role
+  if (usuario && (usuario.role === 'admin' || usuario.role === 'cajero')) {
     console.log('MeseroGuard - Usuario es admin, redirigiendo a dashboard-admin');
     return router.parseUrl('/admin/dashboard-admin');
   }

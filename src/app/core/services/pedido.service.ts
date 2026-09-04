@@ -23,9 +23,6 @@ export class PedidoService {
   private apiUrl = `${environment.apiUrl}/pedidos`;
   private adminApiUrl = `${environment.apiUrl}/admin/orders`;
 
-  /**
-   * Encabezados con JWT para endpoints administrativos
-   */
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
@@ -34,30 +31,18 @@ export class PedidoService {
     });
   }
 
-
-  // ✅ Obtener TODOS los pedidos del usuario autenticado
-
   // ==========================================
-  // --- FLUSO DEL CLIENTE (MÓDULO PÚBLICO) ---
+  // --- FLUJO DEL CLIENTE (MÓDULO PÚBLICO) ---
   // ==========================================
 
-  /**
-   * Crear pedido desde la web/app del cliente
-   */
   crearPedido(payload: CreateOrderRequest): Observable<CreateOrderResponse> {
     return this.http.post<CreateOrderResponse>(this.apiUrl, payload);
   }
 
-  /**
-   * Alias de compatibilidad para el flujo en inglés
-   */
   createOrder(payload: CreateOrderRequest): Observable<CreateOrderResponse> {
     return this.crearPedido(payload);
   }
 
-  /**
-   * Obtener el voucher/comprobante mediante el código de orden
-   */
   obtenerVoucher(orderCode: string): Observable<VoucherResponse> {
     return this.http.get<VoucherResponse>(`${this.apiUrl}/${orderCode}/voucher`);
   }
@@ -66,10 +51,6 @@ export class PedidoService {
     return this.obtenerVoucher(orderCode);
   }
 
-  /**
-   * POLLING de respaldo: Consulta cada 3s el estado del pedido.
-   * Se ejecuta en paralelo con WebSockets (qr-view.component.ts)
-   */
   pollOrderStatus(orderCode: string, stop$: Subject<void>): Observable<OrderStatusResponse> {
     return interval(3000).pipe(
       switchMap(() => this.http.get<OrderStatusResponse>(`${this.apiUrl}/${orderCode}/status`)),
@@ -80,7 +61,6 @@ export class PedidoService {
   // ==========================================
   // --- MÓDULO ADMINISTRATIVO / MESERO / CAJA ---
   // ==========================================
-
 
   obtenerPedidos(): Observable<any[]> {
     console.log('📤 Solicitando todos los pedidos');
@@ -118,8 +98,8 @@ export class PedidoService {
     return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
   }
 
-
-  updateOrderStatus(id: number, status: OrderStatus): Observable<LiveOrder> {
+  // ✅ CORREGIDO: aceptar string como parámetro
+  updateOrderStatus(id: number, status: string | OrderStatus): Observable<LiveOrder> {
     return this.http.patch<LiveOrder>(
       `${this.adminApiUrl}/${id}/status`, 
       { status }, 

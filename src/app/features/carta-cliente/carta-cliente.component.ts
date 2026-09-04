@@ -10,8 +10,8 @@ import { ProductoService } from '../../core/services/producto.service';
 import { PedidoService } from '../../core/services/pedido.service';
 import { AuthService } from '../../core/services/auth.service';
 
-// Interfaces
-import { Categoria, Producto, ItemCarrito } from '../../core/models/interfaces';
+// ✅ CORREGIDO: usar Product en lugar de Producto
+import { Categoria, Product, ItemCarrito, CreateOrderRequest } from '../../core/models/interfaces';
 
 // Components
 import { ProductoCardComponent } from './components/producto-card/producto-card.component';
@@ -41,8 +41,9 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   loading = signal(true);
   error = signal<string | null>(null);
   categorias = signal<Categoria[]>([]);
-  productos = signal<Producto[]>([]);
-  productosFiltrados = signal<Producto[]>([]);
+  // ✅ CORREGIDO: usar Product
+  productos = signal<Product[]>([]);
+  productosFiltrados = signal<Product[]>([]);
   categoriaSeleccionada = signal<number | null>(null);
   carrito = signal<ItemCarrito[]>([]);
   mostrarCarrito = signal(false);
@@ -50,7 +51,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   cargandoPedido = signal(false);
   busqueda = signal('');
 
-  // Computed properties
   totalItems = computed(() => {
     return this.carrito().reduce((sum, item) => sum + item.cantidad, 0);
   });
@@ -82,15 +82,11 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    // ✅ CARGAR DATOS SIN REQUERIR AUTENTICACIÓN
-    // La carta de cliente es pública, no requiere login
     console.log('🔄 Iniciando carta de cliente...');
     this.cargarDatos();
   }
 
-  ngOnDestroy(): void {
-    // Limpiar suscripciones si es necesario
-  }
+  ngOnDestroy(): void {}
 
   cargarDatos(): void {
     console.log('📥 Cargando datos...');
@@ -166,7 +162,8 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }
   }
 
-  agregarAlCarrito(producto: Producto): void {
+  // ✅ CORREGIDO: usar Product
+  agregarAlCarrito(producto: Product): void {
     const carritoActual = this.carrito();
     const itemExistente = carritoActual.find(item => item.producto.id === producto.id);
 
@@ -219,12 +216,11 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.mostrarModalPago.set(false);
   }
 
-  // ✅ MÉTODO PROCESAR PEDIDO CON IZIPAY - CORREGIDO
+  // ✅ CORREGIDO: método procesarPedido con CreateOrderRequest
   procesarPedido(datosPago: any): void {
-    console.log('📤 === PROCESANDO PEDIDO CON IZIPAY ===');
+    console.log('📤 === PROCESANDO PEDIDO ===');
     console.log('📤 Datos de pago:', datosPago);
 
-    // Verificar autenticación para hacer el pedido
     const token = this.authService.getToken();
     const usuario = this.authService.getUsuarioActual();
 
@@ -240,20 +236,20 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     this.cargandoPedido.set(true);
 
-    // Verificar que el carrito no esté vacío
     if (this.carrito().length === 0) {
       alert('El carrito está vacío');
       this.cargandoPedido.set(false);
       return;
     }
 
-    const pedido = {
+    // ✅ CORREGIDO: crear objeto con todos los campos requeridos
+    const pedido: CreateOrderRequest = {
+      customerName: datosPago.clienteNombre || 'Cliente',
+      customerPhone: datosPago.telefono || '999999999',
+      channelCode: 'web',
       items: this.carrito().map(item => ({
-        id: item.producto.id,
-        nombre: item.producto.nombre,
-        precio: this.obtenerPrecioNumerico(item.producto.precio),
-        cantidad: item.cantidad,
-        subtotal: this.obtenerPrecioNumerico(item.producto.precio) * item.cantidad
+        productId: item.producto.id,
+        quantity: item.cantidad
       })),
       subtotal: this.subtotal(),
       igv: this.igv(),
@@ -268,7 +264,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     console.log('📤 Enviando pedido al backend:', pedido);
 
-    // 1. Crear el pedido
     this.pedidoService.crearPedido(pedido).subscribe({
       next: (response: any) => {
         console.log('✅ Respuesta del servidor:', response);
@@ -277,13 +272,11 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
           const pedidoId = response.pedido?.id;
 
           if (pedidoId) {
-            // 2. Redirigir a Izipay con el ID del pedido y el monto
             console.log('🔄 Redirigiendo a Izipay...');
             console.log('📝 Pedido ID:', pedidoId);
             console.log('💰 Monto:', this.total());
             console.log('📝 Método:', datosPago.metodo);
 
-            // ✅ Redirigir a Izipay
             this.redirigirAIzipay(pedidoId, this.total(), datosPago.metodo);
           } else {
             console.warn('⚠️ No se recibió ID del pedido');
@@ -314,38 +307,28 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ REDIRIGIR A IZIPAY
   redirigirAIzipay(pedidoId: number, monto: number, metodo: string): void {
     console.log('🔄 === REDIRIGIENDO A IZIPAY ===');
     console.log('📝 Pedido ID:', pedidoId);
     console.log('💰 Monto:', monto);
     console.log('📝 Método:', metodo);
 
-    // Construir URL de Izipay con los parámetros
     const izipayUrl = `https://izipay.pe/pago?pedido=${pedidoId}&monto=${monto.toFixed(2)}&metodo=${metodo}&nombre=Doña Yacki`;
 
     console.log('🔗 URL Izipay:', izipayUrl);
 
-    // ✅ En producción, redirigir a Izipay
-    // window.location.href = izipayUrl;
-
-    // ⚠️ SIMULACIÓN - Para pruebas, simular que Izipay confirma el pago
+    // Simulación
     this.simularPagoIzipay(pedidoId);
   }
 
-  // ✅ SIMULAR PAGO CON IZIPAY (para pruebas)
   simularPagoIzipay(pedidoId: number): void {
     console.log('🔄 Simulando pago con Izipay...');
-
-    // Mostrar mensaje de espera
     alert('🔄 Redirigiendo a Izipay...\nEspera la confirmación del pago.');
 
-    // Simular que Izipay confirma el pago después de 5 segundos
     setTimeout(() => {
       console.log('✅ Confirmación de pago recibida de Izipay');
       console.log('📝 Pedido ID:', pedidoId);
 
-      // Marcar el pedido como pagado
       this.pedidoService.marcarPagado(pedidoId, 'izipay').subscribe({
         next: (response) => {
           console.log('✅ Pedido marcado como pagado:', response);
@@ -353,7 +336,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('❌ Error al marcar pedido como pagado:', err);
-          // Si el pedido ya está pagado, igual finalizar
           if (err.status === 400 && err.error?.error?.includes('ya está pagado')) {
             console.log('ℹ️ El pedido ya estaba pagado');
             this.finalizarPedido();
@@ -366,7 +348,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }, 5000);
   }
 
-  // ✅ FINALIZAR PEDIDO
   finalizarPedido(): void {
     console.log('✅ === PEDIDO FINALIZADO ===');
     this.cargandoPedido.set(false);
@@ -376,7 +357,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     alert('🎉 ¡Pedido realizado con éxito! Tu pedido está siendo preparado.');
   }
 
-  // ✅ MÉTODOS DE UTILIDAD
   obtenerPrecioNumerico(precio: number | string): number {
     const num = typeof precio === 'string' ? parseFloat(precio) : precio;
     return isNaN(num) ? 0 : num;
@@ -387,7 +367,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     return `S/ ${num.toFixed(2)}`;
   }
 
-  // ✅ MÉTODO PARA MANEJAR ERROR DE IMAGEN DEL LOGO
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
@@ -404,7 +383,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.router.navigate(['/login-admin']);
   }
 
-  // ✅ SVG Icons para categorías
   getCategoriaIcon(nombre: string): string {
     const icons: Record<string, string> = {
       'Brasas': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 6 4 10 4 14c0 4 3 6 8 6s8-2 8-6c0-4-4-8-8-12z"/><path d="M12 18c-3 0-6-1-6-4"/></svg>`,

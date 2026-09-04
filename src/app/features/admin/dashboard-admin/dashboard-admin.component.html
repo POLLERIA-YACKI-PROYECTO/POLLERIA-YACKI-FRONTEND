@@ -5,13 +5,19 @@
     <!-- Header General -->
     <header class="dashboard-header">
       <div class="header-left">
-        <img class="brand" src="assets/logos/logo-app-neon.jpeg" alt="Doña Yacki" />
-        <div>
-          <h1>Dashboard Administrativo</h1>
-          <p class="subtitle">
-            Bienvenido, {{ auth.getUser()?.fullName || auth.getUser()?.nombre || usuario()?.nombre || 'Administrador' }}
-          </p>
-        </div>
+        <h1>
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9" y1="21" x2="9" y2="9"/>
+            <line x1="15" y1="21" x2="15" y2="9"/>
+          </svg>
+          Panel de Administración
+        </h1>
+        <p class="subtitle">
+          Bienvenido, {{ auth.getUsuarioActual()?.nombre || 'Administrador' }}
+        </p>
       </div>
 
       <div class="header-actions">
@@ -19,7 +25,7 @@
           <span class="fecha">{{ fechaActual }}</span>
           <span class="hora">{{ horaActual }}</span>
         </div>
-        <a routerLink="/admin/reports" class="btn-link">Reportes</a>
+        <a routerLink="/admin/reportes" class="btn-link">Reportes</a>
         <button class="btn-refresh" (click)="refrescar()" title="Actualizar datos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="23 4 23 10 17 10"/>
@@ -74,21 +80,23 @@
         <h2>Pedidos en Vivo</h2>
         <div class="board">
           @for (o of orders(); track (o.id || o.orderCode)) {
-            <div class="order-card" [class]="'status-' + (o.status || o.estado)">
+            <!-- ✅ CORREGIDO: o.estado → o['estado'] -->
+            <div class="order-card" [class]="'status-' + (o.status || o['estado'])">
               <div class="row">
-                <strong>{{ o.orderCode || o.codigo || ('#' + o.id) }}</strong>
+                <strong>{{ o.orderCode || o['codigo'] || ('#' + o.id) }}</strong>
                 <span class="status-badge">
-                  {{ statusLabels[o.status || o.estado] || (o.status || o.estado) }}
+                  {{ statusLabels[(o.status || o['estado'])] || (o.status || o['estado']) }}
                 </span>
               </div>
 
               <div class="row muted">
-                <span>{{ o.customerName || o.cliente || 'Cliente' }}</span>
-                <span>S/ {{ (o.total || o.monto_total || 0) | number:'1.2-2' }}</span>
+                <span>{{ o.customerName || o['cliente'] || 'Cliente' }}</span>
+                <span>S/ {{ (o.total || o['monto_total'] || 0) | number:'1.2-2' }}</span>
               </div>
 
               <div class="actions">
-                @if ((o.status || o.estado) !== 'entregado' && (o.status || o.estado) !== 'cancelado' && (o.status || o.estado) !== 'expirado') {
+                <!-- ✅ CORREGIDO: o.estado → o['estado'] -->
+                @if ((o.status || o['estado']) !== 'entregado' && (o.status || o['estado']) !== 'cancelado' && (o.status || o['estado']) !== 'expirado') {
                   <button (click)="nextStatus(o)">
                     Avanzar estado →
                   </button>
@@ -96,7 +104,7 @@
                 <button 
                   class="secondary" 
                   (click)="reprint(o)" 
-                  [disabled]="(o.status || o.estado) === 'pendiente_pago' || (o.status || o.estado) === 'pendiente'"
+                  [disabled]="(o.status || o['estado']) === 'pendiente_pago' || (o.status || o['estado']) === 'pendiente'"
                 >
                   Reimprimir voucher
                 </button>
@@ -111,7 +119,16 @@
       <!-- 3. Resumen Consolidado de Ventas -->
       <section class="resumen-container">
         <div class="resumen-header">
-          <h3>Resumen General de Ventas</h3>
+          <h3>
+            <svg class="resumen-icon-header" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <line x1="2" y1="11" x2="22" y2="11"/>
+              <line x1="2" y1="16" x2="22" y2="16"/>
+              <circle cx="16" cy="13" r="1"/>
+              <circle cx="8" cy="18" r="1"/>
+            </svg>
+            Resumen General de Ventas
+          </h3>
           <span class="resumen-total">Total General: S/ {{ resumenVentas().totalRecaudado | number:'1.2-2' }}</span>
         </div>
         <div class="resumen-grid">
@@ -148,6 +165,13 @@
       <section class="tabla-container">
         <div class="tabla-header">
           <div class="tabla-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <line x1="2" y1="11" x2="22" y2="11"/>
+              <line x1="2" y1="16" x2="22" y2="16"/>
+              <circle cx="16" cy="13" r="1"/>
+              <circle cx="8" cy="18" r="1"/>
+            </svg>
             <h3>Historial de Ventas Recientes</h3>
           </div>
           <span class="total-items">{{ ventasRecientes().length }} registros</span>
@@ -174,7 +198,6 @@
                       <span class="tipo-icon" [innerHTML]="getTipoSvg(venta.tipo)"></span>
                       {{ venta.tipo === 'delivery' ? 'Motorizado' :
                          venta.tipo === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
-                      {{ venta.tipo === 'delivery' ? 'Motorizado' : venta.tipo === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
                     </span>
                   </td>
                   <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>

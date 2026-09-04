@@ -33,8 +33,8 @@ export class LoginMeseroComponent implements OnInit {
 
   ngOnInit(): void {
     const usuario = this.authService.getUsuarioActual();
-    if (usuario && usuario.rol === 'mesero') {
-      // ✅ CORREGIDO: Redirigir a /mesero/dashboard
+    // ✅ CORREGIDO: usuario.rol → usuario.role
+    if (usuario && usuario.role === 'mesero') {
       this.router.navigate(['/mesero/dashboard']);
     }
   }
@@ -58,11 +58,11 @@ export class LoginMeseroComponent implements OnInit {
     this.authService.loginMesero(dni).subscribe({
       next: (usuario) => {
         this.isLoading.set(false);
-        this.nombreUsuario.set(usuario.nombre);
+        // ✅ CORREGIDO: usuario.nombre → usuario['nombre']
+        this.nombreUsuario.set(usuario['nombre']);
         this.mostrarBienvenida.set(true);
 
         setTimeout(() => {
-          // ✅ CORREGIDO: Redirigir a /mesero/dashboard
           this.router.navigate(['/mesero/dashboard']);
         }, 2000);
       },

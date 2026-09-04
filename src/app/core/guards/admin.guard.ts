@@ -1,4 +1,4 @@
-// src\app\core\guards\admin.guard.ts
+// src/app/core/guards/admin.guard.ts
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -19,14 +19,14 @@ export const AdminGuard = () => {
     return router.parseUrl('/login-admin');
   }
 
-  // Verificar que el usuario sea admin o cajero
-  if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
+  // ✅ CORREGIDO: usuario.rol → usuario.role
+  if (usuario && (usuario.role === 'admin' || usuario.role === 'cajero')) {
     console.log('AdminGuard - Acceso permitido para admin/cajero');
     return true;
   }
 
-  // Si es mesero, redirigir a su dashboard
-  if (usuario && usuario.rol === 'mesero') {
+  // ✅ CORREGIDO: usuario.rol → usuario.role
+  if (usuario && usuario.role === 'mesero') {
     console.log('AdminGuard - Usuario es mesero, redirigiendo a dashboard-mesero');
     return router.parseUrl('/mesero/dashboard');
   }
