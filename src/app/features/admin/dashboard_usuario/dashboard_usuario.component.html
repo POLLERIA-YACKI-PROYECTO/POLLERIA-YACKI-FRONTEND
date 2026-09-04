@@ -1,0 +1,52 @@
+<div class="dashboard">
+  <header>
+    <img class="brand" src="assets/logos/logo-app-neon.jpeg" alt="Doña Yacki" />
+    <div class="header-actions">
+      <span>{{ auth.getUser()?.fullName || auth.getUser()?.nombre || 'Usuario' }}</span>
+      <a routerLink="/admin/reportes">Reportes</a>
+      <button (click)="auth.logout()">Salir</button>
+    </div>
+  </header>
+
+  <h1>Pedidos en vivo</h1>
+
+  @if (loading()) {
+    <p>Cargando…</p>
+  }
+
+  <div class="board">
+    @for (o of orders(); track (o.id || o.orderCode)) {
+      <div class="order-card" [class]="'status-' + (o.status || o.estado)">
+        <div class="row">
+          <strong>{{ o.orderCode || o.codigo || ('#' + o.id) }}</strong>
+          <span class="status-badge">
+            {{ statusLabels[o.status || o.estado] || (o.status || o.estado) }}
+          </span>
+        </div>
+
+        <div class="row muted">
+          <span>{{ o.customerName || o.cliente || 'Cliente' }}</span>
+          <span>S/ {{ (o.total || o.monto_total || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="actions">
+          @if ((o.status || o.estado) !== 'entregado' && (o.status || o.estado) !== 'cancelado' && (o.status || o.estado) !== 'expirado') {
+            <button (click)="nextStatus(o)">
+              Avanzar estado →
+            </button>
+          }
+          
+          <button 
+            class="secondary" 
+            (click)="reprint(o)" 
+            [disabled]="(o.status || o.estado) === 'pendiente_pago' || (o.status || o.estado) === 'pendiente'"
+          >
+            Reimprimir voucher
+          </button>
+        </div>
+      </div>
+    } @empty {
+      <p class="empty-board">No hay pedidos en curso en este momento.</p>
+    }
+  </div>
+</div>
