@@ -446,71 +446,80 @@ verDetalle(pedido: any): void {
   // GUARDAR PEDIDO
   // ============================================
   guardarPedido(): void {
-    if (this.itemsPedido().length === 0) {
-      alert('Agregue al menos un producto al pedido');
-      return;
-    }
+  if (this.itemsPedido().length === 0) {
+    alert('Agregue al menos un producto al pedido');
+    return;
+  }
 
-    const nombreCliente = this.clienteSeleccionado()?.nombre || this.nuevoCliente.nombre;
-    if (!nombreCliente) {
-      alert('Por favor seleccione o agregue un cliente');
-      return;
-    }
+  const nombreCliente = this.clienteSeleccionado()?.nombre || this.nuevoCliente.nombre;
+  if (!nombreCliente) {
+    alert('Por favor seleccione o agregue un cliente');
+    return;
+  }
 
-    let subtotal = 0;
-    const itemsConPrecio = this.itemsPedido().map((item: any) => {
-      const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : item.precio;
-      const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : item.cantidad;
-      subtotal += precio * cantidad;
-      return {
-        id: item.id,
-        nombre: item.nombre,
-        precio: precio,
-        cantidad: cantidad,
-        subtotal: precio * cantidad
-      };
-    });
+  // ✅ PROCESAR ITEMS CORRECTAMENTE
+  let subtotal = 0;
+  const itemsConPrecio = this.itemsPedido().map((item: any) => {
+    const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : Number(item.precio);
+    const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : Number(item.cantidad);
+    const subtotalItem = precio * cantidad;
+    subtotal += subtotalItem;
+    
+    return {
+      id: Number(item.id),
+      nombre: String(item.nombre).trim(),
+      precio: Number(precio),
+      cantidad: Number(cantidad),
+      subtotal: Number(subtotalItem)
+    };
+  });
 
-    const igv = subtotal * 0.18;
-    const total = subtotal + igv;
+  const igv = subtotal * 0.18;
+  const total = subtotal + igv;
 
-    const pedidoData: any = {
-      usuario_id: this.usuario().id,
-      cliente_id: this.clienteSeleccionado()?.id || null,
-      cliente_nombre: nombreCliente,
-      items: itemsConPrecio,
-      subtotal: subtotal,
-      igv: igv,
-      total: total,
-      tipo: 'local',
-      tipo_entrega: this.tipoEntrega(),
-      observaciones: ''
+  console.log('📝 Items procesados:', JSON.stringify(itemsConPrecio));
+  console.log('📝 Subtotal:', subtotal);
+  console.log('📝 IGV:', igv);
+  console.log('📝 Total:', total);
+
+  const pedidoData: any = {
+    usuario_id: this.usuario().id,
+    cliente_id: this.clienteSeleccionado()?.id || null,
+    cliente_nombre: nombreCliente,
+    items: itemsConPrecio, // ✅ Enviamos el array, no un string
+    subtotal: subtotal,
+    igv: igv,
+    total: total,
+    tipo: 'local',
+    tipo_entrega: this.tipoEntrega(),
+    observaciones: '',
+    pagado: 0
+  };
+
+  if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
+    const nuevoClienteData = {
+      nombre: this.nuevoCliente.nombre,
+      apellido: this.nuevoCliente.apellido,
+      dni: this.nuevoCliente.dni,
+      telefono: this.nuevoCliente.telefono,
+      email: this.nuevoCliente.email
     };
 
-    if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
-      const nuevoClienteData = {
-        nombre: this.nuevoCliente.nombre,
-        apellido: this.nuevoCliente.apellido,
-        dni: this.nuevoCliente.dni,
-        telefono: this.nuevoCliente.telefono,
-        email: this.nuevoCliente.email
-      };
-
-      this.clienteService.crearCliente(nuevoClienteData).subscribe({
-        next: (clienteCreado: any) => {
-          pedidoData.cliente_id = clienteCreado.id;
-          pedidoData.cliente_nombre = clienteCreado.nombre;
-          this.crearPedido(pedidoData);
-        },
-        error: (err: any) => {
-          console.error('Error al crear cliente:', err);
-          alert('Error al crear cliente');
-        }
-      });
-    } else {
-      this.crearPedido(pedidoData);
-    }
+    this.clienteService.crearCliente(nuevoClienteData).subscribe({
+      next: (clienteCreado: any) => {
+        pedidoData.cliente_id = clienteCreado.id;
+        pedidoData.cliente_nombre = clienteCreado.nombre || nombreCliente;
+        this.crearPedido(pedidoData);
+      },
+      error: (err: any) => {
+        console.error('Error al crear cliente:', err);
+        alert('Error al crear cliente');
+      }
+    });
+  } else {
+    this.crearPedido(pedidoData);
   }
+}
 
   crearPedido(pedidoData: any): void {
     this.pedidoService.crearPedido(pedidoData).subscribe({

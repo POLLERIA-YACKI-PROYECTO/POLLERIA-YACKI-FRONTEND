@@ -58,9 +58,10 @@ export class PedidoService {
     return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
   }
 
-  marcarPagado(id: number, metodo_pago: string): Observable<any> {
-    console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
-    return this.http.put(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });
+marcarPagado(id: number, metodo_pago: string): Observable<any> {
+  console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
+  // ✅ Cambiar de PUT a PATCH para que coincida con el backend
+  return this.http.patch(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });
   }
 
   eliminarPedido(id: number): Observable<any> {
