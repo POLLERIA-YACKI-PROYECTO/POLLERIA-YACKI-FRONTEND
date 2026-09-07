@@ -7,9 +7,14 @@
         routerLinkActive="active"
         class="sidebar-item"
         [routerLinkActiveOptions]="{ exact: false }"
+        [title]="item.label"
       >
         <span class="sidebar-icon" [innerHTML]="getIconSvg(item.icon)"></span>
         <span class="sidebar-label">{{ item.label }}</span>
+        
+        @if (item.icon === 'carta') {
+          <span class="sidebar-badge">📷</span>
+        }
       </a>
     }
   </nav>

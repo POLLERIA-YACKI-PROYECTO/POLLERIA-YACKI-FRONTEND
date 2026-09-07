@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 export class CategoriaService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private apiUrl = `${environment.apiUrl}/categorias`;
+  private apiUrl = `${environment.apiUrl}/api/categorias`;
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();

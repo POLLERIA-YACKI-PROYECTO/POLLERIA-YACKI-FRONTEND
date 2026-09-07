@@ -24,18 +24,8 @@ export class SidebarComponent {
     },
     {
       icon: 'carta',
-      label: 'Carta',
+      label: 'Carta / Productos',
       route: '/admin/carta-admin'
-    },
-    {
-      icon: 'precios',
-      label: 'Precios',
-      route: '/admin/precios-admin'
-    },
-    {
-      icon: 'mantenimiento',
-      label: 'Mantenimiento',
-      route: '/admin/mantenimiento'
     },
     {
       icon: 'personal',
@@ -50,7 +40,7 @@ export class SidebarComponent {
   ]);
 
   getIconSvg(icon: string): string {
-    const icons: any = {
+    const icons: Record<string, string> = {
       'dashboard': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -61,35 +51,20 @@ export class SidebarComponent {
       `,
       'ventas': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="7" width="20" height="14" rx="2"/>
-          <line x1="2" y1="11" x2="22" y2="11"/>
-          <line x1="2" y1="16" x2="22" y2="16"/>
-          <circle cx="16" cy="13" r="1"/>
-          <circle cx="8" cy="18" r="1"/>
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
         </svg>
       `,
       'carta': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 4h16v16H4z"/>
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
           <path d="M8 8h8v8H8z"/>
           <path d="M8 12h8"/>
-          <path d="M12 4v4"/>
-          <path d="M12 16v4"/>
-        </svg>
-      `,
-      'precios': `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
-        </svg>
-      `,
-      'mantenimiento': `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
+          <path d="M4 4v2"/>
+          <path d="M20 4v2"/>
+          <path d="M4 20v-2"/>
+          <path d="M20 20v-2"/>
+          <circle cx="12" cy="16" r="1"/>
         </svg>
       `,
       'personal': `
@@ -100,13 +75,10 @@ export class SidebarComponent {
       `,
       'reportes': `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 4h16v16H4z"/>
-          <path d="M8 8h8v8H8z"/>
-          <path d="M8 12h8"/>
-          <path d="M4 4L8 8"/>
-          <path d="M20 4L16 8"/>
-          <path d="M4 20L8 16"/>
-          <path d="M20 20L16 16"/>
+          <path d="M21 12v-2a5 5 0 0 0-5-5H8a5 5 0 0 0-5 5v2"/>
+          <circle cx="12" cy="16" r="5"/>
+          <path d="M12 11v5"/>
+          <path d="M9 13l3 3 3-3"/>
         </svg>
       `
     };

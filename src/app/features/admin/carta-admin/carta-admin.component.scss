@@ -989,3 +989,143 @@
     height: 12px;
   }
 }
+// Agregar al final del archivo src/app/features/admin/carta-admin/carta-admin.component.scss
+
+/* ============================================
+   IMAGEN DEL PRODUCTO
+   ============================================ */
+.imagen-section {
+  margin-bottom: 20px;
+}
+
+.imagen-preview {
+  width: 150px;
+  height: 150px;
+  border: 2px dashed #d4c8b8;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #faf8f5;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+}
+
+.imagen-preview:hover {
+  border-color: #ce8329;
+  background: #fef9f0;
+}
+
+.imagen-preview.has-image {
+  border-style: solid;
+  border-color: #ce8329;
+}
+
+.imagen-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-eliminar-imagen {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(220, 38, 38, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-eliminar-imagen:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.btn-eliminar-imagen svg {
+  width: 16px;
+  height: 16px;
+  stroke: white;
+}
+
+.imagen-placeholder {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+}
+
+.imagen-placeholder svg {
+  width: 48px;
+  height: 48px;
+  stroke: #ccc;
+  margin-bottom: 8px;
+}
+
+.imagen-placeholder span {
+  display: block;
+  font-size: 13px;
+}
+
+.imagen-placeholder small {
+  display: block;
+  font-size: 11px;
+  color: #ccc;
+  margin-top: 4px;
+}
+
+.imagen-info {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.producto-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e8e0d6;
+}
+
+/* ============================================
+   TEMA OSCURO - IMAGEN
+   ============================================ */
+.carta-admin-container.tema-oscuro .imagen-preview {
+  background: #151515;
+  border-color: #2a2a2a;
+}
+
+.carta-admin-container.tema-oscuro .imagen-preview:hover {
+  border-color: #ce8329;
+}
+
+.carta-admin-container.tema-oscuro .imagen-placeholder {
+  color: #666;
+}
+
+.carta-admin-container.tema-oscuro .imagen-placeholder svg {
+  stroke: #444;
+}
+
+.carta-admin-container.tema-oscuro .imagen-placeholder small {
+  color: #555;
+}
+
+.carta-admin-container.tema-oscuro .imagen-info {
+  color: #666;
+}
+
+.carta-admin-container.tema-oscuro .producto-thumb {
+  border-color: #2a2a2a;
+}

@@ -59,7 +59,7 @@ export class ProductoCardComponent {
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = 'assets/images/default-product.png';
+    img.src = 'assets/images/productos/default-product.jpg';
     img.onerror = null;
   }
 }

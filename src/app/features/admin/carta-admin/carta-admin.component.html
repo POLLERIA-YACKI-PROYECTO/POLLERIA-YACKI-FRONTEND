@@ -81,6 +81,7 @@
     </div>
   </div>
 
+  <!-- FORMULARIO CON IMAGEN -->
   @if (mostrarFormulario()) {
     <div class="formulario-card">
       <h3>
@@ -90,70 +91,87 @@
         </svg>
         {{ editando() ? 'Editar Producto' : 'Nuevo Producto' }}
       </h3>
+      
+      <!-- PREVIEW DE IMAGEN -->
+      <div class="imagen-section">
+        <div class="imagen-preview" [class.has-image]="imagenPreview()" (click)="inputFile.click()">
+          @if (imagenPreview()) {
+            <img [src]="imagenPreview()" alt="Producto" (error)="$event.target.src='assets/images/productos/default-product.jpg'">
+            <button class="btn-eliminar-imagen" (click)="eliminarImagen($event)" type="button" title="Eliminar imagen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          } @else {
+            <div class="imagen-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+              <span>Haz clic para subir imagen</span>
+              <small>JPG, PNG, GIF, WEBP (max 5MB)</small>
+            </div>
+          }
+        </div>
+        <input
+          #inputFile
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          hidden
+        >
+        <div class="imagen-info">
+          @if (editando() && productoEdit()?.imagen) {
+            <p>Imagen actual: {{ productoEdit()?.imagen }}</p>
+          }
+          @if (editando() && productoEdit()?.imagen === 'imagen.jpg') {
+            <p class="imagen-default">🖼️ Usando imagen por defecto</p>
+          }
+          <button 
+            *ngIf="editando() && productoEdit()?.imagen && productoEdit()?.imagen !== 'imagen.jpg'"
+            class="btn-restaurar-default" 
+            (click)="restaurarImagenDefault()" 
+            type="button"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9m0 0v6m0-6h-6"/>
+            </svg>
+            Restaurar imagen por defecto
+          </button>
+        </div>
+      </div>
+
+      <!-- CAMPOS DEL FORMULARIO -->
       <div class="form-grid">
         <div class="form-group">
-          <label>Categoría</label>
-          <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v4"/>
-              <path d="M12 14v4"/>
-              <line x1="6" y1="12" x2="10" y2="12"/>
-              <line x1="14" y1="12" x2="18" y2="12"/>
-            </svg>
-            <select [(ngModel)]="nuevoProducto().categoria_id">
-              @for (cat of categorias(); track cat.id) {
-                <option [value]="cat.id">{{ cat.nombre }}</option>
-              }
-            </select>
-          </div>
+          <label>Categoría *</label>
+          <select [(ngModel)]="nuevoProducto().categoria_id" required>
+            <option value="">Seleccionar categoría</option>
+            @for (cat of categorias(); track cat.id) {
+              <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
+            }
+          </select>
         </div>
         <div class="form-group">
-          <label>Nombre</label>
-          <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4h16v16H4z"/>
-              <path d="M8 8h8v8H8z"/>
-              <path d="M8 12h8"/>
-            </svg>
-            <input type="text" [(ngModel)]="nuevoProducto().nombre" placeholder="Nombre del producto">
-          </div>
+          <label>Nombre *</label>
+          <input type="text" [(ngModel)]="nuevoProducto().nombre" placeholder="Nombre del producto" required>
         </div>
         <div class="form-group">
-          <label>Precio</label>
-          <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
-            </svg>
-            <input type="number" [(ngModel)]="nuevoProducto().precio" placeholder="0.00" step="0.01">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Descripción</label>
-          <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 4h16v16H4z"/>
-              <path d="M8 8h8v8H8z"/>
-              <path d="M8 12h8"/>
-              <path d="M12 4v4"/>
-              <path d="M12 16v4"/>
-            </svg>
-            <input type="text" [(ngModel)]="nuevoProducto().descripcion" placeholder="Descripción">
-          </div>
+          <label>Precio *</label>
+          <input type="number" [(ngModel)]="nuevoProducto().precio" placeholder="0.00" step="0.01" min="0" required>
         </div>
         <div class="form-group">
           <label>Stock</label>
-          <div class="input-wrapper">
-            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="2" y="7" width="20" height="14" rx="2"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-            </svg>
-            <input type="number" [(ngModel)]="nuevoProducto().stock" placeholder="0">
-          </div>
+          <input type="number" [(ngModel)]="nuevoProducto().stock" placeholder="0" min="0">
         </div>
-        <div class="form-group">
-          <button class="btn-success" (click)="guardarProducto()">
+        <div class="form-group full-width">
+          <label>Descripción</label>
+          <input type="text" [(ngModel)]="nuevoProducto().descripcion" placeholder="Descripción del producto">
+        </div>
+        <div class="form-group btn-guardar-wrapper">
+          <button class="btn-success" (click)="guardarProducto()" [disabled]="!nuevoProducto().nombre || nuevoProducto().precio <= 0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
@@ -164,6 +182,7 @@
     </div>
   }
 
+  <!-- TABLA DE PRODUCTOS -->
   <div class="tabla-container">
     <div class="tabla-header">
       <span>
@@ -180,6 +199,7 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th>Imagen</th>
             <th>Nombre</th>
             <th>Categoría</th>
             <th>Precio</th>
@@ -193,8 +213,19 @@
             <tr [class.agotado]="producto.agotado">
               <td><span class="id-badge">#{{ producto.id }}</span></td>
               <td>
-                <span class="producto-nombre">{{ producto.nombre }}</span>
+                <div class="imagen-thumb-container">
+                  <img 
+                    [src]="getImagenUrl(producto.imagen)" 
+                    [alt]="producto.nombre"
+                    class="producto-thumb"
+                    (error)="$event.target.src='assets/images/default-product.png'"
+                  >
+                  @if (producto.imagen === 'imagen.jpg' || !producto.imagen) {
+                    <span class="default-badge">Default</span>
+                  }
+                </div>
               </td>
+              <td><span class="producto-nombre">{{ producto.nombre }}</span></td>
               <td>
                 <span class="categoria-badge">{{ getNombreCategoria(producto.categoria_id) }}</span>
               </td>
@@ -211,26 +242,38 @@
                 </button>
               </td>
               <td>
-                <button class="btn-edit" (click)="editarProducto(producto)" title="Editar">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button class="btn-delete" (click)="eliminarProducto(producto.id)" title="Eliminar">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    <line x1="10" y1="11" x2="10" y2="17"/>
-                    <line x1="14" y1="11" x2="14" y2="17"/>
-                  </svg>
-                </button>
+                <div class="acciones-group">
+                  <button class="btn-edit" (click)="editarProducto(producto)" title="Editar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button 
+                    *ngIf="producto.imagen && producto.imagen !== 'imagen.jpg'" 
+                    class="btn-restaurar" 
+                    (click)="restaurarImagenDefaultProducto(producto)" 
+                    title="Restaurar imagen por defecto"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9m0 0v6m0-6h-6"/>
+                    </svg>
+                  </button>
+                  <button class="btn-delete" (click)="eliminarProducto(producto.id)" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      <line x1="10" y1="11" x2="10" y2="17"/>
+                      <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                  </button>
+                </div>
               </td>
             </tr>
           }
           @empty {
             <tr>
-              <td colspan="7" class="text-center">
+              <td colspan="8" class="text-center">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="12"/>
@@ -241,6 +284,7 @@
                 } @else {
                   <p>No hay productos registrados</p>
                 }
+                <button class="btn-primary-small" (click)="toggleFormulario()">Agregar primer producto</button>
               </td>
             </tr>
           }
@@ -275,7 +319,7 @@
         <path d="M4 4L8 8"/>
         <path d="M20 4L16 8"/>
       </svg>
-      Los productos se sincronizan automáticamente con la base de datos
+      Todos los productos comparten la misma imagen por defecto (imagen.jpg)
     </p>
   </div>
-</div>
+</div>src/assets/images/productos/default-product.jpg

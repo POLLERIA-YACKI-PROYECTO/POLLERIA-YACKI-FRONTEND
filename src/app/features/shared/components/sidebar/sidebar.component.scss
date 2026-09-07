@@ -12,7 +12,7 @@
 .sidebar {
   width: 250px;
   min-height: calc(100vh - 80px);
-  background: #452b1d; /* Marrón muy oscuro */
+  background: #452b1d;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -54,7 +54,7 @@
   gap: 12px;
   padding: 10px 14px;
   border-radius: 8px;
-  color: #e5ccad; /* Beige claro */
+  color: #e5ccad;
   text-decoration: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
@@ -65,14 +65,14 @@
 }
 
 .sidebar-item:hover {
-  background: rgba(196, 49, 41, 0.15); /* #c43129 con opacidad */
-  color: #d6ad31; /* Dorado */
+  background: rgba(196, 49, 41, 0.15);
+  color: #d6ad31;
   transform: translateX(4px);
 }
 
 .sidebar-item.active {
   background: rgba(196, 49, 41, 0.20);
-  color: #d6ad31; /* Dorado */
+  color: #d6ad31;
   font-weight: 600;
 }
 
@@ -83,8 +83,42 @@
   top: 20%;
   height: 60%;
   width: 3px;
-  background: #c43129; /* Rojo principal */
+  background: #c43129;
   border-radius: 0 4px 4px 0;
+}
+
+/* ============================================
+   BADGE DEL SIDEBAR (para Carta)
+   ============================================ */
+.sidebar-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  background: #c43129;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.sidebar-badge svg {
+  width: 12px;
+  height: 12px;
+  stroke: white;
+  stroke-width: 3;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 /* ============================================
@@ -102,18 +136,18 @@
 .sidebar-icon svg {
   width: 20px;
   height: 20px;
-  stroke: #e5ccad; /* Beige claro */
+  stroke: #e5ccad;
   stroke-width: 2;
   fill: none;
   transition: stroke 0.3s ease;
 }
 
 .sidebar-item:hover .sidebar-icon svg {
-  stroke: #d6ad31; /* Dorado */
+  stroke: #d6ad31;
 }
 
 .sidebar-item.active .sidebar-icon svg {
-  stroke: #d6ad31; /* Dorado */
+  stroke: #d6ad31;
 }
 
 /* ============================================
@@ -123,16 +157,16 @@
   flex: 1;
   font-size: 13px;
   letter-spacing: 0.3px;
-  color: #e5ccad; /* Beige claro */
+  color: #e5ccad;
   transition: color 0.3s ease;
 }
 
 .sidebar-item:hover .sidebar-label {
-  color: #d6ad31; /* Dorado */
+  color: #d6ad31;
 }
 
 .sidebar-item.active .sidebar-label {
-  color: #d6ad31; /* Dorado */
+  color: #d6ad31;
 }
 
 /* ============================================
@@ -157,23 +191,23 @@
 }
 
 .mesero-link .sidebar-icon svg {
-  stroke: #d6ad31; /* Dorado */
+  stroke: #d6ad31;
 }
 
 .mesero-link .sidebar-icon svg circle {
-  fill: #d6ad31; /* Dorado */
+  fill: #d6ad31;
 }
 
 .mesero-link .sidebar-label {
-  color: #d6ad31; /* Dorado */
+  color: #d6ad31;
 }
 
 .mesero-link:hover .sidebar-label {
-  color: #e5ccad; /* Beige claro */
+  color: #e5ccad;
 }
 
 .mesero-link:hover .sidebar-icon svg {
-  stroke: #e5ccad; /* Beige claro */
+  stroke: #e5ccad;
 }
 
 /* ============================================
@@ -231,7 +265,7 @@
 
   .sidebar-item.active {
     border-left: none !important;
-    border-bottom: 2px solid #c43129; /* Rojo principal */
+    border-bottom: 2px solid #c43129;
     border-radius: 0;
     background: transparent;
   }
@@ -253,6 +287,17 @@
 
   .sidebar-label {
     font-size: 11px;
+  }
+
+  .sidebar-badge {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+  
+  .sidebar-badge svg {
+    width: 10px;
+    height: 10px;
   }
 
   .sidebar-footer {
@@ -287,6 +332,16 @@
 
   .sidebar-label {
     font-size: 10px;
+  }
+
+  .sidebar-badge {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .sidebar-badge svg {
+    width: 8px;
+    height: 8px;
   }
 }
 

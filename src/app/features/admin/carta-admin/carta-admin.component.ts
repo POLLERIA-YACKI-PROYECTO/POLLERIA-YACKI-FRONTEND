@@ -1,5 +1,5 @@
 // src/app/features/admin/carta-admin/carta-admin.component.ts
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductoService } from '../../../core/services/producto.service';
@@ -20,6 +20,8 @@ export class CartaAdminComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
 
+  @ViewChild('inputFile') inputFile!: ElementRef<HTMLInputElement>;
+
   productos = signal<any[]>([]);
   productosFiltrados = signal<any[]>([]);
   categorias = signal<any[]>([]);
@@ -32,18 +34,23 @@ export class CartaAdminComponent implements OnInit {
   productoEdit = signal<any>(null);
   editando = signal(false);
 
+  // ✅ IMAGEN
+  imagenPreview = signal<string | null>(null);
+  imagenFile = signal<File | null>(null);
+
   nuevoProducto = signal({
     categoria_id: 0,
     nombre: '',
     precio: 0,
     descripcion: '',
-    stock: 0
+    stock: 0,
+    imagen: null as string | null
   });
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
-    if (this.usuario()?.rol !== 'admin') {
-      this.router.navigate(['/carta-mesero']);
+    if (this.usuario()?.rol !== 'admin' && this.usuario()?.rol !== 'cajero') {
+      this.router.navigate(['/login-admin']);
       return;
     }
     this.cargarDatos();
@@ -59,7 +66,7 @@ export class CartaAdminComponent implements OnInit {
     this.categoriaService.obtenerCategorias().subscribe({
       next: (categorias) => {
         this.categorias.set(categorias);
-        if (categorias.length > 0) {
+        if (categorias.length > 0 && this.nuevoProducto().categoria_id === 0) {
           this.nuevoProducto.update(p => ({ ...p, categoria_id: categorias[0].id }));
         }
       },
@@ -91,25 +98,17 @@ export class CartaAdminComponent implements OnInit {
     }
 
     const filtrados = this.productos().filter(producto => {
-      // Buscar por nombre
-      const nombreMatch = producto.nombre.toLowerCase().includes(termino);
-
-      // Buscar por categoría
+      const nombreMatch = producto.nombre?.toLowerCase().includes(termino) || false;
       const categoria = this.categorias().find(c => c.id === producto.categoria_id);
-      const categoriaMatch = categoria?.nombre.toLowerCase().includes(termino) || false;
-
-      // Buscar por precio (si el término es numérico)
+      const categoriaMatch = categoria?.nombre?.toLowerCase().includes(termino) || false;
+      
       let precioMatch = false;
       const precioNum = parseFloat(termino.replace('s/', '').replace('s', '').trim());
       if (!isNaN(precioNum)) {
-        precioMatch = producto.precio === precioNum ||
-                      producto.precio.toString().includes(termino.replace('s/', '').trim());
+        precioMatch = producto.precio === precioNum || producto.precio.toString().includes(termino);
       }
-
-      // Buscar por ID
-      const idMatch = producto.id.toString().includes(termino);
-
-      // Buscar por estado (agotado/disponible)
+      
+      const idMatch = producto.id?.toString().includes(termino) || false;
       const estadoMatch = termino === 'agotado' ? producto.agotado === true :
                          termino === 'disponible' ? producto.agotado === false : false;
 
@@ -125,6 +124,108 @@ export class CartaAdminComponent implements OnInit {
   }
 
   // ============================================
+  // IMAGEN
+  // ============================================
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecciona una imagen válida');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no debe superar los 5MB');
+        return;
+      }
+      
+      this.imagenFile.set(file);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagenPreview.set(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // ✅ OBTENER URL DE IMAGEN - CORREGIDO
+  getImagenUrl(imagen: string | null): string {
+    if (!imagen) return 'assets/images/productos/default-product.jpg';
+    if (imagen.startsWith('http')) return imagen;
+    if (imagen.startsWith('assets/')) return imagen;
+    // ✅ URL correcta: /uploads/productos/...
+    return `/uploads/productos/${imagen}`;
+  }
+
+  esImagenDefault(imagen: string | null): boolean {
+    return this.productoService.esImagenDefault(imagen);
+  }
+
+  // ✅ Restaurar imagen por defecto (para el formulario - SIN PARÁMETROS)
+  restaurarImagenDefault(): void {
+    if (!this.productoEdit()) return;
+    
+    if (confirm('¿Restaurar la imagen por defecto para este producto?')) {
+      this.productoService.restaurarImagenDefault(this.productoEdit().id).subscribe({
+        next: () => {
+          alert('✅ Imagen por defecto restaurada');
+          this.imagenPreview.set(null);
+          this.imagenFile.set(null);
+          this.nuevoProducto.update(p => ({ ...p, imagen: 'imagen.jpg' }));
+          this.cargarDatos();
+        },
+        error: (err) => {
+          console.error('Error al restaurar imagen:', err);
+          alert('❌ Error al restaurar imagen');
+        }
+      });
+    }
+  }
+
+  // ✅ Restaurar imagen por defecto (desde la tabla - CON PARÁMETRO)
+  restaurarImagenDefaultProducto(producto: any): void {
+    if (!producto) return;
+    
+    if (confirm(`¿Restaurar la imagen por defecto para "${producto.nombre}"?`)) {
+      this.productoService.restaurarImagenDefault(producto.id).subscribe({
+        next: () => {
+          alert('✅ Imagen por defecto restaurada');
+          this.cargarDatos();
+        },
+        error: (err) => {
+          console.error('Error al restaurar imagen:', err);
+          alert('❌ Error al restaurar imagen');
+        }
+      });
+    }
+  }
+
+  // ✅ Eliminar imagen del producto (restaura la default)
+  eliminarImagen(event: Event): void {
+    event.stopPropagation();
+    if (!this.productoEdit()) return;
+    
+    if (confirm('¿Eliminar esta imagen y restaurar la imagen por defecto?')) {
+      this.productoService.eliminarImagen(this.productoEdit().id).subscribe({
+        next: () => {
+          this.imagenPreview.set(null);
+          this.imagenFile.set(null);
+          this.nuevoProducto.update(p => ({ ...p, imagen: 'imagen.jpg' }));
+          alert('✅ Imagen eliminada, restaurada a la imagen por defecto');
+          this.cargarDatos();
+        },
+        error: (err) => {
+          console.error('Error al eliminar imagen:', err);
+          alert('❌ Error al eliminar imagen');
+        }
+      });
+    }
+  }
+
+  // ============================================
   // CRUD DE PRODUCTOS
   // ============================================
   toggleFormulario(): void {
@@ -137,8 +238,11 @@ export class CartaAdminComponent implements OnInit {
         nombre: '',
         precio: 0,
         descripcion: '',
-        stock: 0
+        stock: 0,
+        imagen: null
       });
+      this.imagenPreview.set(null);
+      this.imagenFile.set(null);
     }
   }
 
@@ -150,8 +254,14 @@ export class CartaAdminComponent implements OnInit {
       nombre: producto.nombre,
       precio: producto.precio,
       descripcion: producto.descripcion || '',
-      stock: producto.stock || 0
+      stock: producto.stock || 0,
+      imagen: producto.imagen || null
     });
+    if (producto.imagen && producto.imagen !== 'imagen.jpg') {
+      this.imagenPreview.set(this.getImagenUrl(producto.imagen));
+    } else {
+      this.imagenPreview.set(null);
+    }
     this.mostrarFormulario.set(true);
   }
 
@@ -161,28 +271,45 @@ export class CartaAdminComponent implements OnInit {
       return;
     }
 
+    if (!this.nuevoProducto().categoria_id) {
+      alert('Por favor seleccione una categoría');
+      return;
+    }
+
+    const formData = new FormData();
+    const data = this.nuevoProducto();
+    formData.append('nombre', data.nombre);
+    formData.append('precio', data.precio.toString());
+    formData.append('categoria_id', data.categoria_id.toString());
+    formData.append('descripcion', data.descripcion || '');
+    formData.append('stock', data.stock?.toString() || '0');
+    
+    if (this.imagenFile()) {
+      formData.append('imagen', this.imagenFile()!);
+    }
+
     if (this.editando()) {
-      this.productoService.actualizarProducto(this.productoEdit().id, this.nuevoProducto()).subscribe({
+      this.productoService.actualizarProductoConImagen(this.productoEdit().id, formData).subscribe({
         next: () => {
-          alert('Producto actualizado correctamente');
+          alert('✅ Producto actualizado correctamente');
           this.cargarDatos();
           this.toggleFormulario();
         },
         error: (err) => {
           console.error('Error al actualizar producto:', err);
-          alert('Error al actualizar producto');
+          alert('❌ Error al actualizar producto');
         }
       });
     } else {
-      this.productoService.crearProducto(this.nuevoProducto()).subscribe({
+      this.productoService.crearProductoConImagen(formData).subscribe({
         next: () => {
-          alert('Producto creado correctamente');
+          alert('✅ Producto creado correctamente');
           this.cargarDatos();
           this.toggleFormulario();
         },
         error: (err) => {
           console.error('Error al crear producto:', err);
-          alert('Error al crear producto');
+          alert('❌ Error al crear producto');
         }
       });
     }
@@ -194,7 +321,7 @@ export class CartaAdminComponent implements OnInit {
         this.productos.update(list =>
           list.map(p => p.id === producto.id ? { ...p, agotado: result.agotado } : p)
         );
-        this.filtrarProductos(); // Refrescar filtro
+        this.filtrarProductos();
       },
       error: (err) => console.error('Error al cambiar estado:', err)
     });
@@ -204,12 +331,12 @@ export class CartaAdminComponent implements OnInit {
     if (confirm('¿Está seguro de eliminar este producto?')) {
       this.productoService.eliminarProducto(id).subscribe({
         next: () => {
-          alert('Producto eliminado correctamente');
+          alert('✅ Producto eliminado correctamente');
           this.cargarDatos();
         },
         error: (err) => {
           console.error('Error al eliminar producto:', err);
-          alert('Error al eliminar producto');
+          alert('❌ Error al eliminar producto');
         }
       });
     }
@@ -221,7 +348,7 @@ export class CartaAdminComponent implements OnInit {
   }
 
   irCartaMesero(): void {
-    this.router.navigate(['/carta-mesero']);
+    this.router.navigate(['/mesero/carta']);
   }
 
   irDashboard(): void {
