@@ -194,7 +194,7 @@
               <td>{{ venta.usuario_nombre || 'Desconocido' }}</td>
               <td>{{ venta.items?.length || 0 }}</td>
               <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
-              <td>{{ formatearFecha(venta.fecha_pago || venta.created_at) }}</td>
+              <td>{{ formatearFecha(venta.fecha_venta || venta.fecha_pago || venta.created_at) }}</td>
               <td>
                 <span class="metodo-badge {{ venta.metodo_pago }}">
                   {{ getMetodoPagoLabel(venta.metodo_pago) }}
@@ -247,7 +247,7 @@
               <td>{{ venta.usuario_nombre || 'Desconocido' }}</td>
               <td>{{ venta.items?.length || 0 }}</td>
               <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
-              <td>{{ formatearFecha(venta.fecha_pago || venta.created_at) }}</td>
+              <td>{{ formatearFecha(venta.fecha_venta || venta.fecha_pago || venta.created_at) }}</td>
               <td>
                 <span class="metodo-badge {{ venta.metodo_pago }}">
                   {{ getMetodoPagoLabel(venta.metodo_pago) }}

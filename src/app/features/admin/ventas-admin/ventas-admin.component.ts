@@ -67,78 +67,125 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.errorMessage.set('');
     this.pagando = false;
 
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
+    this.subscriptions = [];
+
     let solicitudesCompletadas = 0;
-    const totalSolicitudes = 3;
-    const verificarFinalizado = () => {
+    const totalSolicitudes = 2;
+
+    const verificarFinalizado = (): void => {
       solicitudesCompletadas++;
+
       if (solicitudesCompletadas >= totalSolicitudes) {
         this.loading.set(false);
-        console.log('✅ Datos cargados completamente');
-        console.log('📋 Pedidos pendientes:', this.pedidosPendientes().length);
-        console.log('📋 Pedidos pagados:', this.pedidosPagados().length);
       }
     };
 
-    // Cargar pedidos pendientes
-    const sub1 = this.pedidoService.obtenerPedidosPendientes().subscribe({
-      next: (pedidos: any[]) => {
-        console.log('📋 Pedidos pendientes recibidos:', pedidos?.length || 0);
-        const pendientes = (pedidos || []).filter(p => p.pagado !== 1 && p.pagado !== true);
-        this.pedidosPendientes.set(pendientes);
-        this.totalPendientes.set(pendientes.length);
-        verificarFinalizado();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar pedidos pendientes:', err);
-        verificarFinalizado();
-      }
-    });
-    this.subscriptions.push(sub1);
+    const solicitudPendientes = this.pedidoService
+      .obtenerPedidosPendientes()
+      .subscribe({
+        next: (pedidos: any[]) => {
+          const pendientes = (Array.isArray(pedidos) ? pedidos : []).filter(
+            pedido =>
+              pedido.pagado !== 1 &&
+              pedido.pagado !== true &&
+              pedido.estado !== 'cancelado' &&
+              pedido.estado !== 'cancelada'
+          );
 
-    // Cargar pedidos pagados
-    const sub2 = this.pedidoService.obtenerPedidosPagados().subscribe({
-      next: (pedidos: any[]) => {
-        console.log('📋 Pedidos pagados recibidos:', pedidos?.length || 0);
-        const pagados = pedidos || [];
-        this.pedidosPagados.set(pagados);
-        this.totalPagados.set(pagados.length);
-        const total = pagados.reduce((sum: number, p: any) => sum + (parseFloat(p.total) || 0), 0);
-        this.totalRecaudado.set(total);
-        this.organizarVentas(pagados);
-        verificarFinalizado();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar pedidos pagados:', err);
-        verificarFinalizado();
-      }
-    });
-    this.subscriptions.push(sub2);
+          this.pedidosPendientes.set(pendientes);
+          this.totalPendientes.set(pendientes.length);
+          verificarFinalizado();
+        },
+        error: (error: any) => {
+          console.error('Error al cargar pedidos pendientes:', error);
+          this.pedidosPendientes.set([]);
+          this.totalPendientes.set(0);
+          verificarFinalizado();
+        }
+      });
 
-    // Cargar todas las ventas
-    const sub3 = this.ventaService.obtenerVentas().subscribe({
-      next: (ventas: any[]) => {
-        console.log('📋 Ventas totales recibidas:', ventas?.length || 0);
-        const ventasArray = ventas || [];
-        const local = ventasArray.filter((v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar');
-        const delivery = ventasArray.filter((v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada');
+    this.subscriptions.push(solicitudPendientes);
 
-        this.ventasLocal.set(local);
-        this.ventasDelivery.set(delivery);
-        this.totalVentasLocal.set(local.length);
-        this.totalVentasDelivery.set(delivery.length);
-        verificarFinalizado();
-      },
-      error: (err: any) => {
-        console.error('Error al cargar ventas:', err);
-        verificarFinalizado();
-      }
-    });
-    this.subscriptions.push(sub3);
+    const solicitudVentas = this.ventaService
+      .obtenerVentas()
+      .subscribe({
+        next: (ventas: any[]) => {
+          const ventasCompletadas = Array.isArray(ventas) ? ventas : [];
+
+          this.pedidosPagados.set(ventasCompletadas);
+          this.totalPagados.set(ventasCompletadas.length);
+          this.organizarVentas(ventasCompletadas);
+          this.totalRecaudado.set(
+            this.calcularTotalRegistros(ventasCompletadas)
+          );
+
+          verificarFinalizado();
+        },
+        error: (error: any) => {
+          console.error('Error al cargar ventas:', error);
+          this.pedidosPagados.set([]);
+          this.ventasLocal.set([]);
+          this.ventasDelivery.set([]);
+          this.totalPagados.set(0);
+          this.totalVentasLocal.set(0);
+          this.totalVentasDelivery.set(0);
+          this.totalRecaudado.set(0);
+          this.errorMessage.set('Error al cargar las ventas');
+          verificarFinalizado();
+        }
+      });
+
+    this.subscriptions.push(solicitudVentas);
   }
 
-  organizarVentas(pedidos: any[]): void {
-    const local = pedidos.filter((p: any) => p.tipo_entrega === 'local' || p.tipo_entrega === 'paraLlevar');
-    const delivery = pedidos.filter((p: any) => p.tipo_entrega === 'delivery' || p.tipo_entrega === 'motorizada');
+  private normalizarTipoEntrega(valor: unknown): string {
+    return String(valor || 'local').trim().toLowerCase();
+  }
+
+  private esVentaLocal(valor: unknown): boolean {
+    const tipo = this.normalizarTipoEntrega(valor);
+
+    return (
+      tipo === 'local' ||
+      tipo === 'parallevar' ||
+      tipo === 'para_llevar' ||
+      tipo === 'para llevar'
+    );
+  }
+
+  private esVentaMotorizada(valor: unknown): boolean {
+    const tipo = this.normalizarTipoEntrega(valor);
+
+    return (
+      tipo === 'delivery' ||
+      tipo === 'motorizada' ||
+      tipo === 'motorizado'
+    );
+  }
+
+  private numeroSeguro(valor: unknown): number {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : 0;
+  }
+
+  private calcularTotalRegistros(registros: any[]): number {
+    return registros.reduce(
+      (total, registro) => total + this.numeroSeguro(registro?.total),
+      0
+    );
+  }
+
+  organizarVentas(ventas: any[]): void {
+    const registros = Array.isArray(ventas) ? ventas : [];
+
+    const local = registros.filter(venta =>
+      this.esVentaLocal(venta.tipo_entrega || venta.tipo)
+    );
+
+    const delivery = registros.filter(venta =>
+      this.esVentaMotorizada(venta.tipo_entrega || venta.tipo)
+    );
 
     this.ventasLocal.set(local);
     this.ventasDelivery.set(delivery);
@@ -190,7 +237,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           const tipoEntrega = response.tipo_entrega || 'local';
           const tipoTexto = tipoEntrega === 'delivery' || tipoEntrega === 'motorizada' ? 'Motorizado' : 'Local';
 
-          alert(`✅ Pedido #${pedido.id} pagado correctamente\nTipo: ${tipoTexto}\nMétodo: ${this.getMetodoPagoLabel(metodo)}`);
+          alert(`✅ Pedido #${pedido.id} pagado correctamente
+Tipo: ${tipoTexto}
+Método: ${this.getMetodoPagoLabel(metodo)}`);
 
           // Recargar datos
           setTimeout(() => {
@@ -310,8 +359,10 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  totalPorTipo(pedidos: any[]): number {
-    return (pedidos || []).reduce((sum: number, p: any) => sum + (parseFloat(p.total) || 0), 0);
+  totalPorTipo(ventas: any[]): number {
+    return this.calcularTotalRegistros(
+      Array.isArray(ventas) ? ventas : []
+    );
   }
 
   irDashboard(): void {

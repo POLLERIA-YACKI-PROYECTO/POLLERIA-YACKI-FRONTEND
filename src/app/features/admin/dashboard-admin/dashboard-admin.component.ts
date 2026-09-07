@@ -158,7 +158,7 @@ export class DashboardAdminComponent implements OnInit {
     this.ventaService.obtenerVentas().subscribe({
       next: (ventas) => {
         const ventasArray = ventas || [];
-        const hoy = new Date().toISOString().split('T')[0];
+        const hoy = this.obtenerFechaLocal(new Date());
         const ventasHoy = ventasArray.filter((v: any) => v.fecha_venta?.startsWith(hoy));
 
         this.actualizarStat('ventas', ventasHoy.length);
@@ -213,6 +213,25 @@ export class DashboardAdminComponent implements OnInit {
     });
   }
 
+private obtenerFechaLocal(
+  fecha: Date
+): string {
+  const anio =
+    fecha.getFullYear();
+
+  const mes =
+    String(
+      fecha.getMonth() + 1
+    ).padStart(2, '0');
+
+  const dia =
+    String(
+      fecha.getDate()
+    ).padStart(2, '0');
+
+  return `${anio}-${mes}-${dia}`;
+}
+  
   formatearFecha(fecha: string): string {
     try {
       const d = new Date(fecha);
