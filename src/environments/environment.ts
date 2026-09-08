@@ -1,5 +1,5 @@
 // src/environments/environment.ts
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000' // ✅ SIN /api al final
+  apiUrl: 'http://localhost:3000/api' // ✅ SIN /api al final
 };
