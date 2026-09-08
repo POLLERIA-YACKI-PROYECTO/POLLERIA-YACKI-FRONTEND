@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 export class ProductoService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private apiUrl = `${environment.apiUrl}/api/productos`;
+  private apiUrl = `${environment.apiUrl}/productos`;
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
