@@ -86,6 +86,18 @@
   border-color: #f31730;
 }
 
+.menu-toggle-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-toggle-text svg {
+  stroke: currentColor;
+  width: 16px;
+  height: 16px;
+}
+
 .menu-arrow {
   transition: transform 0.3s ease;
   stroke: currentColor;
@@ -227,7 +239,44 @@
 }
 
 .stat-icon {
-  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(243, 23, 48, 0.06);
+  flex-shrink: 0;
+}
+
+.stat-icon svg {
+  stroke: #f31730;
+  width: 24px;
+  height: 24px;
+}
+
+.stat-card.local .stat-icon {
+  background: rgba(254, 249, 0, 0.08);
+}
+
+.stat-card.local .stat-icon svg {
+  stroke: #fef900;
+}
+
+.stat-card.delivery .stat-icon {
+  background: rgba(243, 23, 48, 0.08);
+}
+
+.stat-card.delivery .stat-icon svg {
+  stroke: #f31730;
+}
+
+.stat-card.total .stat-icon {
+  background: rgba(254, 249, 0, 0.08);
+}
+
+.stat-card.total .stat-icon svg {
+  stroke: #fef900;
 }
 
 .stat-info {
@@ -291,7 +340,43 @@
 }
 
 .resumen-icon {
-  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(243, 23, 48, 0.06);
+}
+
+.resumen-icon svg {
+  stroke: #f31730;
+  width: 18px;
+  height: 18px;
+}
+
+.resumen-card.local .resumen-icon {
+  background: rgba(254, 249, 0, 0.08);
+}
+
+.resumen-card.local .resumen-icon svg {
+  stroke: #fef900;
+}
+
+.resumen-card.delivery .resumen-icon {
+  background: rgba(243, 23, 48, 0.08);
+}
+
+.resumen-card.delivery .resumen-icon svg {
+  stroke: #f31730;
+}
+
+.resumen-card.general .resumen-icon {
+  background: rgba(50, 205, 50, 0.08);
+}
+
+.resumen-card.general .resumen-icon svg {
+  stroke: #32CD32;
 }
 
 .resumen-title {
@@ -450,6 +535,8 @@
 
 .tipo-badge svg {
   stroke: currentColor;
+  width: 12px;
+  height: 12px;
 }
 
 .tipo-badge.tipo-local {
@@ -477,6 +564,8 @@
 
 .metodo-badge svg {
   stroke: currentColor;
+  width: 12px;
+  height: 12px;
 }
 
 .metodo-badge.metodo-efectivo {
@@ -561,15 +650,15 @@
    ============================================ */
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
   color: #888;
 }
 
 .empty-state svg {
-  width: 48px;
-  height: 48px;
-  stroke: #666;
-  margin-bottom: 12px;
+  width: 64px;
+  height: 64px;
+  stroke: #555;
+  margin-bottom: 16px;
 }
 
 .empty-state p {
@@ -613,6 +702,14 @@
 .ventas-mesero-container.tema-claro .stat-card:hover,
 .ventas-mesero-container.tema-claro .resumen-card:hover {
   border-color: #ce8329;
+}
+
+.ventas-mesero-container.tema-claro .stat-icon {
+  background: rgba(206, 131, 41, 0.06);
+}
+
+.ventas-mesero-container.tema-claro .stat-icon svg {
+  stroke: #ce8329;
 }
 
 .ventas-mesero-container.tema-claro .tabla-header {
@@ -793,7 +890,13 @@
   }
 
   .stat-icon {
-    font-size: 20px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
   .resumen-body {
@@ -890,7 +993,13 @@
   }
 
   .stat-icon {
-    font-size: 16px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .stat-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   .ventas-tabla {

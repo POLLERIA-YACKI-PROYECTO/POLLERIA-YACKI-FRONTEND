@@ -38,6 +38,7 @@
       </div>
     </div>
 
+    <!-- Resumen de Mesas -->
     <div class="resumen-mesas">
       <div class="resumen-item total">
         <span class="resumen-icon">
@@ -74,6 +75,7 @@
       </div>
     </div>
 
+    <!-- Grid de Mesas -->
     <div class="mesas-grid">
       @for (mesa of mesas(); track mesa.numero) {
         <div
@@ -93,6 +95,7 @@
       }
     </div>
 
+    <!-- Panel de Acciones -->
     @if (mesaSeleccionada() !== null) {
       @let mesaNum = mesaSeleccionada();
       @if (mesaNum !== null) {
@@ -106,11 +109,14 @@
                 @if (mesa.ocupada && mesa.cliente) {
                   <span class="mesa-actions-cliente"> - {{ mesa.cliente }}</span>
                 }
+                @if (mesa.ocupada && mesa.cantidad_personas) {
+                  <span class="mesa-actions-personas"> • {{ mesa.cantidad_personas }} personas</span>
+                }
               </span>
             </div>
             <div class="mesa-actions-buttons">
               @if (mesa.ocupada) {
-                <button class="btn-liberar" (click)="liberarMesa()">
+                <button class="btn-liberar" (click)="abrirModalLiberar()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
@@ -118,7 +124,7 @@
                   Liberar Mesa
                 </button>
               } @else {
-                <button class="btn-ocupar" (click)="ocuparMesa()">
+                <button class="btn-ocupar" (click)="abrirModalOcupar()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 5v14M5 12h14"/>
                   </svg>
@@ -132,3 +138,189 @@
     }
   </div>
 </div>
+
+<!-- ✅ MODAL OCUPAR MESA -->
+@if (mostrarModalOcupar()) {
+  <div class="modal-overlay" (click)="cerrarModalOcupar()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <div class="modal-icon ocupar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Ocupar Mesa #{{ mesaAOcupar() }}</h2>
+            <p class="modal-subtitle">Ingresa los datos del cliente</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModalOcupar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="nombreCliente">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Nombre del Cliente
+          </label>
+          <div class="input-wrapper">
+            <input
+              id="nombreCliente"
+              type="text"
+              [(ngModel)]="nombreCliente"
+              placeholder="Ej: Juan Pérez"
+              (keydown.enter)="ocuparMesa()"
+              autofocus
+            >
+            @if (nombreCliente()) {
+              <span class="input-clear" (click)="nombreCliente.set('')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </span>
+            }
+          </div>
+          <span class="input-hint">Ingresa el nombre completo del cliente</span>
+        </div>
+
+        <div class="form-group">
+          <label for="cantidadPersonas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Cantidad de Personas
+          </label>
+          <div class="stepper-wrapper">
+            <button 
+              class="stepper-btn" 
+              (click)="cantidadPersonas.set(cantidadPersonas() - 1)"
+              [disabled]="cantidadPersonas() <= 1"
+              type="button"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <span class="stepper-value">{{ cantidadPersonas() }}</span>
+            <button 
+              class="stepper-btn" 
+              (click)="cantidadPersonas.set(cantidadPersonas() + 1)"
+              type="button"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar-modal" (click)="cerrarModalOcupar()">
+          Cancelar
+        </button>
+        <button 
+          class="btn-ocupar-modal" 
+          (click)="ocuparMesa()"
+          [disabled]="!nombreCliente().trim()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Ocupar Mesa
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ✅ MODAL CONFIRMAR LIBERAR MESA - DISEÑO BONITO -->
+@if (mostrarModalLiberar()) {
+  <div class="modal-overlay" (click)="cerrarModalLiberar()">
+    <div class="modal-content modal-confirmar" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <div class="modal-icon liberar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Liberar Mesa #{{ mesaALiberar() }}</h2>
+            <p class="modal-subtitle">Confirma la liberación de la mesa</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModalLiberar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Información de la mesa a liberar -->
+        <div class="confirmar-info">
+          <div class="confirmar-mesa">
+            <span class="confirmar-label">Mesa</span>
+            <span class="confirmar-valor mesa-numero-grande">#{{ mesaALiberar() }}</span>
+          </div>
+          
+          <div class="confirmar-cliente">
+            <span class="confirmar-label">Cliente</span>
+            <span class="confirmar-valor cliente-nombre">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              {{ clienteALiberar() }}
+            </span>
+          </div>
+
+          <div class="confirmar-advertencia">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M12 8v4"/>
+              <path d="M12 16h.01"/>
+            </svg>
+            <span>¿Estás seguro de liberar esta mesa?</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar-modal" (click)="cerrarModalLiberar()">
+          Cancelar
+        </button>
+        <button 
+          class="btn-liberar-modal" 
+          (click)="confirmarLiberarMesa()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Sí, Liberar Mesa
+        </button>
+      </div>
+    </div>
+  </div>
+}

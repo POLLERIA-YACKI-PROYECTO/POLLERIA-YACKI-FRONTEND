@@ -2038,3 +2038,134 @@
     min-width: 0;
   }
 }
+// src/app/features/mesero/pedidos-mesero/pedidos-mesero.component.scss
+
+// AGREGAR AL FINAL DEL ARCHIVO EXISTENTE
+
+/* ============================================
+   MESERO BADGE EN TARJETA DE PEDIDO
+   ============================================ */
+.pedido-mesero {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pedido-mesero svg {
+  flex-shrink: 0;
+  stroke: #94a3b8;
+}
+
+.pedido-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* TEMA CLARO - MESERO BADGE */
+.pedidos-mesero-container.tema-claro .pedido-mesero {
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.pedidos-mesero-container.tema-claro .pedido-mesero svg {
+  stroke: #64748b;
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .pedido-mesero {
+    font-size: 10px;
+    padding: 2px 8px;
+    max-width: 100px;
+  }
+}
+// src/app/features/mesero/pedidos-mesero/pedidos-mesero.component.scss
+
+// AGREGAR AL FINAL DEL ARCHIVO EXISTENTE
+
+/* ============================================
+   ESTILOS PARA SVG EN ESTADOS Y FILTROS
+   ============================================ */
+
+// Estado badge con SVG
+.pedido-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-weight: 600;
+}
+
+.pedido-estado svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+// Filtros con SVG
+.filtro-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filtro-icon svg {
+  stroke: currentColor;
+  width: 14px;
+  height: 14px;
+}
+
+.filtro-btn.active .filtro-icon svg {
+  stroke: #ffffda;
+}
+
+// Tipo de entrega en tarjeta con SVG
+.tipo-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tipo-icono svg {
+  stroke: currentColor;
+  width: 14px;
+  height: 14px;
+}
+
+.pedido-tipo.local .tipo-icono svg {
+  stroke: #32CD32;
+}
+
+.pedido-tipo.delivery .tipo-icono svg {
+  stroke: #f31730;
+}
+
+// Tema claro
+.pedidos-mesero-container.tema-claro {
+  .filtro-btn.active .filtro-icon svg {
+    stroke: #ffffff;
+  }
+
+  .pedido-estado svg {
+    stroke: currentColor;
+  }
+}

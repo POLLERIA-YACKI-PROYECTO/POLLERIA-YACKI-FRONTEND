@@ -25,7 +25,7 @@
         </svg>
         Dashboard
       </button>
-      <button class="btn-refresh" (click)="cargarDatos()">
+      <button class="btn-refresh" (click)="recargarDatos()" [disabled]="loading()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10"/>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -78,198 +78,308 @@
     </div>
   }
 
-  <!-- PEDIDOS PENDIENTES -->
-  <div class="tabla-container">
-    <div class="tabla-header">
-      <h3>Pedidos Pendientes de Pago</h3>
-      <span class="total-items">{{ pedidosPendientes().length }} pedidos</span>
-    </div>
-    <div class="tabla-scroll">
-      <table class="tabla-ventas">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Mesero</th>
-            <th>Tipo</th>
-            <th>Total</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (pedido of pedidosPendientes(); track pedido.id) {
+  @if (!loading()) {
+    <!-- PEDIDOS PENDIENTES -->
+    <div class="tabla-container">
+      <div class="tabla-header">
+        <h3>Pedidos Pendientes de Pago</h3>
+        <span class="total-items">{{ pedidosPendientes().length }} pedidos</span>
+      </div>
+      <div class="tabla-scroll">
+        <table class="tabla-ventas">
+          <thead>
             <tr>
-              <td><span class="id-badge">#{{ pedido.id }}</span></td>
-              <td>{{ pedido.cliente_nombre || pedido.cliente_nombre_real || 'Consumidor Final' }}</td>
-              <td>{{ pedido.usuario_nombre || 'Desconocido' }}</td>
-              <td>
-                <span class="tipo-badge {{ pedido.tipo_entrega }}">
-                  <span class="tipo-icon" [innerHTML]="getTipoEntregaSvg(pedido.tipo_entrega)"></span>
-                  {{ pedido.tipo_entrega === 'delivery' ? 'Motorizado' :
-                     pedido.tipo_entrega === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
-                </span>
-              </td>
-              <td class="total-col">S/ {{ pedido.total | number:'1.2-2' }}</td>
-              <td>{{ formatearFecha(pedido.created_at) }}</td>
-              <td>
-                <span class="estado-badge {{ getEstadoPedidoClass(pedido) }}">
-                  {{ getEstadoPedidoTexto(pedido) }}
-                </span>
-              </td>
-              <td>
-                <!-- ✅ SOLO MOSTRAR BOTÓN DE PAGO SI ESTÁ PENDIENTE Y NO PAGADO -->
-                @if (mostrarBotonPago(pedido)) {
-                  <div class="acciones-btns">
-                    <select [(ngModel)]="metodoSeleccionado" class="select-pago">
-                      @for (metodo of metodosPago; track metodo) {
-                        <option [value]="metodo">{{ getMetodoPagoLabel(metodo) }}</option>
-                      }
-                    </select>
-                    <button class="btn-pagar" (click)="marcarPagado(pedido)" [disabled]="loading()">
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Mesero</th>
+              <th>Tipo</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pedido of pedidosPendientes(); track pedido.id) {
+              <tr>
+                <td><span class="id-badge">#{{ pedido.id }}</span></td>
+                <td>{{ pedido.cliente_nombre || pedido.cliente_nombre_real || 'Consumidor Final' }}</td>
+                <td>{{ pedido.usuario_nombre || 'Desconocido' }}</td>
+                <td>
+                  <span class="tipo-badge {{ pedido.tipo_entrega }}">
+                    <span class="tipo-icon" [innerHTML]="getTipoEntregaSvg(pedido.tipo_entrega)"></span>
+                    {{ getTipoEntregaLabel(pedido.tipo_entrega) }}
+                  </span>
+                </td>
+                <td class="total-col">S/ {{ pedido.total | number:'1.2-2' }}</td>
+                <td>{{ formatearFecha(pedido.created_at) }}</td>
+                <td>
+                  <span class="estado-badge {{ getEstadoPedidoClass(pedido) }}">
+                    {{ getEstadoPedidoTexto(pedido) }}
+                  </span>
+                </td>
+                <td>
+                  @if (mostrarBotonPago(pedido)) {
+                    <button class="btn-pagar" (click)="abrirModalPago(pedido)" [disabled]="loading()">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="M12 6v6l4 2"/>
                       </svg>
                       Pagar
                     </button>
-                  </div>
-                } @else {
-                  <!-- ✅ SI YA ESTÁ PAGADO O CANCELADO, MOSTRAR TEXTO -->
-                  <span class="estado-final">
-                    @if (estaPagado(pedido)) {
-                      ✅ Pagado
-                    } @else if (estaCancelado(pedido)) {
-                      ❌ Cancelado
-                    } @else {
-                      {{ getEstadoPedidoTexto(pedido) }}
-                    }
+                  } @else {
+                    <span class="estado-final">
+                      @if (estaPagado(pedido)) {
+                        ✅ Pagado
+                      } @else if (estaCancelado(pedido)) {
+                        ❌ Cancelado
+                      } @else {
+                        {{ getEstadoPedidoTexto(pedido) }}
+                      }
+                    </span>
+                  }
+                </td>
+              </tr>
+            }
+            @empty {
+              <tr>
+                <td colspan="8" class="text-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p>No hay pedidos pendientes</p>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VENTAS EN LOCAL -->
+    <div class="tabla-container" style="margin-top: 24px;">
+      <div class="tabla-header">
+        <h3>Ventas en Local</h3>
+        <span class="total-items">{{ ventasLocal().length }} ventas</span>
+      </div>
+      <div class="tabla-scroll">
+        <table class="tabla-ventas">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Mesero</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th>Método</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (venta of ventasLocal(); track venta.id) {
+              <tr>
+                <td><span class="id-badge">#{{ venta.id }}</span></td>
+                <td>{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
+                <td>{{ venta.usuario_nombre || 'Desconocido' }}</td>
+                <td>{{ venta.items?.length || 0 }}</td>
+                <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
+                <td>{{ formatearFecha(venta.fecha_venta || venta.fecha_pago || venta.created_at) }}</td>
+                <td>
+                  <span class="metodo-badge {{ venta.metodo_pago }}">
+                    <span [innerHTML]="getMetodoPagoSvg(venta.metodo_pago)"></span>
+                    {{ getMetodoPagoLabel(venta.metodo_pago) }}
                   </span>
-                }
-              </td>
+                </td>
+              </tr>
+            }
+            @empty {
+              <tr>
+                <td colspan="7" class="text-center">
+                  <p>No hay ventas en local</p>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4"><strong>Total Local</strong></td>
+              <td colspan="3"><strong>S/ {{ totalPorTipo(ventasLocal()) | number:'1.2-2' }}</strong></td>
             </tr>
-          }
-          @empty {
-            <tr>
-              <td colspan="8" class="text-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <p>No hay pedidos pendientes</p>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+          </tfoot>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <!-- VENTAS EN LOCAL -->
-  <div class="tabla-container" style="margin-top: 24px;">
-    <div class="tabla-header">
-      <h3>Ventas en Local</h3>
-      <span class="total-items">{{ ventasLocal().length }} ventas</span>
-    </div>
-    <div class="tabla-scroll">
-      <table class="tabla-ventas">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Mesero</th>
-            <th>Items</th>
-            <th>Total</th>
-            <th>Fecha</th>
-            <th>Método</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (venta of ventasLocal(); track venta.id) {
+    <!-- VENTAS MOTORIZADAS -->
+    <div class="tabla-container" style="margin-top: 24px;">
+      <div class="tabla-header">
+        <h3>Ventas Motorizadas</h3>
+        <span class="total-items">{{ ventasDelivery().length }} ventas</span>
+      </div>
+      <div class="tabla-scroll">
+        <table class="tabla-ventas">
+          <thead>
             <tr>
-              <td><span class="id-badge">#{{ venta.id }}</span></td>
-              <td>{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
-              <td>{{ venta.usuario_nombre || 'Desconocido' }}</td>
-              <td>{{ venta.items?.length || 0 }}</td>
-              <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
-              <td>{{ formatearFecha(venta.fecha_venta || venta.fecha_pago || venta.created_at) }}</td>
-              <td>
-                <span class="metodo-badge {{ venta.metodo_pago }}">
-                  {{ getMetodoPagoLabel(venta.metodo_pago) }}
-                </span>
-              </td>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Mesero</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th>Método</th>
             </tr>
-          }
-          @empty {
-            <tr>
-              <td colspan="7" class="text-center">
-                <p>No hay ventas en local</p>
-              </td>
+          </thead>
+          <tbody>
+            @for (venta of ventasDelivery(); track venta.id) {
+              <tr>
+                <td><span class="id-badge">#{{ venta.id }}</span></td>
+                <td>{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
+                <td>{{ venta.usuario_nombre || 'Desconocido' }}</td>
+                <td>{{ venta.items?.length || 0 }}</td>
+                <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
+                <td>{{ formatearFecha(venta.fecha_venta || venta.fecha_pago || venta.created_at) }}</td>
+                <td>
+                  <span class="metodo-badge {{ venta.metodo_pago }}">
+                    <span [innerHTML]="getMetodoPagoSvg(venta.metodo_pago)"></span>
+                    {{ getMetodoPagoLabel(venta.metodo_pago) }}
+                  </span>
+                </td>
+              </tr>
+            }
+            @empty {
+              <tr>
+                <td colspan="7" class="text-center">
+                  <p>No hay ventas motorizadas</p>
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4"><strong>Total Motorizado</strong></td>
+              <td colspan="3"><strong>S/ {{ totalPorTipo(ventasDelivery()) | number:'1.2-2' }}</strong></td>
             </tr>
-          }
-        </tbody>
-        <tfoot>
-          <tr class="total-row">
-            <td colspan="4"><strong>Total Local</strong></td>
-            <td colspan="3"><strong>S/ {{ totalPorTipo(ventasLocal()) | number:'1.2-2' }}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
+          </tfoot>
+        </table>
+      </div>
     </div>
-  </div>
-
-  <!-- VENTAS MOTORIZADAS -->
-  <div class="tabla-container" style="margin-top: 24px;">
-    <div class="tabla-header">
-      <h3>Ventas Motorizadas</h3>
-      <span class="total-items">{{ ventasDelivery().length }} ventas</span>
-    </div>
-    <div class="tabla-scroll">
-      <table class="tabla-ventas">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Mesero</th>
-            <th>Items</th>
-            <th>Total</th>
-            <th>Fecha</th>
-            <th>Método</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (venta of ventasDelivery(); track venta.id) {
-            <tr>
-              <td><span class="id-badge">#{{ venta.id }}</span></td>
-              <td>{{ venta.cliente_nombre || venta.cliente_nombre_real || 'Consumidor Final' }}</td>
-              <td>{{ venta.usuario_nombre || 'Desconocido' }}</td>
-              <td>{{ venta.items?.length || 0 }}</td>
-              <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
-              <td>{{ formatearFecha(venta.fecha_venta || venta.fecha_pago || venta.created_at) }}</td>
-              <td>
-                <span class="metodo-badge {{ venta.metodo_pago }}">
-                  {{ getMetodoPagoLabel(venta.metodo_pago) }}
-                </span>
-              </td>
-            </tr>
-          }
-          @empty {
-            <tr>
-              <td colspan="7" class="text-center">
-                <p>No hay ventas motorizadas</p>
-              </td>
-            </tr>
-          }
-        </tbody>
-        <tfoot>
-          <tr class="total-row">
-            <td colspan="4"><strong>Total Motorizado</strong></td>
-            <td colspan="3"><strong>S/ {{ totalPorTipo(ventasDelivery()) | number:'1.2-2' }}</strong></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  </div>
+  }
 </div>
+
+<!-- ✅ MODAL DE PAGO - DISEÑO BONITO -->
+@if (mostrarModalPago() && pedidoEnPago()) {
+  <div class="modal-overlay" (click)="cerrarModalPago()">
+    <div class="modal-pago" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Confirmar Pago</h2>
+            <p class="modal-subtitle">Pedido #{{ pedidoEnPago()?.id }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModalPago()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Detalles del pedido -->
+        <div class="detalle-pedido">
+          <div class="detalle-row">
+            <span class="detalle-label">Cliente</span>
+            <span class="detalle-valor">{{ pedidoEnPago()?.cliente_nombre || pedidoEnPago()?.cliente_nombre_real || 'Consumidor Final' }}</span>
+          </div>
+          <div class="detalle-row">
+            <span class="detalle-label">Mesero</span>
+            <span class="detalle-valor">{{ pedidoEnPago()?.usuario_nombre || 'Desconocido' }}</span>
+          </div>
+          <div class="detalle-row">
+            <span class="detalle-label">Tipo de Entrega</span>
+            <span class="detalle-valor">
+              <span class="tipo-badge {{ pedidoEnPago()?.tipo_entrega }}">
+                <span [innerHTML]="getTipoEntregaSvg(pedidoEnPago()?.tipo_entrega)"></span>
+                {{ getTipoEntregaLabel(pedidoEnPago()?.tipo_entrega) }}
+              </span>
+            </span>
+          </div>
+          <div class="detalle-row">
+            <span class="detalle-label">Total</span>
+            <span class="detalle-valor total-monto">S/ {{ pedidoEnPago()?.total | number:'1.2-2' }}</span>
+          </div>
+          <div class="detalle-row">
+            <span class="detalle-label">Estado</span>
+            <span class="detalle-valor">
+              <span class="estado-badge {{ getEstadoPedidoClass(pedidoEnPago()) }}">
+                {{ getEstadoPedidoTexto(pedidoEnPago()) }}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Items del pedido -->
+        <div class="items-pedido">
+          <h4>Productos</h4>
+          <div class="items-lista">
+            @for (item of pedidoEnPago()?.items || []; track $index) {
+              <div class="item-row">
+                <span class="item-nombre">{{ item.nombre || 'Producto' }}</span>
+                <span class="item-cantidad">x{{ item.cantidad || 1 }}</span>
+                <span class="item-precio">S/ {{ (item.precio || 0) * (item.cantidad || 1) | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Selección de método de pago -->
+        <div class="metodo-pago-section">
+          <h4>Método de Pago</h4>
+          <div class="metodos-grid">
+            @for (metodo of metodosPago; track metodo) {
+              <button 
+                class="metodo-btn" 
+                [class.active]="metodoSeleccionado() === metodo"
+                (click)="metodoSeleccionado.set(metodo)"
+              >
+                <span class="metodo-icon" [innerHTML]="getMetodoPagoSvg(metodo)"></span>
+                <span class="metodo-label">{{ getMetodoPagoLabel(metodo) }}</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModalPago()" [disabled]="procesandoPago()">
+          Cancelar
+        </button>
+        <button 
+          class="btn-confirmar-pago" 
+          (click)="confirmarPago()" 
+          [disabled]="procesandoPago() || !metodoSeleccionado()"
+        >
+          @if (procesandoPago()) {
+            <div class="spinner-small"></div>
+            Procesando...
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            Confirmar Pago
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

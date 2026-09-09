@@ -1,4 +1,4 @@
-// src\app\core\services\mesa.service.ts
+// src/app/core/services/mesa.service.ts
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -10,6 +10,10 @@ export interface Mesa {
   numero: number;
   ocupada: boolean;
   cliente?: string;
+  capacidad?: number;
+  ubicacion?: string;
+  cantidad_personas?: number;
+  hora_ocupacion?: string;
 }
 
 @Injectable({
@@ -21,7 +25,6 @@ export class MesaService {
   private apiUrl = `${environment.apiUrl}/mesas`;
 
   private mesas = signal<Mesa[]>([]);
-
   private mesaSeleccionada = signal<number | null>(null);
   private ultimaActualizacion = signal<Date>(new Date());
 
@@ -39,7 +42,11 @@ export class MesaService {
           id: m.id,
           numero: m.numero,
           ocupada: !!m.ocupada,
-          cliente: m.cliente || undefined
+          cliente: m.cliente || undefined,
+          capacidad: m.capacidad || 4,
+          ubicacion: m.ubicacion || 'Sala Principal',
+          cantidad_personas: m.cantidad_personas || 0,
+          hora_ocupacion: m.hora_ocupacion || undefined
         })));
         this.ultimaActualizacion.set(new Date());
       },
@@ -67,13 +74,21 @@ export class MesaService {
     return this.mesaSeleccionada;
   }
 
-  ocuparMesa(numero: number, cliente?: string): void {
-    this.http.put(`${this.apiUrl}/ocupar/${numero}`, { cliente }, { headers: this.getHeaders() }).subscribe({
+  ocuparMesa(numero: number, cliente?: string, cantidad_personas?: number): void {
+    const payload: any = { cliente: cliente || 'Cliente' };
+    if (cantidad_personas) {
+      payload.cantidad_personas = cantidad_personas;
+    }
+    
+    this.http.put(`${this.apiUrl}/ocupar/${numero}`, payload, { headers: this.getHeaders() }).subscribe({
       next: () => {
         this.cargarMesas();
         this.seleccionarMesa(numero);
       },
-      error: (err) => alert(err.error?.error || `No se pudo ocupar la mesa ${numero}`)
+      error: (err) => {
+        console.error('Error al ocupar mesa:', err);
+        alert(err.error?.error || `No se pudo ocupar la mesa ${numero}`);
+      }
     });
   }
 
@@ -83,7 +98,10 @@ export class MesaService {
         this.cargarMesas();
         this.seleccionarMesa(numero);
       },
-      error: (err) => alert(err.error?.error || `No se pudo liberar la mesa ${numero}`)
+      error: (err) => {
+        console.error('Error al liberar mesa:', err);
+        alert(err.error?.error || `No se pudo liberar la mesa ${numero}`);
+      }
     });
   }
 
@@ -106,7 +124,6 @@ export class MesaService {
     this.ultimaActualizacion.set(new Date());
   }
 
-  // Método para sincronizar cambios entre componentes
   getUltimaActualizacion() {
     return this.ultimaActualizacion;
   }

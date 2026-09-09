@@ -7,7 +7,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Subscription } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-ventas-admin',
@@ -22,6 +22,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
 
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
@@ -44,9 +46,14 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   metodosPago = ['efectivo', 'tarjeta', 'yape', 'plin', 'transferencia'];
   metodoSeleccionado = signal<string>('efectivo');
 
-  // Bandera para evitar múltiples clics
-  private pagando = false;
-  private subscriptions: Subscription[] = [];
+  // Modal de pago - MEJORADO
+  mostrarModalPago = signal<boolean>(false);
+  pedidoEnPago = signal<any>(null);
+  procesandoPago = signal<boolean>(false);
+  pagoCompletado = signal<boolean>(false);
+  mensajePago = signal<string>('');
+  tipoPago = signal<string>('');
+  mostrarMensajeExito = signal<boolean>(false);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -59,30 +66,17 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   cargarDatos(): void {
     this.loading.set(true);
     this.errorMessage.set('');
-    this.pagando = false;
 
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
-    this.subscriptions = [];
-
-    let solicitudesCompletadas = 0;
-    const totalSolicitudes = 2;
-
-    const verificarFinalizado = (): void => {
-      solicitudesCompletadas++;
-
-      if (solicitudesCompletadas >= totalSolicitudes) {
-        this.loading.set(false);
-      }
-    };
-
-    const solicitudPendientes = this.pedidoService
-      .obtenerPedidosPendientes()
+    // Cargar pedidos pendientes
+    this.pedidoService.obtenerPedidosPendientes()
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (pedidos: any[]) => {
           const pendientes = (Array.isArray(pedidos) ? pedidos : []).filter(
@@ -93,34 +87,40 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
               pedido.estado !== 'cancelada'
           );
 
-          this.pedidosPendientes.set(pendientes);
-          this.totalPendientes.set(pendientes.length);
-          verificarFinalizado();
+          const pendientesConNombre = pendientes.map(p => ({
+            ...p,
+            usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido'
+          }));
+
+          this.pedidosPendientes.set(pendientesConNombre);
+          this.totalPendientes.set(pendientesConNombre.length);
+          this.checkLoading();
         },
         error: (error: any) => {
           console.error('Error al cargar pedidos pendientes:', error);
           this.pedidosPendientes.set([]);
           this.totalPendientes.set(0);
-          verificarFinalizado();
+          this.checkLoading();
         }
       });
 
-    this.subscriptions.push(solicitudPendientes);
-
-    const solicitudVentas = this.ventaService
-      .obtenerVentas()
+    // Cargar ventas
+    this.ventaService.obtenerVentas()
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (ventas: any[]) => {
           const ventasCompletadas = Array.isArray(ventas) ? ventas : [];
 
-          this.pedidosPagados.set(ventasCompletadas);
-          this.totalPagados.set(ventasCompletadas.length);
-          this.organizarVentas(ventasCompletadas);
-          this.totalRecaudado.set(
-            this.calcularTotalRegistros(ventasCompletadas)
-          );
+          const ventasConNombre = ventasCompletadas.map(v => ({
+            ...v,
+            usuario_nombre: v.usuario_nombre_completo || v.usuario_nombre || 'Desconocido'
+          }));
 
-          verificarFinalizado();
+          this.pedidosPagados.set(ventasConNombre);
+          this.totalPagados.set(ventasConNombre.length);
+          this.organizarVentas(ventasConNombre);
+          this.totalRecaudado.set(this.calcularTotalRegistros(ventasConNombre));
+          this.checkLoading();
         },
         error: (error: any) => {
           console.error('Error al cargar ventas:', error);
@@ -132,11 +132,15 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.totalVentasDelivery.set(0);
           this.totalRecaudado.set(0);
           this.errorMessage.set('Error al cargar las ventas');
-          verificarFinalizado();
+          this.checkLoading();
         }
       });
+  }
 
-    this.subscriptions.push(solicitudVentas);
+  private checkLoading(): void {
+    setTimeout(() => {
+      this.loading.set(false);
+    }, 500);
   }
 
   private normalizarTipoEntrega(valor: unknown): string {
@@ -145,7 +149,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
   private esVentaLocal(valor: unknown): boolean {
     const tipo = this.normalizarTipoEntrega(valor);
-
     return (
       tipo === 'local' ||
       tipo === 'parallevar' ||
@@ -156,7 +159,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
   private esVentaMotorizada(valor: unknown): boolean {
     const tipo = this.normalizarTipoEntrega(valor);
-
     return (
       tipo === 'delivery' ||
       tipo === 'motorizada' ||
@@ -193,13 +195,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.totalVentasDelivery.set(delivery.length);
   }
 
-  // ✅ MÉTODO PAGAR CORREGIDO
-  marcarPagado(pedido: any): void {
-    if (this.pagando) {
-      console.log('⏳ Ya hay una operación en curso, espere...');
-      return;
-    }
-
+  // ✅ ABRIR MODAL DE PAGO
+  abrirModalPago(pedido: any): void {
     if (!pedido || !pedido.id) {
       alert('Error: Pedido inválido');
       return;
@@ -211,64 +208,97 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Resetear estados
+    this.pagoCompletado.set(false);
+    this.procesandoPago.set(false);
+    this.mostrarMensajeExito.set(false);
+    this.mensajePago.set('');
+    this.tipoPago.set('');
+
+    this.pedidoEnPago.set(pedido);
+    this.metodoSeleccionado.set('efectivo');
+    this.mostrarModalPago.set(true);
+  }
+
+  // ✅ CERRAR MODAL DE PAGO
+  cerrarModalPago(): void {
+    this.mostrarModalPago.set(false);
+    this.pedidoEnPago.set(null);
+    this.procesandoPago.set(false);
+    this.pagoCompletado.set(false);
+    this.mostrarMensajeExito.set(false);
+    this.mensajePago.set('');
+    this.tipoPago.set('');
+  }
+
+  // ✅ CONFIRMAR PAGO DESDE EL MODAL
+  confirmarPago(): void {
+    const pedido = this.pedidoEnPago();
+    if (!pedido) return;
+
     const metodo = this.metodoSeleccionado();
     if (!metodo) {
       alert('Seleccione un método de pago');
       return;
     }
 
-    console.log('💰 === INICIANDO PAGO ===');
-    console.log('💰 Pedido ID:', pedido.id);
-    console.log('💰 Método de pago:', metodo);
-    console.log('💰 Tipo de entrega:', pedido.tipo_entrega);
+    // Mostrar estado de procesamiento
+    this.procesandoPago.set(true);
+    this.mensajePago.set('Procesando pago...');
+    this.tipoPago.set('procesando');
 
-    if (!confirm(`¿Confirmar pago del pedido #${pedido.id}?`)) {
-      return;
-    }
+    this.pedidoService.marcarPagado(pedido.id, metodo)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          console.log('✅ Respuesta del servidor:', response);
 
-    this.pagando = true;
-    this.loading.set(true);
+          if (response && response.success === true) {
+            // Pago completado con éxito
+            this.procesandoPago.set(false);
+            this.pagoCompletado.set(true);
+            this.mostrarMensajeExito.set(true);
+            this.mensajePago.set('¡Pago completado con éxito!');
+            this.tipoPago.set('exito');
 
-    const sub = this.pedidoService.marcarPagado(pedido.id, metodo).subscribe({
-      next: (response: any) => {
-        console.log('✅ Respuesta del servidor:', response);
+            const tipoTexto = this.getTipoEntregaLabel(pedido.tipo_entrega);
+            const metodoTexto = this.getMetodoPagoLabel(metodo);
 
-        if (response && response.success === true) {
-          const tipoEntrega = response.tipo_entrega || 'local';
-          const tipoTexto = tipoEntrega === 'delivery' || tipoEntrega === 'motorizada' ? 'Motorizado' : 'Local';
+            // Esperar 2 segundos antes de cerrar automáticamente
+            setTimeout(() => {
+              this.cerrarModalPago();
+              this.cargarDatos();
+            }, 2500);
 
-          alert(`✅ Pedido #${pedido.id} pagado correctamente
-Tipo: ${tipoTexto}
-Método: ${this.getMetodoPagoLabel(metodo)}`);
+          } else {
+            // Respuesta inesperada
+            this.procesandoPago.set(false);
+            this.mensajePago.set('Error: Respuesta inesperada del servidor');
+            this.tipoPago.set('error');
+          }
+        },
+        error: (err: any) => {
+          console.error('❌ Error:', err);
+          this.procesandoPago.set(false);
+          this.tipoPago.set('error');
 
-          // Recargar datos
-          setTimeout(() => {
-            this.cargarDatos();
-          }, 300);
-        } else {
-          console.warn('⚠️ Respuesta inesperada:', response);
-          this.cargarDatos();
+          let mensaje = 'Error al procesar el pago';
+          if (err.error) {
+            mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
+          }
+
+          if (err.status === 400 && mensaje.includes('ya está pagado')) {
+            this.mensajePago.set('Este pedido ya estaba pagado');
+            this.tipoPago.set('info');
+            setTimeout(() => {
+              this.cerrarModalPago();
+              this.cargarDatos();
+            }, 2000);
+          } else {
+            this.mensajePago.set(mensaje);
+          }
         }
-      },
-      error: (err: any) => {
-        console.error('❌ Error:', err);
-
-        let mensaje = 'Error al marcar pedido como pagado';
-        if (err.error) {
-          mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
-        }
-
-        if (err.status === 400 && mensaje.includes('ya está pagado')) {
-          alert('ℹ️ El pedido ya estaba pagado. Actualizando datos...');
-          this.cargarDatos();
-        } else {
-          alert('❌ ' + mensaje);
-          this.pagando = false;
-          this.loading.set(false);
-        }
-      }
-    });
-    this.subscriptions.push(sub);
+      });
   }
 
   // ✅ MÉTODOS DE VERIFICACIÓN
@@ -299,6 +329,16 @@ Método: ${this.getMetodoPagoLabel(metodo)}`);
   }
 
   // ✅ MÉTODOS DE UTILIDAD
+  getTipoEntregaLabel(tipo: string): string {
+    const labels: any = {
+      'local': 'Local',
+      'delivery': 'Motorizado',
+      'paraLlevar': 'Para Llevar',
+      'motorizada': 'Motorizado'
+    };
+    return labels[tipo] || 'Local';
+  }
+
   getTipoEntregaSvg(tipo: string): SafeHtml {
     const icons: any = {
       'local': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
@@ -342,6 +382,17 @@ Método: ${this.getMetodoPagoLabel(metodo)}`);
       'transferencia': 'Transferencia'
     };
     return labels[metodo] || metodo;
+  }
+
+  getMetodoPagoSvg(metodo: string): SafeHtml {
+    const icons: any = {
+      'efectivo': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/></svg>`,
+      'tarjeta': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`,
+      'yape': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+      'plin': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>`,
+      'transferencia': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 12h18"/><path d="M18 7l5 5-5 5"/><path d="M6 7l-5 5 5 5"/></svg>`
+    };
+    return this.sanitizer.bypassSecurityTrustHtml(icons[metodo] || icons['efectivo']);
   }
 
   formatearFecha(fecha: string): string {

@@ -143,7 +143,12 @@
         [class.active]="filtroTipo() === 'local'"
         (click)="cambiarFiltroTipo('local')"
       >
-        <span class="filtro-icon">🏠</span>
+        <span class="filtro-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+        </span>
         Local
         <span class="filtro-count">{{ pedidosLocal().length }}</span>
       </button>
@@ -152,7 +157,14 @@
         [class.active]="filtroTipo() === 'delivery'"
         (click)="cambiarFiltroTipo('delivery')"
       >
-        <span class="filtro-icon">🛵</span>
+        <span class="filtro-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="15" height="13" rx="2"/>
+            <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+            <circle cx="5.5" cy="18" r="2.5"/>
+            <circle cx="18.5" cy="18" r="2.5"/>
+          </svg>
+        </span>
         Motorizado
         <span class="filtro-count">{{ pedidosDelivery().length }}</span>
       </button>
@@ -171,7 +183,16 @@
           <div class="pedido-card">
             <div class="pedido-header-card">
               <span class="pedido-estado {{ getEstadoClass(pedido.estado) }}">
-                {{ getEstadoIcono(pedido.estado) }} {{ getEstadoTexto(pedido.estado) }}
+                <span [innerHTML]="getEstadoSvg(pedido.estado)"></span>
+                {{ getEstadoTexto(pedido.estado) }}
+              </span>
+              <!-- ✅ NOMBRE DEL MESERO EN LA TARJETA -->
+              <span class="pedido-mesero">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                {{ pedido.usuario_nombre_completo || pedido.usuario_nombre || 'Mesero' }}
               </span>
             </div>
             <div class="pedido-body">
@@ -183,7 +204,7 @@
                 {{ pedido.cliente_nombre_real || pedido.cliente_nombre || 'Cliente' }}
               </p>
               <p class="pedido-tipo {{ pedido.tipo_entrega || 'local' }}">
-                <span class="tipo-icono">{{ getTipoEntregaIcono(pedido.tipo_entrega) }}</span>
+                <span class="tipo-icono" [innerHTML]="getTipoEntregaSvg(pedido.tipo_entrega)"></span>
                 {{ getTipoEntregaLabel(pedido.tipo_entrega) }}
               </p>
               <p class="pedido-items">
@@ -259,7 +280,7 @@
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="12" r="4"/>
+                <circle cx="12" cy="7" r="4"/>
               </svg>
               <input
                 type="text"

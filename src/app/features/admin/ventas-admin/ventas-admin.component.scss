@@ -279,7 +279,9 @@
 
 /* TIPO ENTREGA */
 .tipo-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 2px 10px;
   border-radius: 12px;
   font-size: 11px;
@@ -301,13 +303,28 @@
   color: #166534;
 }
 
+.tipo-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.tipo-icon svg {
+  stroke: currentColor;
+}
+
 /* MÉTODO PAGO */
 .metodo-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 2px 10px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
+}
+
+.metodo-badge svg {
+  stroke: currentColor;
 }
 
 .metodo-badge.efectivo {
@@ -336,45 +353,41 @@
 }
 
 /* ACCIONES */
-.acciones-btns {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.select-pago {
-  padding: 4px 8px;
-  border: 1px solid #e4cbad;
-  border-radius: 4px;
-  font-size: 11px;
-  background: #faf8f5;
-  color: #5e412f;
-}
-
 .btn-pagar {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 12px;
+  padding: 6px 14px;
   background: #c5302a;
   color: #ffffff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .btn-pagar:hover {
   background: #a02822;
+  transform: translateY(-1px);
+}
+
+.btn-pagar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-pagar svg {
   stroke: #ffffff;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+}
+
+.estado-final {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
 }
 
 /* LOADING */
@@ -406,6 +419,348 @@
   stroke: #ccc;
   display: block;
   margin: 0 auto 8px;
+}
+
+/* ============================================
+   MODAL DE PAGO - DISEÑO BONITO
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInOverlay 0.3s ease;
+  padding: 16px;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-pago {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUpModal 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideUpModal {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e4cbad;
+  background: #faf8f5;
+}
+
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(197, 48, 42, 0.08);
+  flex-shrink: 0;
+}
+
+.modal-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #c5302a;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #5e412f;
+  line-height: 1.2;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin: 2px 0 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  background: rgba(197, 48, 42, 0.08);
+}
+
+.modal-close svg {
+  stroke: #888;
+  width: 20px;
+  height: 20px;
+  transition: stroke 0.3s ease;
+}
+
+.modal-close:hover svg {
+  stroke: #c5302a;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: 60vh;
+}
+
+/* Detalle del pedido */
+.detalle-pedido {
+  background: #faf8f5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.detalle-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.detalle-label {
+  color: #888;
+  font-weight: 500;
+}
+
+.detalle-valor {
+  color: #5e412f;
+  font-weight: 600;
+}
+
+.detalle-valor.total-monto {
+  font-size: 18px;
+  color: #c5302a;
+}
+
+/* Items del pedido */
+.items-pedido {
+  margin-bottom: 16px;
+}
+
+.items-pedido h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5e412f;
+  margin: 0 0 10px 0;
+}
+
+.items-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: #faf8f5;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.item-nombre {
+  color: #5e412f;
+  flex: 1;
+}
+
+.item-cantidad {
+  color: #888;
+  margin: 0 12px;
+}
+
+.item-precio {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+/* Método de pago */
+.metodo-pago-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5e412f;
+  margin: 0 0 10px 0;
+}
+
+.metodos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.metodo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: #faf8f5;
+  border: 2px solid #e4cbad;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.metodo-btn:hover {
+  border-color: #c5302a;
+  transform: translateY(-2px);
+}
+
+.metodo-btn.active {
+  border-color: #c5302a;
+  background: rgba(197, 48, 42, 0.05);
+  box-shadow: 0 0 0 4px rgba(197, 48, 42, 0.08);
+}
+
+.metodo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metodo-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #888;
+}
+
+.metodo-btn.active .metodo-icon svg {
+  stroke: #c5302a;
+}
+
+.metodo-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+}
+
+.metodo-btn.active .metodo-label {
+  color: #5e412f;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid #e4cbad;
+  background: #faf8f5;
+}
+
+.btn-cancelar,
+.btn-confirmar-pago {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  flex: 1;
+}
+
+.btn-cancelar {
+  background: transparent;
+  border: 2px solid #e4cbad;
+  color: #888;
+}
+
+.btn-cancelar:hover:not(:disabled) {
+  border-color: #c5302a;
+  color: #5e412f;
+}
+
+.btn-cancelar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-confirmar-pago {
+  background: #c5302a;
+  color: #ffffff;
+}
+
+.btn-confirmar-pago:hover:not(:disabled) {
+  background: #a02822;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(197, 48, 42, 0.3);
+}
+
+.btn-confirmar-pago:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-confirmar-pago svg {
+  stroke: #ffffff;
+  width: 18px;
+  height: 18px;
+}
+
+/* Spinner pequeño */
+.spinner-small {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -448,18 +803,37 @@
     padding: 8px 10px;
   }
 
-  .acciones-btns {
+  .modal-pago {
+    max-width: 98%;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 16px 18px;
+  }
+
+  .modal-body {
+    padding: 18px;
+  }
+
+  .modal-footer {
     flex-direction: column;
-    align-items: stretch;
+    gap: 8px;
+    padding: 14px 18px 18px;
   }
 
-  .select-pago {
+  .btn-cancelar,
+  .btn-confirmar-pago {
+    flex: none;
     width: 100%;
   }
 
-  .btn-pagar {
-    width: 100%;
-    justify-content: center;
+  .metodos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .page-header h2 {
+    font-size: 18px;
   }
 }
 
@@ -478,7 +852,7 @@
   }
 
   .page-header h2 {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .header-icon {
@@ -508,5 +882,40 @@
   .btn-dashboard span,
   .btn-refresh span {
     display: none;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .metodos-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .metodo-btn {
+    padding: 8px 4px;
+  }
+
+  .metodo-label {
+    font-size: 10px;
+  }
+
+  .detalle-row {
+    font-size: 12px;
+  }
+
+  .item-row {
+    font-size: 12px;
   }
 }

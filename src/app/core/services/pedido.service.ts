@@ -35,9 +35,10 @@ export class PedidoService {
     return this.http.get<any[]>(`${this.apiUrl}/pagados`, { headers: this.getHeaders() });
   }
 
+  // ✅ OBTENER PEDIDOS ENTREGADOS DEL MESERO
   obtenerPedidosPagadosMesero(): Observable<any[]> {
-    console.log('📤 Solicitando pedidos pagados del mesero');
-    return this.http.get<any[]>(`${this.apiUrl}/mesero/pagados`, { 
+    console.log('📤 Solicitando pedidos entregados del mesero');
+    return this.http.get<any[]>(`${this.apiUrl}/entregados/mesero`, { 
       headers: this.getHeaders() 
     });
   }
@@ -58,10 +59,9 @@ export class PedidoService {
     return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
   }
 
-marcarPagado(id: number, metodo_pago: string): Observable<any> {
-  console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
-  // ✅ Cambiar de PUT a PATCH para que coincida con el backend
-  return this.http.patch(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });
+  marcarPagado(id: number, metodo_pago: string): Observable<any> {
+    console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
+    return this.http.patch(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });
   }
 
   eliminarPedido(id: number): Observable<any> {

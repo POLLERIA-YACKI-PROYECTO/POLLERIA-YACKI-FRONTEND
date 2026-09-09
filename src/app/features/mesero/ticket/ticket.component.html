@@ -127,14 +127,29 @@
     <!-- STATS -->
     <div class="stats-tickets">
       <div class="stat-card">
-        <span class="stat-icon">🎫</span>
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <path d="M4 4h16v16H4z"/>
+            <path d="M8 8h8v8H8z"/>
+            <path d="M8 12h8"/>
+            <path d="M4 4L8 8"/>
+            <path d="M20 4L16 8"/>
+            <path d="M4 20L8 16"/>
+            <path d="M20 20L16 16"/>
+          </svg>
+        </div>
         <div class="stat-info">
           <span class="stat-value">{{ totalTickets() }}</span>
           <span class="stat-label">Total Tickets</span>
         </div>
       </div>
       <div class="stat-card">
-        <span class="stat-icon">💰</span>
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v2M12 16v2M8 10h2M14 10h2M8 14h8"/>
+          </svg>
+        </div>
         <div class="stat-info">
           <span class="stat-value">S/ {{ totalRecaudado() | number:'1.2-2' }}</span>
           <span class="stat-label">Total Recaudado</span>
@@ -229,7 +244,20 @@
   <div class="modal-overlay" (click)="cerrarDetalle()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>🎫 Ticket #{{ ticketSeleccionado()?.id }}</h2>
+        <div class="modal-header-content">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+              <path d="M4 4h16v16H4z"/>
+              <path d="M8 8h8v8H8z"/>
+              <path d="M8 12h8"/>
+              <path d="M4 4L8 8"/>
+              <path d="M20 4L16 8"/>
+              <path d="M4 20L8 16"/>
+              <path d="M20 20L16 16"/>
+            </svg>
+          </div>
+          <h2>Ticket #{{ ticketSeleccionado()?.id }}</h2>
+        </div>
         <button class="btn-cerrar" (click)="cerrarDetalle()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -242,7 +270,7 @@
         <!-- Header del Ticket -->
         <div class="ticket-print-header">
           <div class="ticket-empresa">
-            <h3>🍗 Doña Yacki</h3>
+            <h3>Doña Yacki</h3>
             <p>Sabor que enamora</p>
             <p class="ticket-direccion">Mz M2 Lt 33, Jardines de Chillón</p>
             <p class="ticket-telefono">Tel: 902 458 936</p>
@@ -269,7 +297,7 @@
           </div>
           @if (ticketSeleccionado()?.observaciones) {
             <div class="observaciones">
-              📝 {{ ticketSeleccionado()?.observaciones }}
+              {{ ticketSeleccionado()?.observaciones }}
             </div>
           }
         </div>

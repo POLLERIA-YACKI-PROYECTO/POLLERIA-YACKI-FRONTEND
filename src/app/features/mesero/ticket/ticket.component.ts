@@ -50,69 +50,67 @@ export class TicketComponent implements OnInit {
 
   // ✅ CARGAR TODOS LOS PEDIDOS ENTREGADOS DEL MESERO
   cargarTickets(): void {
-  this.loading.set(true);
-  console.log('📝 Cargando tickets para mesero ID:', this.usuario()?.id);
+    this.loading.set(true);
+    console.log('📝 Cargando tickets para mesero ID:', this.usuario()?.id);
 
-  // ✅ Usar el método que trae los pedidos entregados del mesero
-  this.pedidoService.obtenerPedidosPagadosMesero().subscribe({
-    next: (pedidos: any[]) => {
-      console.log('📝 Pedidos entregados del mesero (RAW):', pedidos);
-      console.log('📝 Cantidad de pedidos entregados:', pedidos?.length || 0);
-      
-      // Mostrar detalles de cada pedido
-      if (pedidos && pedidos.length > 0) {
-        pedidos.forEach((p: any, index: number) => {
-          console.log(`📝 Pedido entregado ${index + 1}: ID=${p.id}, Tipo=${p.tipo_entrega}, Cliente=${p.cliente_nombre}, Total=${p.total}, Pagado=${p.pagado}`);
-        });
-      }
-      
-      const ticketsFormateados = pedidos.map((p: any) => {
-        let items = p.items;
-        if (typeof items === 'string') {
-          try {
-            items = JSON.parse(items);
-          } catch (e) {
-            items = [];
-          }
-        }
-
-        const totalItems = items?.length || 0;
+    this.pedidoService.obtenerPedidosPagadosMesero().subscribe({
+      next: (pedidos: any[]) => {
+        console.log('📝 Pedidos entregados del mesero (RAW):', pedidos);
+        console.log('📝 Cantidad de pedidos entregados:', pedidos?.length || 0);
         
-        return {
-          id: p.id,
-          cliente: p.cliente_nombre_real || p.cliente_nombre || 'Cliente',
-          items: items || [],
-          totalItems: totalItems,
-          total: parseFloat(p.total) || 0,
-          subtotal: parseFloat(p.subtotal) || 0,
-          igv: parseFloat(p.igv) || 0,
-          fecha: p.fecha_pago || p.created_at,
-          tipo_entrega: p.tipo_entrega || 'local',
-          metodo_pago: p.metodo_pago || 'efectivo',
-          estado: p.estado || 'entregado',
-          usuario_nombre: p.usuario_nombre || 'Desconocido',
-          observaciones: p.observaciones || '',
-          mesa: p.mesa_id || null,
-          pagado: p.pagado || 0
-        };
-      });
+        if (pedidos && pedidos.length > 0) {
+          pedidos.forEach((p: any, index: number) => {
+            console.log(`📝 Pedido entregado ${index + 1}: ID=${p.id}, Tipo=${p.tipo_entrega}, Cliente=${p.cliente_nombre}, Total=${p.total}, Pagado=${p.pagado}`);
+          });
+        }
+        
+        const ticketsFormateados = pedidos.map((p: any) => {
+          let items = p.items;
+          if (typeof items === 'string') {
+            try {
+              items = JSON.parse(items);
+            } catch (e) {
+              items = [];
+            }
+          }
 
-      console.log('📝 Tickets formateados:', ticketsFormateados);
-      console.log('📝 Cantidad de tickets:', ticketsFormateados.length);
+          const totalItems = items?.length || 0;
+          
+          return {
+            id: p.id,
+            cliente: p.cliente_nombre_real || p.cliente_nombre || 'Cliente',
+            items: items || [],
+            totalItems: totalItems,
+            total: parseFloat(p.total) || 0,
+            subtotal: parseFloat(p.subtotal) || 0,
+            igv: parseFloat(p.igv) || 0,
+            fecha: p.fecha_pago || p.created_at,
+            tipo_entrega: p.tipo_entrega || 'local',
+            metodo_pago: p.metodo_pago || 'efectivo',
+            estado: p.estado || 'entregado',
+            usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Mesero',
+            observaciones: p.observaciones || '',
+            mesa: p.mesa_id || null,
+            pagado: p.pagado || 0
+          };
+        });
 
-      // Ordenar por fecha descendente (más reciente primero)
-      ticketsFormateados.sort((a: any, b: any) => {
-        return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
-      });
+        console.log('📝 Tickets formateados:', ticketsFormateados);
+        console.log('📝 Cantidad de tickets:', ticketsFormateados.length);
 
-      this.tickets.set(ticketsFormateados);
-      this.loading.set(false);
-    },
-    error: (err: any) => {
-      console.error('Error al cargar tickets:', err);
-      this.loading.set(false);
-    }
-  });
+        // Ordenar por fecha descendente (más reciente primero)
+        ticketsFormateados.sort((a: any, b: any) => {
+          return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+        });
+
+        this.tickets.set(ticketsFormateados);
+        this.loading.set(false);
+      },
+      error: (err: any) => {
+        console.error('Error al cargar tickets:', err);
+        this.loading.set(false);
+      }
+    });
   }
 
   // ✅ Ver detalle del ticket
@@ -141,6 +139,7 @@ export class TicketComponent implements OnInit {
           <head>
             <title>Ticket #${ticket.id}</title>
             <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
               body {
                 font-family: 'Courier New', monospace;
                 max-width: 300px;
@@ -148,6 +147,8 @@ export class TicketComponent implements OnInit {
                 padding: 20px;
                 background: #fff;
                 color: #333;
+                font-size: 12px;
+                line-height: 1.4;
               }
               .header {
                 text-align: center;
@@ -156,16 +157,22 @@ export class TicketComponent implements OnInit {
                 margin-bottom: 10px;
               }
               .header h1 {
-                font-size: 18px;
+                font-size: 20px;
                 margin: 0;
+                color: #c5302a;
               }
-              .header p {
+              .header .slogan {
                 font-size: 11px;
-                margin: 4px 0;
                 color: #666;
+                margin: 2px 0;
+              }
+              .header .info-empresa {
+                font-size: 10px;
+                color: #888;
+                margin: 2px 0;
               }
               .info {
-                font-size: 12px;
+                font-size: 11px;
                 margin-bottom: 10px;
               }
               .info-line {
@@ -173,16 +180,28 @@ export class TicketComponent implements OnInit {
                 justify-content: space-between;
                 padding: 2px 0;
               }
+              .info-line strong {
+                color: #222;
+              }
+              .separador {
+                text-align: center;
+                color: #ccc;
+                margin: 6px 0;
+                letter-spacing: 2px;
+                font-size: 10px;
+              }
               table {
                 width: 100%;
-                font-size: 12px;
+                font-size: 11px;
                 border-collapse: collapse;
-                margin: 10px 0;
+                margin: 6px 0;
               }
               th {
                 text-align: left;
                 border-bottom: 1px dashed #333;
                 padding: 4px 0;
+                font-size: 10px;
+                color: #666;
               }
               td {
                 padding: 3px 0;
@@ -191,11 +210,19 @@ export class TicketComponent implements OnInit {
                 text-align: right;
               }
               .total-line {
+                display: flex;
+                justify-content: space-between;
+                padding: 2px 0;
+              }
+              .total-final {
                 border-top: 2px dashed #333;
                 padding-top: 8px;
-                margin-top: 8px;
-                font-weight: bold;
+                margin-top: 4px;
                 font-size: 14px;
+                font-weight: bold;
+              }
+              .total-final span:last-child {
+                color: #c5302a;
               }
               .footer {
                 text-align: center;
@@ -205,25 +232,37 @@ export class TicketComponent implements OnInit {
                 padding-top: 10px;
                 margin-top: 10px;
               }
+              .footer p {
+                margin: 2px 0;
+              }
               .metodo-pago {
                 background: #f0f0f0;
-                padding: 4px 8px;
+                padding: 2px 8px;
                 border-radius: 4px;
                 display: inline-block;
-                font-size: 11px;
+                font-size: 10px;
+                font-weight: bold;
               }
               .observaciones {
                 font-style: italic;
                 color: #666;
-                font-size: 11px;
-                margin-top: 6px;
-                padding: 6px;
+                font-size: 10px;
+                margin-top: 4px;
+                padding: 4px 8px;
                 background: #f9f9f9;
                 border-radius: 4px;
+                border-left: 3px solid #c5302a;
               }
+              .total-items {
+                font-size: 10px;
+                color: #888;
+                margin-top: 4px;
+                text-align: right;
+              }
+              .no-print { display: none; }
               @media print {
                 body { padding: 10px; }
-                .no-print { display: none; }
+                .no-print { display: none !important; }
               }
             </style>
           </head>
@@ -231,15 +270,27 @@ export class TicketComponent implements OnInit {
             ${contenido}
             <div class="footer">
               <p>¡Gracias por tu preferencia!</p>
-              <p>Doña Yacki - Sabor que enamora</p>
-              <p style="font-size:10px;color:#999;">Ticket generado el ${new Date().toLocaleString()}</p>
+              <p style="font-size:10px;color:#999;">Doña Yacki - Sabor que enamora</p>
+              <p style="font-size:9px;color:#bbb;">Ticket generado el ${new Date().toLocaleString()}</p>
             </div>
-            <div style="text-align:center;margin-top:10px;" class="no-print">
-              <button onclick="window.print()" style="padding:8px 20px;background:#c5302a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;">
-                🖨️ Imprimir
+            <div style="text-align:center;margin-top:12px;" class="no-print">
+              <button onclick="window.print()" style="padding:8px 20px;background:#c5302a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin:4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M18 9H6"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                  <line x1="10" y1="17" x2="14" y2="17"/>
+                  <line x1="10" y1="19" x2="14" y2="19"/>
+                  <rect x="8" y="11" width="8" height="2"/>
+                </svg>
+                Imprimir
               </button>
-              <button onclick="window.close()" style="padding:8px 20px;background:#666;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-left:8px;">
-                ✕ Cerrar
+              <button onclick="window.close()" style="padding:8px 20px;background:#666;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin:4px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Cerrar
               </button>
             </div>
           </body>
@@ -280,18 +331,20 @@ export class TicketComponent implements OnInit {
     };
     const metodoPagoLabel = metodoPagoLabels[ticket.metodo_pago] || ticket.metodo_pago;
 
+    const fechaFormateada = ticket.fecha ? new Date(ticket.fecha).toLocaleString() : '--';
+
     return `
       <div class="header">
-        <h1>🍗 Doña Yacki</h1>
-        <p>Sabor que enamora</p>
-        <p style="font-size:10px;">Mz M2 Lt 33, Jardines de Chillón</p>
-        <p style="font-size:10px;">Tel: 902 458 936</p>
+        <h1>Doña Yacki</h1>
+        <p class="slogan">Sabor que enamora</p>
+        <p class="info-empresa">Mz M2 Lt 33, Jardines de Chillón</p>
+        <p class="info-empresa">Tel: 902 458 936</p>
       </div>
 
       <div class="info">
         <div class="info-line">
           <span><strong>Ticket #${ticket.id}</strong></span>
-          <span>${new Date(ticket.fecha).toLocaleString()}</span>
+          <span>${fechaFormateada}</span>
         </div>
         <div class="info-line">
           <span><strong>Cliente:</strong> ${ticket.cliente}</span>
@@ -306,10 +359,12 @@ export class TicketComponent implements OnInit {
         </div>
         ${ticket.observaciones ? `
           <div class="observaciones">
-            📝 ${ticket.observaciones}
+            ${ticket.observaciones}
           </div>
         ` : ''}
       </div>
+
+      <div class="separador">─────────────────</div>
 
       <table>
         <thead>
@@ -326,20 +381,22 @@ export class TicketComponent implements OnInit {
         </tbody>
       </table>
 
-      <div style="text-align:right;font-size:13px;">
-        <div class="info-line">
+      <div class="separador">─────────────────</div>
+
+      <div style="text-align:right;">
+        <div class="total-line">
           <span>Subtotal</span>
           <span>S/ ${ticket.subtotal.toFixed(2)}</span>
         </div>
-        <div class="info-line">
+        <div class="total-line">
           <span>IGV (18%)</span>
           <span>S/ ${ticket.igv.toFixed(2)}</span>
         </div>
-        <div class="total-line">
+        <div class="total-line total-final">
           <span><strong>TOTAL</strong></span>
           <span><strong>S/ ${ticket.total.toFixed(2)}</strong></span>
         </div>
-        <div style="font-size:11px;color:#666;margin-top:4px;">
+        <div class="total-items">
           Total Items: ${ticket.totalItems}
         </div>
       </div>

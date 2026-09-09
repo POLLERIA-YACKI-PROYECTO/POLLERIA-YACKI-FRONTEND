@@ -56,7 +56,7 @@ export class PedidosMeseroComponent implements OnInit {
   tipoEntrega = signal<string>('local');
   filtroTipo = signal<string>('todos');
 
-  // ✅ Modal Detalle Pedido
+  // Modal Detalle Pedido
   pedidoSeleccionado = signal<any>(null);
   mostrarDetalle = signal<boolean>(false);
 
@@ -105,7 +105,6 @@ export class PedidosMeseroComponent implements OnInit {
 
     this.pedidoService.obtenerPedidos().subscribe({
       next: (pedidos: any[]) => {
-        // Parsear items de cada pedido
         const pedidosParseados = pedidos.map((p: any) => {
           if (p.items && typeof p.items === 'string') {
             try {
@@ -204,25 +203,27 @@ export class PedidosMeseroComponent implements OnInit {
     return textos[estado] || estado;
   }
 
-  getEstadoIcono(estado: string): string {
-    const iconos: any = {
-      'pendiente': '⏳',
-      'preparando': '🔪',
-      'listo': '✅',
-      'entregado': '📦',
-      'cancelado': '❌'
+  // ✅ ESTADO SVG - PROFESIONAL
+  getEstadoSvg(estado: string): string {
+    const svgs: any = {
+      'pendiente': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+      'preparando': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>`,
+      'listo': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`,
+      'entregado': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+      'cancelado': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
     };
-    return iconos[estado] || '📋';
+    return svgs[estado] || svgs['pendiente'];
   }
 
-  getTipoEntregaIcono(tipo: string): string {
-    const iconos: any = {
-      'local': '🏠',
-      'delivery': '🛵',
-      'paraLlevar': '📦',
-      'motorizada': '🛵'
+  // ✅ TIPO ENTREGA SVG - PROFESIONAL
+  getTipoEntregaSvg(tipo: string): string {
+    const svgs: any = {
+      'local': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+      'delivery': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="13" rx="2"/><polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/></svg>`,
+      'paraLlevar': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
+      'motorizada': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="13" rx="2"/><polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/></svg>`
     };
-    return iconos[tipo] || '🏠';
+    return svgs[tipo] || svgs['local'];
   }
 
   getTipoEntregaLabel(tipo: string): string {
@@ -235,62 +236,54 @@ export class PedidosMeseroComponent implements OnInit {
     return labels[tipo] || 'Local';
   }
 
- // pedidos-mesero.component.ts - Reemplazar el método verDetalle
-
-// ✅ MÉTODO VER DETALLE - CORREGIDO
-verDetalle(pedido: any): void {
-  console.log('📋 === VER DETALLE PEDIDO ===');
-  console.log('📋 Pedido completo:', JSON.stringify(pedido, null, 2));
-  console.log('📋 Items raw:', pedido.items);
-  console.log('📋 Tipo de items:', typeof pedido.items);
-  
-  // Hacer una copia profunda del pedido
-  const pedidoCopia = JSON.parse(JSON.stringify(pedido));
-  
-  // ✅ Parsear items correctamente
-  if (pedidoCopia.items) {
-    if (typeof pedidoCopia.items === 'string') {
-      try {
-        pedidoCopia.items = JSON.parse(pedidoCopia.items);
-        console.log('📋 Items parseados desde string:', pedidoCopia.items);
-      } catch (e) {
-        console.error('❌ Error al parsear items:', e);
+  // ✅ VER DETALLE - CORREGIDO
+  verDetalle(pedido: any): void {
+    console.log('📋 === VER DETALLE PEDIDO ===');
+    console.log('📋 Pedido completo:', JSON.stringify(pedido, null, 2));
+    
+    const pedidoCopia = JSON.parse(JSON.stringify(pedido));
+    
+    if (pedidoCopia.items) {
+      if (typeof pedidoCopia.items === 'string') {
+        try {
+          pedidoCopia.items = JSON.parse(pedidoCopia.items);
+        } catch (e) {
+          console.error('❌ Error al parsear items:', e);
+          pedidoCopia.items = [];
+        }
+      } else if (!Array.isArray(pedidoCopia.items)) {
         pedidoCopia.items = [];
       }
-    } else if (!Array.isArray(pedidoCopia.items)) {
+    } else {
       pedidoCopia.items = [];
     }
-  } else {
-    pedidoCopia.items = [];
+    
+    // ✅ NOMBRE DEL CLIENTE
+    pedidoCopia.cliente_nombre = pedidoCopia.cliente_nombre_real || 
+                                 pedidoCopia.cliente_nombre || 
+                                 'Cliente';
+    
+    // ✅ NOMBRE DEL MESERO - USAR usuario_nombre_completo
+    pedidoCopia.usuario_nombre = pedidoCopia.usuario_nombre_completo || 
+                                 pedidoCopia.usuario_nombre || 
+                                 'Mesero';
+    
+    pedidoCopia.created_at = pedidoCopia.created_at || 
+                             pedidoCopia.fecha || 
+                             new Date().toISOString();
+    
+    console.log('📋 Mesero:', pedidoCopia.usuario_nombre);
+    console.log('📋 Items finales:', pedidoCopia.items);
+    
+    this.pedidoSeleccionado.set(pedidoCopia);
+    this.mostrarDetalle.set(true);
   }
-  
-  // ✅ Asegurar que los campos tengan valores por defecto
-  pedidoCopia.cliente_nombre = pedidoCopia.cliente_nombre || 
-                               pedidoCopia.cliente_nombre_real || 
-                               'Cliente';
-  
-  pedidoCopia.usuario_nombre = pedidoCopia.usuario_nombre || 
-                               pedidoCopia.mesero_nombre || 
-                               'Desconocido';
-  
-  pedidoCopia.created_at = pedidoCopia.created_at || 
-                           pedidoCopia.fecha || 
-                           new Date().toISOString();
-  
-  console.log('📋 Pedido procesado para modal:', pedidoCopia);
-  console.log('📋 Items finales:', pedidoCopia.items);
-  console.log('📋 Total items:', pedidoCopia.items.length);
-  
-  this.pedidoSeleccionado.set(pedidoCopia);
-  this.mostrarDetalle.set(true);
-}
-  // ✅ CERRAR DETALLE
+
   cerrarDetalle(): void {
     this.mostrarDetalle.set(false);
     this.pedidoSeleccionado.set(null);
   }
 
-  // ✅ ACTUALIZAR ESTADO DEL PEDIDO DESDE EL MODAL
   actualizarEstadoPedido(event: { id: number, estado: string }): void {
     this.pedidoService.cambiarEstado(event.id, event.estado).subscribe({
       next: () => {
@@ -446,80 +439,79 @@ verDetalle(pedido: any): void {
   // GUARDAR PEDIDO
   // ============================================
   guardarPedido(): void {
-  if (this.itemsPedido().length === 0) {
-    alert('Agregue al menos un producto al pedido');
-    return;
-  }
+    if (this.itemsPedido().length === 0) {
+      alert('Agregue al menos un producto al pedido');
+      return;
+    }
 
-  const nombreCliente = this.clienteSeleccionado()?.nombre || this.nuevoCliente.nombre;
-  if (!nombreCliente) {
-    alert('Por favor seleccione o agregue un cliente');
-    return;
-  }
+    const nombreCliente = this.clienteSeleccionado()?.nombre || this.nuevoCliente.nombre;
+    if (!nombreCliente) {
+      alert('Por favor seleccione o agregue un cliente');
+      return;
+    }
 
-  // ✅ PROCESAR ITEMS CORRECTAMENTE
-  let subtotal = 0;
-  const itemsConPrecio = this.itemsPedido().map((item: any) => {
-    const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : Number(item.precio);
-    const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : Number(item.cantidad);
-    const subtotalItem = precio * cantidad;
-    subtotal += subtotalItem;
-    
-    return {
-      id: Number(item.id),
-      nombre: String(item.nombre).trim(),
-      precio: Number(precio),
-      cantidad: Number(cantidad),
-      subtotal: Number(subtotalItem)
-    };
-  });
-
-  const igv = subtotal * 0.18;
-  const total = subtotal + igv;
-
-  console.log('📝 Items procesados:', JSON.stringify(itemsConPrecio));
-  console.log('📝 Subtotal:', subtotal);
-  console.log('📝 IGV:', igv);
-  console.log('📝 Total:', total);
-
-  const pedidoData: any = {
-    usuario_id: this.usuario().id,
-    cliente_id: this.clienteSeleccionado()?.id || null,
-    cliente_nombre: nombreCliente,
-    items: itemsConPrecio, // ✅ Enviamos el array, no un string
-    subtotal: subtotal,
-    igv: igv,
-    total: total,
-    tipo: 'local',
-    tipo_entrega: this.tipoEntrega(),
-    observaciones: '',
-    pagado: 0
-  };
-
-  if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
-    const nuevoClienteData = {
-      nombre: this.nuevoCliente.nombre,
-      apellido: this.nuevoCliente.apellido,
-      dni: this.nuevoCliente.dni,
-      telefono: this.nuevoCliente.telefono,
-      email: this.nuevoCliente.email
-    };
-
-    this.clienteService.crearCliente(nuevoClienteData).subscribe({
-      next: (clienteCreado: any) => {
-        pedidoData.cliente_id = clienteCreado.id;
-        pedidoData.cliente_nombre = clienteCreado.nombre || nombreCliente;
-        this.crearPedido(pedidoData);
-      },
-      error: (err: any) => {
-        console.error('Error al crear cliente:', err);
-        alert('Error al crear cliente');
-      }
+    let subtotal = 0;
+    const itemsConPrecio = this.itemsPedido().map((item: any) => {
+      const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : Number(item.precio);
+      const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : Number(item.cantidad);
+      const subtotalItem = precio * cantidad;
+      subtotal += subtotalItem;
+      
+      return {
+        id: Number(item.id),
+        nombre: String(item.nombre).trim(),
+        precio: Number(precio),
+        cantidad: Number(cantidad),
+        subtotal: Number(subtotalItem)
+      };
     });
-  } else {
-    this.crearPedido(pedidoData);
+
+    const igv = subtotal * 0.18;
+    const total = subtotal + igv;
+
+    console.log('📝 Items procesados:', JSON.stringify(itemsConPrecio));
+    console.log('📝 Subtotal:', subtotal);
+    console.log('📝 IGV:', igv);
+    console.log('📝 Total:', total);
+
+    const pedidoData: any = {
+      usuario_id: this.usuario().id,
+      cliente_id: this.clienteSeleccionado()?.id || null,
+      cliente_nombre: nombreCliente,
+      items: itemsConPrecio,
+      subtotal: subtotal,
+      igv: igv,
+      total: total,
+      tipo: 'local',
+      tipo_entrega: this.tipoEntrega(),
+      observaciones: '',
+      pagado: 0
+    };
+
+    if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
+      const nuevoClienteData = {
+        nombre: this.nuevoCliente.nombre,
+        apellido: this.nuevoCliente.apellido,
+        dni: this.nuevoCliente.dni,
+        telefono: this.nuevoCliente.telefono,
+        email: this.nuevoCliente.email
+      };
+
+      this.clienteService.crearCliente(nuevoClienteData).subscribe({
+        next: (clienteCreado: any) => {
+          pedidoData.cliente_id = clienteCreado.id;
+          pedidoData.cliente_nombre = clienteCreado.nombre || nombreCliente;
+          this.crearPedido(pedidoData);
+        },
+        error: (err: any) => {
+          console.error('Error al crear cliente:', err);
+          alert('Error al crear cliente');
+        }
+      });
+    } else {
+      this.crearPedido(pedidoData);
+    }
   }
-}
 
   crearPedido(pedidoData: any): void {
     this.pedidoService.crearPedido(pedidoData).subscribe({
