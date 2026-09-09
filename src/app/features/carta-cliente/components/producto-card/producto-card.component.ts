@@ -1,7 +1,15 @@
 // src/app/features/carta-cliente/components/producto-card/producto-card.component.ts
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  Output,
+  signal
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Producto } from '../../../../core/models/interfaces';
+import { ProductoService } from '../../../../core/services/producto.service';
 
 @Component({
   selector: 'app-producto-card',
@@ -11,22 +19,25 @@ import { Producto } from '../../../../core/models/interfaces';
   styleUrls: ['./producto-card.component.scss']
 })
 export class ProductoCardComponent {
-  @Input() producto!: Producto;
+  private productoService = inject(ProductoService);
+
+  @Input({ required: true }) producto!: Producto;
   @Output() agregar = new EventEmitter<Producto>();
 
   agregando = signal(false);
 
   get imagenUrl(): string {
-    if (!this.producto?.imagen) return 'assets/images/default-product.png';
-    if (this.producto.imagen.startsWith('http')) return this.producto.imagen;
-    if (this.producto.imagen.startsWith('assets/')) return this.producto.imagen;
-    return `assets/images/${this.producto.imagen}`;
+    return this.productoService.getImagenUrl(
+      this.producto?.imagen
+    );
   }
 
   get estaDisponible(): boolean {
-    return this.producto?.disponible !== false &&
-           this.producto?.agotado !== true &&
-           (this.producto?.stock ?? 0) > 0;
+    return (
+      this.producto?.disponible !== false &&
+      this.producto?.agotado !== true &&
+      (this.producto?.stock ?? 0) > 0
+    );
   }
 
   get tieneStock(): boolean {
@@ -35,31 +46,50 @@ export class ProductoCardComponent {
 
   get stockLabel(): string {
     const stock = this.producto?.stock ?? 0;
-    if (stock === 0) return 'Agotado';
-    if (stock < 5) return `Ultimas ${stock}`;
+
+    if (stock === 0) {
+      return 'Agotado';
+    }
+
+    if (stock < 5) {
+      return `Últimas ${stock}`;
+    }
+
     return '';
   }
 
   formatearPrecio(precio: number | string): string {
-    const num = typeof precio === 'string' ? parseFloat(precio) : precio;
-    if (isNaN(num)) return 'S/ 0.00';
-    return `S/ ${num.toFixed(2)}`;
+    const numero =
+      typeof precio === 'string'
+        ? Number.parseFloat(precio)
+        : precio;
+
+    return Number.isFinite(numero)
+      ? numero.toFixed(2)
+      : '0.00';
   }
 
   onAgregar(): void {
-    if (!this.estaDisponible) return;
+    if (!this.estaDisponible) {
+      return;
+    }
+
     this.agregando.set(true);
     this.agregar.emit(this.producto);
-    
-    // Reset después de la animación
+
     setTimeout(() => {
       this.agregando.set(false);
     }, 500);
   }
 
   onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.src = 'assets/images/productos/default-product.jpg';
-    img.onerror = null;
+    const imagen = event.target as HTMLImageElement;
+
+    if (imagen.dataset['fallbackAplicado'] === 'true') {
+      return;
+    }
+
+    imagen.dataset['fallbackAplicado'] = 'true';
+    imagen.src = this.productoService.getImagenUrl('imagen.jpg');
   }
 }

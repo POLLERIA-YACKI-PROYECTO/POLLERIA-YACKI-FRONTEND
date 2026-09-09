@@ -470,13 +470,57 @@
 
         @if (productoSeleccionado()) {
           <div class="cantidad-selector">
-            <label>Cantidad</label>
-            <div class="cantidad-controls">
-              <button (click)="cantidadProducto.set(cantidadProducto() - 1)" [disabled]="cantidadProducto() <= 1">-</button>
-              <span>{{ cantidadProducto() }}</span>
-              <button (click)="cantidadProducto.set(cantidadProducto() + 1)">+</button>
-              <button class="btn-agregar" (click)="agregarProductoAlPedido()">
-                Agregar
+            <div class="cantidad-info">
+              <label for="cantidadProductoSeleccionado">Cantidad</label>
+              <span class="cantidad-ayuda">Selecciona cuántas unidades deseas agregar</span>
+            </div>
+
+            <div class="cantidad-acciones">
+              <div class="cantidad-stepper" aria-label="Selector de cantidad">
+                <button
+                  class="cantidad-btn"
+                  type="button"
+                  (click)="cantidadProducto.set(cantidadProducto() - 1)"
+                  [disabled]="cantidadProducto() <= 1"
+                  aria-label="Disminuir cantidad"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+
+                <output
+                  id="cantidadProductoSeleccionado"
+                  class="cantidad-valor"
+                  aria-live="polite"
+                >
+                  {{ cantidadProducto() }}
+                </output>
+
+                <button
+                  class="cantidad-btn"
+                  type="button"
+                  (click)="cantidadProducto.set(cantidadProducto() + 1)"
+                  aria-label="Aumentar cantidad"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </button>
+              </div>
+
+              <button
+                class="btn-agregar"
+                type="button"
+                (click)="agregarProductoAlPedido()"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2l1.5 3L11 6.5 7.5 8 6 11 4.5 8 1 6.5 4.5 5 6 2z"/>
+                  <path d="M12 5h9v14H5v-7"/>
+                  <path d="M12 9v6M9 12h6"/>
+                </svg>
+                <span>Agregar al pedido</span>
               </button>
             </div>
           </div>
@@ -486,7 +530,7 @@
   </div>
 }
 
-<!-- ✅ MODAL DETALLE PEDIDO -->
+<!-- MODAL DETALLE PEDIDO -->
 <app-pedido-detalle
   [pedido]="pedidoSeleccionado()"
   [visible]="mostrarDetalle()"
