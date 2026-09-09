@@ -46,7 +46,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   metodosPago = ['efectivo', 'tarjeta', 'yape', 'plin', 'transferencia'];
   metodoSeleccionado = signal<string>('efectivo');
 
-  // Modal de pago - MEJORADO
+  // Modal de pago
   mostrarModalPago = signal<boolean>(false);
   pedidoEnPago = signal<any>(null);
   procesandoPago = signal<boolean>(false);
@@ -54,6 +54,10 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   mensajePago = signal<string>('');
   tipoPago = signal<string>('');
   mostrarMensajeExito = signal<boolean>(false);
+  mostrarResumen = signal<boolean>(false);
+
+  // Resultado del pago
+  resultadoPago = signal<any>(null);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
@@ -74,7 +78,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    // Cargar pedidos pendientes
     this.pedidoService.obtenerPedidosPendientes()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -104,7 +107,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Cargar ventas
     this.ventaService.obtenerVentas()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -212,8 +214,10 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.pagoCompletado.set(false);
     this.procesandoPago.set(false);
     this.mostrarMensajeExito.set(false);
+    this.mostrarResumen.set(false);
     this.mensajePago.set('');
     this.tipoPago.set('');
+    this.resultadoPago.set(null);
 
     this.pedidoEnPago.set(pedido);
     this.metodoSeleccionado.set('efectivo');
@@ -227,8 +231,10 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.procesandoPago.set(false);
     this.pagoCompletado.set(false);
     this.mostrarMensajeExito.set(false);
+    this.mostrarResumen.set(false);
     this.mensajePago.set('');
     this.tipoPago.set('');
+    this.resultadoPago.set(null);
   }
 
   // ✅ CONFIRMAR PAGO DESDE EL MODAL
@@ -258,20 +264,23 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             this.procesandoPago.set(false);
             this.pagoCompletado.set(true);
             this.mostrarMensajeExito.set(true);
+            this.mostrarResumen.set(true);
             this.mensajePago.set('¡Pago completado con éxito!');
             this.tipoPago.set('exito');
+            this.resultadoPago.set({
+              pedidoId: pedido.id,
+              total: pedido.total,
+              metodo: metodo,
+              tipoEntrega: pedido.tipo_entrega,
+              cliente: pedido.cliente_nombre || pedido.cliente_nombre_real || 'Cliente'
+            });
 
-            const tipoTexto = this.getTipoEntregaLabel(pedido.tipo_entrega);
-            const metodoTexto = this.getMetodoPagoLabel(metodo);
-
-            // Esperar 2 segundos antes de cerrar automáticamente
             setTimeout(() => {
               this.cerrarModalPago();
               this.cargarDatos();
-            }, 2500);
+            }, 3000);
 
           } else {
-            // Respuesta inesperada
             this.procesandoPago.set(false);
             this.mensajePago.set('Error: Respuesta inesperada del servidor');
             this.tipoPago.set('error');

@@ -34,6 +34,14 @@ export class CartaAdminComponent implements OnInit {
   productoEdit = signal<any>(null);
   editando = signal(false);
 
+  // ✅ MODAL DE CONFIRMACIÓN PARA ELIMINAR
+  mostrarModalEliminar = signal(false);
+  productoAEliminar = signal<any>(null);
+
+  // ✅ MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN
+  mostrarModalRestaurar = signal(false);
+  productoARestaurar = signal<any>(null);
+
   // IMAGEN
   imagenPreview = signal<string | null>(null);
   imagenFile = signal<File | null>(null);
@@ -155,14 +163,12 @@ export class CartaAdminComponent implements OnInit {
     }
   }
 
-  // OBTENER URL DE IMAGEN - CORREGIDO
   getImagenUrl(imagen: string | null | undefined): string {
     return this.productoService.getImagenUrl(imagen);
   }
 
   manejarErrorImagen(event: Event): void {
     const elemento = event.target as HTMLImageElement;
-
     const imagenPredeterminada = this.productoService.getImagenUrl('imagen.jpg');
 
     if (elemento.src === imagenPredeterminada || elemento.dataset['fallbackAplicado'] === 'true') {
@@ -170,13 +176,11 @@ export class CartaAdminComponent implements OnInit {
     }
 
     elemento.dataset['fallbackAplicado'] = 'true';
-
     elemento.src = imagenPredeterminada;
   }
 
   limpiarImagenSeleccionada(event?: Event): void {
     event?.stopPropagation();
-
     this.imagenFile.set(null);
 
     if (this.editando()) {
@@ -194,7 +198,38 @@ export class CartaAdminComponent implements OnInit {
     return this.productoService.esImagenDefault(imagen);
   }
 
-  // Restaurar imagen por defecto (para el formulario - SIN PARÁMETROS)
+  // ✅ ABRIR MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN
+  abrirModalRestaurar(producto: any): void {
+    this.productoARestaurar.set(producto);
+    this.mostrarModalRestaurar.set(true);
+  }
+
+  // ✅ CERRAR MODAL DE RESTAURAR
+  cerrarModalRestaurar(): void {
+    this.mostrarModalRestaurar.set(false);
+    this.productoARestaurar.set(null);
+  }
+
+  // ✅ CONFIRMAR RESTAURAR IMAGEN
+  confirmarRestaurar(): void {
+    const producto = this.productoARestaurar();
+    if (!producto) return;
+
+    this.productoService.restaurarImagenDefault(producto.id).subscribe({
+      next: () => {
+        alert('Imagen por defecto restaurada correctamente');
+        this.cerrarModalRestaurar();
+        this.cargarDatos();
+      },
+      error: (err) => {
+        console.error('Error al restaurar imagen:', err);
+        alert('Error al restaurar imagen');
+        this.cerrarModalRestaurar();
+      },
+    });
+  }
+
+  // ✅ RESTAURAR IMAGEN DESDE EL FORMULARIO
   restaurarImagenDefault(): void {
     if (!this.productoEdit()) return;
 
@@ -215,25 +250,6 @@ export class CartaAdminComponent implements OnInit {
     }
   }
 
-  // Restaurar imagen por defecto (desde la tabla - CON PARÁMETRO)
-  restaurarImagenDefaultProducto(producto: any): void {
-    if (!producto) return;
-
-    if (confirm(`¿Restaurar la imagen por defecto para "${producto.nombre}"?`)) {
-      this.productoService.restaurarImagenDefault(producto.id).subscribe({
-        next: () => {
-          alert('Imagen por defecto restaurada');
-          this.cargarDatos();
-        },
-        error: (err) => {
-          console.error('Error al restaurar imagen:', err);
-          alert('Error al restaurar imagen');
-        },
-      });
-    }
-  }
-
-  // Eliminar imagen del producto (restaura la default)
   eliminarImagen(event: Event): void {
     event.stopPropagation();
     if (!this.productoEdit()) return;
@@ -357,19 +373,35 @@ export class CartaAdminComponent implements OnInit {
     });
   }
 
-  eliminarProducto(id: number): void {
-    if (confirm('¿Está seguro de eliminar este producto?')) {
-      this.productoService.eliminarProducto(id).subscribe({
-        next: () => {
-          alert('Producto eliminado correctamente');
-          this.cargarDatos();
-        },
-        error: (err) => {
-          console.error('Error al eliminar producto:', err);
-          alert('Error al eliminar producto');
-        },
-      });
-    }
+  // ✅ ABRIR MODAL DE CONFIRMACIÓN PARA ELIMINAR
+  abrirModalEliminar(producto: any): void {
+    this.productoAEliminar.set(producto);
+    this.mostrarModalEliminar.set(true);
+  }
+
+  // ✅ CERRAR MODAL DE CONFIRMACIÓN
+  cerrarModalEliminar(): void {
+    this.mostrarModalEliminar.set(false);
+    this.productoAEliminar.set(null);
+  }
+
+  // ✅ CONFIRMAR ELIMINACIÓN
+  confirmarEliminar(): void {
+    const producto = this.productoAEliminar();
+    if (!producto) return;
+
+    this.productoService.eliminarProducto(producto.id).subscribe({
+      next: () => {
+        alert('Producto eliminado correctamente');
+        this.cerrarModalEliminar();
+        this.cargarDatos();
+      },
+      error: (err) => {
+        console.error('Error al eliminar producto:', err);
+        alert('Error al eliminar producto');
+        this.cerrarModalEliminar();
+      },
+    });
   }
 
   getNombreCategoria(id: number): string {

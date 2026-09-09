@@ -1,4 +1,5 @@
 // src/app/features/mesero/carta-mesero/carta-mesero.component.scss
+
 /* ============================================
    BASE - TEMA OSCURO (por defecto)
    ============================================ */
@@ -89,19 +90,6 @@
 .carta-mesero-container.tema-claro .badge-agotado {
   background: rgba(220, 47, 43, 0.1);
   color: #dc2f2b;
-}
-
-.carta-mesero-container.tema-claro .btn-agregar {
-  background: #32CD32;
-  color: #ffffff;
-}
-
-.carta-mesero-container.tema-claro .btn-agregar:hover:not(:disabled) {
-  background: #28a428;
-}
-
-.carta-mesero-container.tema-claro .btn-agregar:disabled {
-  opacity: 0.4;
 }
 
 /* ============================================
@@ -517,100 +505,241 @@
 }
 
 /* ============================================
-   PRODUCTOS
+   BUSCADOR
+   ============================================ */
+.buscador-container {
+  margin-bottom: 16px;
+}
+
+.buscador-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #151515;
+  border: 2px solid #2a2a2a;
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.buscador-wrapper:focus-within {
+  border-color: #f31730;
+  box-shadow: 0 0 0 4px rgba(243, 23, 48, 0.15);
+}
+
+.buscador-icon {
+  width: 20px;
+  height: 20px;
+  stroke: #888;
+  flex-shrink: 0;
+  margin: 0 12px;
+}
+
+.buscador-input {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: #ffffda;
+  outline: none;
+  min-width: 0;
+}
+
+.buscador-input::placeholder {
+  color: #666;
+}
+
+.buscador-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 8px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.buscador-clear:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.buscador-clear svg {
+  width: 18px;
+  height: 18px;
+  stroke: #888;
+  transition: stroke 0.3s ease;
+}
+
+.buscador-clear:hover svg {
+  stroke: #dc2626;
+}
+
+.buscador-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  font-size: 13px;
+  color: #888;
+}
+
+.resultados-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.filtro-activo {
+  color: #f31730;
+  font-weight: 400;
+}
+
+.sin-resultados {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* Highlight para coincidencias */
+::ng-deep mark.highlight {
+  background: rgba(243, 23, 48, 0.25);
+  color: #f31730;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* TEMA CLARO - BUSCADOR */
+.carta-mesero-container.tema-claro .buscador-wrapper {
+  background: #ffffff;
+  border-color: #d4c8b8;
+}
+
+.carta-mesero-container.tema-claro .buscador-wrapper:focus-within {
+  border-color: #ce8329;
+}
+
+.carta-mesero-container.tema-claro .buscador-input {
+  color: #2e2e2e;
+}
+
+.carta-mesero-container.tema-claro .buscador-input::placeholder {
+  color: #aaa;
+}
+
+.carta-mesero-container.tema-claro .buscador-icon {
+  stroke: #aaa;
+}
+
+.carta-mesero-container.tema-claro .filtro-activo {
+  color: #ce8329;
+}
+
+.carta-mesero-container.tema-claro .sin-resultados {
+  color: #dc2626;
+}
+
+/* ============================================
+   PRODUCTOS - MEJORADO SIN BOTÓN AGREGAR
    ============================================ */
 .productos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 10px;
+  gap: 12px;
   padding: 4px 0 16px;
 }
 
 .producto-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
+  flex-direction: column;
+  padding: 16px 18px;
   background: #151515;
   border: 1px solid #2a2a2a;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: all 0.3s ease;
+  min-height: 80px;
+  position: relative;
 }
 
 .producto-card:hover {
   border-color: #f31730;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(243, 23, 48, 0.08);
 }
 
 .producto-card.agotado {
   opacity: 0.5;
+  border-color: #2a2a2a;
 }
 
 .producto-card.agotado:hover {
   transform: none;
   box-shadow: none;
+  border-color: #2a2a2a;
 }
 
 .producto-info {
   flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .producto-nombre {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  margin: 0 0 2px;
+  margin: 0;
   color: #ffffda;
   transition: color 0.3s ease;
+  line-height: 1.3;
+}
+
+.producto-detalles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .producto-precio {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #32CD32;
 }
 
 .badge-agotado {
+  display: inline-block;
   font-size: 10px;
-  color: #f31730;
-  background: rgba(243, 23, 48, 0.1);
-  padding: 2px 8px;
-  border-radius: 12px;
-  margin-left: 6px;
-}
-
-.btn-agregar {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  background: #32CD32;
-  color: #ffffda;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  flex-shrink: 0;
+  color: #f31730;
+  background: rgba(243, 23, 48, 0.12);
+  padding: 2px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }
 
-.btn-agregar svg {
-  stroke: #ffffda;
-  width: 16px;
-  height: 16px;
+/* ============================================
+   TEMA CLARO - PRODUCTOS
+   ============================================ */
+.carta-mesero-container.tema-claro .producto-nombre {
+  color: #2e2e2e;
 }
 
-.btn-agregar:hover:not(:disabled) {
-  background: #28a428;
-  transform: scale(1.04);
+.carta-mesero-container.tema-claro .producto-precio {
+  color: #ce8329;
 }
 
-.btn-agregar:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.carta-mesero-container.tema-claro .badge-agotado {
+  background: rgba(220, 47, 43, 0.1);
+  color: #dc2f2b;
 }
 
 /* ============================================
@@ -753,25 +882,48 @@
   }
 
   .producto-card {
-    padding: 10px 14px;
+    padding: 14px 16px;
+    min-height: 70px;
   }
 
   .producto-nombre {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .producto-precio {
+    font-size: 15px;
+  }
+
+  .buscador-input {
+    padding: 10px 0;
     font-size: 13px;
   }
 
-  .btn-agregar {
-    font-size: 11px;
-    padding: 6px 12px;
+  .buscador-icon {
+    width: 18px;
+    height: 18px;
+    margin: 0 10px;
   }
 
-  .btn-agregar svg {
-    width: 14px;
-    height: 14px;
+  .buscador-clear {
+    width: 32px;
+    height: 32px;
+    margin-right: 6px;
+  }
+
+  .buscador-clear svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .buscador-info {
+    font-size: 12px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .resultados-count {
+    flex-wrap: wrap;
   }
 }
 
@@ -846,33 +998,21 @@
   }
 
   .producto-card {
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 12px;
-  }
-
-  .producto-info {
-    width: 100%;
+    padding: 12px 14px;
+    min-height: 60px;
   }
 
   .producto-nombre {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .producto-precio {
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .badge-agotado {
     font-size: 9px;
-    padding: 1px 6px;
-  }
-
-  .btn-agregar {
-    width: 100%;
-    justify-content: center;
-    font-size: 11px;
-    padding: 6px 12px;
+    padding: 1px 8px;
   }
 
   .empty-message svg {
@@ -882,6 +1022,43 @@
 
   .empty-message p {
     font-size: 12px;
+  }
+
+  .buscador-wrapper {
+    border-radius: 8px;
+  }
+
+  .buscador-input {
+    padding: 8px 0;
+    font-size: 12px;
+  }
+
+  .buscador-icon {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px;
+  }
+
+  .buscador-clear {
+    width: 28px;
+    height: 28px;
+    margin-right: 4px;
+  }
+
+  .buscador-clear svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .buscador-info {
+    font-size: 11px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .filtro-activo {
+    font-size: 11px;
   }
 }
 
@@ -957,235 +1134,13 @@
   }
 
   .producto-nombre {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .producto-precio {
-    font-size: 11px;
-  }
-
-  .btn-agregar {
-    font-size: 10px;
-    padding: 5px 10px;
-  }
-}
-/* ============================================
-   BUSCADOR
-   ============================================ */
-.buscador-container {
-  margin-bottom: 16px;
-}
-
-.buscador-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: #151515;
-  border: 2px solid #2a2a2a;
-  border-radius: 10px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.buscador-wrapper:focus-within {
-  border-color: #f31730;
-  box-shadow: 0 0 0 4px rgba(243, 23, 48, 0.15);
-}
-
-.buscador-icon {
-  width: 20px;
-  height: 20px;
-  stroke: #888;
-  flex-shrink: 0;
-  margin: 0 12px;
-}
-
-.buscador-input {
-  flex: 1;
-  padding: 12px 0;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  font-family: inherit;
-  color: #ffffda;
-  outline: none;
-  min-width: 0;
-}
-
-.buscador-input::placeholder {
-  color: #666;
-}
-
-.buscador-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-right: 8px;
-  background: transparent;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.buscador-clear:hover {
-  background: rgba(220, 38, 38, 0.1);
-}
-
-.buscador-clear svg {
-  width: 18px;
-  height: 18px;
-  stroke: #888;
-  transition: stroke 0.3s ease;
-}
-
-.buscador-clear:hover svg {
-  stroke: #dc2626;
-}
-
-.buscador-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  padding: 0 4px;
-  font-size: 13px;
-  color: #888;
-}
-
-.resultados-count {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-}
-
-.filtro-activo {
-  color: #f31730;
-  font-weight: 400;
-}
-
-.sin-resultados {
-  color: #dc2626;
-  font-weight: 500;
-}
-
-/* Highlight para coincidencias */
-::ng-deep mark.highlight {
-  background: rgba(243, 23, 48, 0.25);
-  color: #f31730;
-  padding: 0 2px;
-  border-radius: 2px;
-  font-weight: 600;
-}
-
-/* TEMA CLARO */
-.carta-mesero-container.tema-claro .buscador-wrapper {
-  background: #ffffff;
-  border-color: #d4c8b8;
-}
-
-.carta-mesero-container.tema-claro .buscador-wrapper:focus-within {
-  border-color: #ce8329;
-}
-
-.carta-mesero-container.tema-claro .buscador-input {
-  color: #2e2e2e;
-}
-
-.carta-mesero-container.tema-claro .buscador-input::placeholder {
-  color: #aaa;
-}
-
-.carta-mesero-container.tema-claro .buscador-icon {
-  stroke: #aaa;
-}
-
-.carta-mesero-container.tema-claro .filtro-activo {
-  color: #ce8329;
-}
-
-.carta-mesero-container.tema-claro .sin-resultados {
-  color: #dc2626;
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .buscador-input {
-    padding: 10px 0;
     font-size: 13px;
   }
 
-  .buscador-icon {
-    width: 18px;
-    height: 18px;
-    margin: 0 10px;
-  }
-
-  .buscador-clear {
-    width: 32px;
-    height: 32px;
-    margin-right: 6px;
-  }
-
-  .buscador-clear svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .buscador-info {
-    font-size: 12px;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-
-  .resultados-count {
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 480px) {
-  .buscador-wrapper {
-    border-radius: 8px;
-  }
-
-  .buscador-input {
-    padding: 8px 0;
-    font-size: 12px;
-  }
-
-  .buscador-icon {
-    width: 16px;
-    height: 16px;
-    margin: 0 8px;
-  }
-
-  .buscador-clear {
-    width: 28px;
-    height: 28px;
-    margin-right: 4px;
-  }
-
-  .buscador-clear svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .buscador-info {
-    font-size: 11px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  .filtro-activo {
-    font-size: 11px;
-  }
-}
-
-@media (max-width: 360px) {
   .buscador-input {
     font-size: 11px;
   }

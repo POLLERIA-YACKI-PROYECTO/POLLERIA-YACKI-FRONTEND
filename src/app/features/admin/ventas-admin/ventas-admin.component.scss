@@ -919,3 +919,334 @@
     font-size: 12px;
   }
 }
+// src/app/features/admin/ventas-admin/ventas-admin.component.scss
+
+// AGREGAR AL FINAL DEL ARCHIVO EXISTENTE
+
+/* ============================================
+   MODAL DE PAGO - ESTILOS MEJORADOS
+   ============================================ */
+
+// Resumen de éxito mejorado
+.resumen-pago-exito {
+  background: linear-gradient(135deg, #f0faf0 0%, #e8f5e8 100%);
+  border: 2px solid #32CD32;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+  animation: slideUpExito 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes slideUpExito {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.exito-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 2px dashed rgba(50, 205, 50, 0.3);
+  margin-bottom: 14px;
+}
+
+.exito-header svg {
+  width: 28px;
+  height: 28px;
+  stroke: #32CD32;
+  flex-shrink: 0;
+}
+
+.exito-header span {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2e7d32;
+}
+
+.exito-detalles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.exito-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+}
+
+.exito-item .exito-label {
+  font-size: 10px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.exito-item .exito-valor {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2e2e2e;
+  margin-top: 2px;
+}
+
+.exito-item .exito-valor.total-monto {
+  color: #32CD32;
+  font-size: 17px;
+}
+
+.exito-item .metodo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.exito-item .metodo-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+// Error detalle mejorado
+.error-detalle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.error-detalle svg {
+  width: 48px;
+  height: 48px;
+  stroke: #e74c3c;
+}
+
+.error-detalle p {
+  color: #e74c3c;
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0;
+}
+
+// Mensaje de estado mejorado
+.mensaje-estado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mensaje-estado.procesando {
+  background: rgba(52, 152, 219, 0.08);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.15);
+}
+
+.mensaje-estado.exito {
+  background: rgba(46, 204, 113, 0.08);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.15);
+}
+
+.mensaje-estado.error {
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.15);
+}
+
+.mensaje-estado svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.mensaje-estado .spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(52, 152, 219, 0.2);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+// Modal icon estados
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(197, 48, 42, 0.08);
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.modal-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: #c5302a;
+}
+
+.modal-icon.procesando {
+  background: rgba(52, 152, 219, 0.12);
+}
+
+.modal-icon.procesando svg {
+  stroke: #3498db;
+}
+
+.modal-icon.exito {
+  background: rgba(46, 204, 113, 0.12);
+}
+
+.modal-icon.exito svg {
+  stroke: #2ecc71;
+}
+
+.modal-icon.error {
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.modal-icon.error svg {
+  stroke: #e74c3c;
+}
+
+.spinner-modal {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(52, 152, 219, 0.2);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+// Botón cerrar éxito
+.btn-cerrar-exito {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  flex: 1;
+  background: #32CD32;
+  color: #ffffff;
+}
+
+.btn-cerrar-exito:hover {
+  background: #28a428;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.btn-cerrar-exito svg {
+  stroke: #ffffff;
+  width: 18px;
+  height: 18px;
+}
+
+// TEMA OSCURO - MODAL
+.pedidos-mesero-container.tema-oscuro .resumen-pago-exito,
+.carta-admin-container.tema-oscuro .resumen-pago-exito,
+.ventas-admin-container.tema-oscuro .resumen-pago-exito {
+  background: linear-gradient(135deg, #1a2a1a 0%, #152015 100%);
+  border-color: #32CD32;
+}
+
+.pedidos-mesero-container.tema-oscuro .exito-header span,
+.carta-admin-container.tema-oscuro .exito-header span,
+.ventas-admin-container.tema-oscuro .exito-header span {
+  color: #32CD32;
+}
+
+.pedidos-mesero-container.tema-oscuro .exito-item,
+.carta-admin-container.tema-oscuro .exito-item,
+.ventas-admin-container.tema-oscuro .exito-item {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pedidos-mesero-container.tema-oscuro .exito-item .exito-valor,
+.carta-admin-container.tema-oscuro .exito-item .exito-valor,
+.ventas-admin-container.tema-oscuro .exito-item .exito-valor {
+  color: #ffffda;
+}
+
+.pedidos-mesero-container.tema-oscuro .exito-item .exito-valor.total-monto,
+.carta-admin-container.tema-oscuro .exito-item .exito-valor.total-monto,
+.ventas-admin-container.tema-oscuro .exito-item .exito-valor.total-monto {
+  color: #32CD32;
+}
+
+// RESPONSIVE
+@media (max-width: 768px) {
+  .exito-detalles {
+    grid-template-columns: 1fr;
+  }
+
+  .exito-header span {
+    font-size: 16px;
+  }
+
+  .exito-item .exito-valor {
+    font-size: 14px;
+  }
+
+  .resumen-pago-exito {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .exito-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .exito-item .exito-valor {
+    font-size: 13px;
+  }
+
+  .exito-item .exito-valor.total-monto {
+    font-size: 15px;
+  }
+
+  .resumen-pago-exito {
+    padding: 14px;
+  }
+
+  .error-detalle svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .error-detalle p {
+    font-size: 13px;
+  }
+}

@@ -186,7 +186,6 @@
                 <span [innerHTML]="getEstadoSvg(pedido.estado)"></span>
                 {{ getEstadoTexto(pedido.estado) }}
               </span>
-              <!-- ✅ NOMBRE DEL MESERO EN LA TARJETA -->
               <span class="pedido-mesero">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -558,3 +557,96 @@
   (cerrar)="cerrarDetalle()"
   (actualizarEstado)="actualizarEstadoPedido($event)"
 ></app-pedido-detalle>
+
+<!-- ✅ MODAL DE ÉXITO - DISEÑO PROFESIONAL -->
+@if (mostrarModalExito()) {
+  <div class="modal-overlay" (click)="cerrarModalExito()">
+    <div class="modal-exito" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <div class="modal-icon exito-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </div>
+          <div>
+            <h2>¡Pedido Creado!</h2>
+            <p class="modal-subtitle">{{ mensajeExito() }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModalExito()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Resumen del pedido -->
+        <div class="resumen-pedido-exito">
+          <div class="resumen-item">
+            <span class="resumen-label">Número de Pedido</span>
+            <span class="resumen-valor">#{{ pedidoCreado()?.id || '--' }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Cliente</span>
+            <span class="resumen-valor">{{ pedidoCreado()?.cliente_nombre || 'Cliente' }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Total</span>
+            <span class="resumen-valor total-monto">S/ {{ pedidoCreado()?.total || 0 | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Tipo de Entrega</span>
+            <span class="resumen-valor">
+              <span class="tipo-badge {{ pedidoCreado()?.tipo_entrega || 'local' }}">
+                <span [innerHTML]="getTipoEntregaSvg(pedidoCreado()?.tipo_entrega)"></span>
+                {{ getTipoEntregaLabel(pedidoCreado()?.tipo_entrega) }}
+              </span>
+            </span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Estado</span>
+            <span class="resumen-valor">
+              <span class="estado-badge estado-pendiente">
+                <span [innerHTML]="getEstadoSvg('pendiente')"></span>
+                Pendiente
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Lista de productos -->
+        <div class="productos-resumen">
+          <h4>Productos</h4>
+          <div class="items-lista-resumen">
+            @for (item of pedidoCreado()?.items || []; track $index) {
+              <div class="item-resumen">
+                <span class="item-nombre-resumen">{{ item.nombre || 'Producto' }}</span>
+                <span class="item-cantidad-resumen">x{{ item.cantidad || 1 }}</span>
+                <span class="item-precio-resumen">S/ {{ (item.precio || 0) * (item.cantidad || 1) | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ver-pedido" (click)="cerrarModalExito(); irPedidos()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="7" width="20" height="14" rx="2"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+          </svg>
+          Ver Pedidos
+        </button>
+        <button class="btn-nuevo-pedido-exito" (click)="cerrarModalExito(); abrirModalNuevoPedido()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Nuevo Pedido
+        </button>
+      </div>
+    </div>
+  </div>
+}

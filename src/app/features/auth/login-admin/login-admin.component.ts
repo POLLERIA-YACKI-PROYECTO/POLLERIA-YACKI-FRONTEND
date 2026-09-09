@@ -34,14 +34,13 @@ export class LoginAdminComponent implements OnInit {
   ngOnInit(): void {
     const usuario = this.authService.getUsuarioActual();
     if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
-      // ✅ CORREGIDO: Redirigir a /admin/dashboard-admin
       this.router.navigate(['/admin/dashboard-admin']);
     }
   }
 
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500"%3E%3Crect width="500" height="500" rx="250" fill="%235e412f"/%3E%3Ctext x="250" y="320" font-size="200" text-anchor="middle" fill="%23e9bd6e" font-family="Arial" font-weight="bold"%3E👑%3C/text%3E%3C/svg%3E';
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500"%3E%3Crect width="500" height="500" rx="250" fill="%235e412f"/%3E%3Ctext x="250" y="320" font-size="180" text-anchor="middle" fill="%23e9bd6e" font-family="Arial" font-weight="bold"%3E%3C/text%3E%3C/svg%3E';
   }
 
   onSubmit(): void {
@@ -62,7 +61,6 @@ export class LoginAdminComponent implements OnInit {
         this.mostrarBienvenida.set(true);
 
         setTimeout(() => {
-          // ✅ CORREGIDO: Redirigir a /admin/dashboard-admin
           this.router.navigate(['/admin/dashboard-admin']);
         }, 1500);
       },

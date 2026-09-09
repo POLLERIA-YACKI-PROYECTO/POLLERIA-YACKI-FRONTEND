@@ -1,8 +1,9 @@
 // src/app/features/mesero/pedidos-mesero/pedidos-mesero.component.ts
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin, Subject, takeUntil, timeout } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { ProductoService } from '../../../core/services/producto.service';
@@ -19,13 +20,15 @@ import { PedidoDetalleComponent } from '../pedido-detalle/pedido-detalle.compone
   styleUrls: ['./pedidos-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class PedidosMeseroComponent implements OnInit {
+export class PedidosMeseroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private pedidoService = inject(PedidoService);
   private productoService = inject(ProductoService);
   private clienteService = inject(ClienteService);
   private categoriaService = inject(CategoriaService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
 
   // Estados
   usuario = signal<any>(null);
@@ -34,6 +37,11 @@ export class PedidosMeseroComponent implements OnInit {
   opcionSeleccionada = signal<string>('');
   loading = signal<boolean>(true);
   cargandoProductos = signal<boolean>(false);
+
+  // ✅ Modal de éxito
+  mostrarModalExito = signal<boolean>(false);
+  mensajeExito = signal<string>('');
+  pedidoCreado = signal<any>(null);
 
   // Datos
   pedidos = signal<any[]>([]);
@@ -86,25 +94,31 @@ export class PedidosMeseroComponent implements OnInit {
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   // ============================================
-  // CARGA DE DATOS
+  // CARGA DE DATOS OPTIMIZADA
   // ============================================
   cargarDatos(): void {
     this.loading.set(true);
 
-    this.categoriaService.obtenerCategorias().subscribe({
-      next: (categorias: any[]) => {
+    forkJoin({
+      categorias: this.categoriaService.obtenerCategorias().pipe(timeout(10000)),
+      pedidos: this.pedidoService.obtenerPedidos().pipe(timeout(10000)),
+      clientes: this.clienteService.obtenerClientes().pipe(timeout(10000))
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: ({ categorias, pedidos, clientes }) => {
         this.categorias.set(categorias);
         if (categorias.length > 0) {
           this.categoriaSeleccionada.set(categorias[0].id);
           this.cargarProductos(categorias[0].id);
         }
-      },
-      error: (err: any) => console.error('Error al cargar categorías:', err)
-    });
 
-    this.pedidoService.obtenerPedidos().subscribe({
-      next: (pedidos: any[]) => {
         const pedidosParseados = pedidos.map((p: any) => {
           if (p.items && typeof p.items === 'string') {
             try {
@@ -117,22 +131,69 @@ export class PedidosMeseroComponent implements OnInit {
         });
         this.pedidos.set(pedidosParseados);
         this.filtrarPedidosPorTipo();
+
+        this.clientes.set(clientes);
         this.loading.set(false);
       },
       error: (err: any) => {
-        console.error('Error al cargar pedidos:', err);
+        console.error('Error al cargar datos:', err);
         this.loading.set(false);
+        this.cargarDatosIndividuales();
       }
-    });
-
-    this.clienteService.obtenerClientes().subscribe({
-      next: (clientes: any[]) => {
-        this.clientes.set(clientes);
-      },
-      error: (err: any) => console.error('Error al cargar clientes:', err)
     });
   }
 
+  private cargarDatosIndividuales(): void {
+    this.categoriaService.obtenerCategorias()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (categorias: any[]) => {
+          this.categorias.set(categorias);
+          if (categorias.length > 0) {
+            this.categoriaSeleccionada.set(categorias[0].id);
+            this.cargarProductos(categorias[0].id);
+          }
+        },
+        error: (err: any) => console.error('Error al cargar categorías:', err)
+      });
+
+    this.pedidoService.obtenerPedidos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (pedidos: any[]) => {
+          const pedidosParseados = pedidos.map((p: any) => {
+            if (p.items && typeof p.items === 'string') {
+              try {
+                p.items = JSON.parse(p.items);
+              } catch (e) {
+                p.items = [];
+              }
+            }
+            return p;
+          });
+          this.pedidos.set(pedidosParseados);
+          this.filtrarPedidosPorTipo();
+          this.loading.set(false);
+        },
+        error: (err: any) => {
+          console.error('Error al cargar pedidos:', err);
+          this.loading.set(false);
+        }
+      });
+
+    this.clienteService.obtenerClientes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (clientes: any[]) => {
+          this.clientes.set(clientes);
+        },
+        error: (err: any) => console.error('Error al cargar clientes:', err)
+      });
+  }
+
+  // ============================================
+  // MÉTODOS EXISTENTES (se mantienen igual)
+  // ============================================
   filtrarPedidosPorTipo(): void {
     const pedidos = this.pedidos();
     this.pedidosLocal.set(pedidos.filter(p => p.tipo_entrega === 'local' || p.tipo_entrega === 'paraLlevar'));
@@ -203,7 +264,6 @@ export class PedidosMeseroComponent implements OnInit {
     return textos[estado] || estado;
   }
 
-  // ✅ ESTADO SVG - PROFESIONAL
   getEstadoSvg(estado: string): string {
     const svgs: any = {
       'pendiente': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
@@ -215,7 +275,6 @@ export class PedidosMeseroComponent implements OnInit {
     return svgs[estado] || svgs['pendiente'];
   }
 
-  // ✅ TIPO ENTREGA SVG - PROFESIONAL
   getTipoEntregaSvg(tipo: string): string {
     const svgs: any = {
       'local': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
@@ -236,11 +295,7 @@ export class PedidosMeseroComponent implements OnInit {
     return labels[tipo] || 'Local';
   }
 
-  // ✅ VER DETALLE - CORREGIDO
   verDetalle(pedido: any): void {
-    console.log('📋 === VER DETALLE PEDIDO ===');
-    console.log('📋 Pedido completo:', JSON.stringify(pedido, null, 2));
-    
     const pedidoCopia = JSON.parse(JSON.stringify(pedido));
     
     if (pedidoCopia.items) {
@@ -248,7 +303,6 @@ export class PedidosMeseroComponent implements OnInit {
         try {
           pedidoCopia.items = JSON.parse(pedidoCopia.items);
         } catch (e) {
-          console.error('❌ Error al parsear items:', e);
           pedidoCopia.items = [];
         }
       } else if (!Array.isArray(pedidoCopia.items)) {
@@ -258,22 +312,9 @@ export class PedidosMeseroComponent implements OnInit {
       pedidoCopia.items = [];
     }
     
-    // ✅ NOMBRE DEL CLIENTE
-    pedidoCopia.cliente_nombre = pedidoCopia.cliente_nombre_real || 
-                                 pedidoCopia.cliente_nombre || 
-                                 'Cliente';
-    
-    // ✅ NOMBRE DEL MESERO - USAR usuario_nombre_completo
-    pedidoCopia.usuario_nombre = pedidoCopia.usuario_nombre_completo || 
-                                 pedidoCopia.usuario_nombre || 
-                                 'Mesero';
-    
-    pedidoCopia.created_at = pedidoCopia.created_at || 
-                             pedidoCopia.fecha || 
-                             new Date().toISOString();
-    
-    console.log('📋 Mesero:', pedidoCopia.usuario_nombre);
-    console.log('📋 Items finales:', pedidoCopia.items);
+    pedidoCopia.cliente_nombre = pedidoCopia.cliente_nombre_real || pedidoCopia.cliente_nombre || 'Cliente';
+    pedidoCopia.usuario_nombre = pedidoCopia.usuario_nombre_completo || pedidoCopia.usuario_nombre || 'Mesero';
+    pedidoCopia.created_at = pedidoCopia.created_at || pedidoCopia.fecha || new Date().toISOString();
     
     this.pedidoSeleccionado.set(pedidoCopia);
     this.mostrarDetalle.set(true);
@@ -436,7 +477,7 @@ export class PedidosMeseroComponent implements OnInit {
   }
 
   // ============================================
-  // GUARDAR PEDIDO
+  // GUARDAR PEDIDO CON MODAL DE ÉXITO
   // ============================================
   guardarPedido(): void {
     if (this.itemsPedido().length === 0) {
@@ -488,6 +529,8 @@ export class PedidosMeseroComponent implements OnInit {
       pagado: 0
     };
 
+    this.loading.set(true);
+
     if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
       const nuevoClienteData = {
         nombre: this.nuevoCliente.nombre,
@@ -505,6 +548,7 @@ export class PedidosMeseroComponent implements OnInit {
         },
         error: (err: any) => {
           console.error('Error al crear cliente:', err);
+          this.loading.set(false);
           alert('Error al crear cliente');
         }
       });
@@ -516,15 +560,33 @@ export class PedidosMeseroComponent implements OnInit {
   crearPedido(pedidoData: any): void {
     this.pedidoService.crearPedido(pedidoData).subscribe({
       next: (response: any) => {
-        alert('✅ Pedido creado correctamente');
+        console.log('✅ Pedido creado:', response);
+        this.loading.set(false);
         this.cerrarModal();
-        this.cargarDatos();
+        
+        // ✅ Mostrar modal de éxito
+        this.pedidoCreado.set(response.pedido || response);
+        this.mensajeExito.set(`Pedido #${response.pedido?.id || 'creado'} correctamente`);
+        this.mostrarModalExito.set(true);
+        
+        // Recargar datos después de 2 segundos
+        setTimeout(() => {
+          this.cargarDatos();
+        }, 500);
       },
       error: (err: any) => {
         console.error('Error al crear pedido:', err);
+        this.loading.set(false);
         alert('❌ Error al crear pedido: ' + (err.error?.detalle || err.message));
       }
     });
+  }
+
+  // ✅ Cerrar modal de éxito
+  cerrarModalExito(): void {
+    this.mostrarModalExito.set(false);
+    this.pedidoCreado.set(null);
+    this.mensajeExito.set('');
   }
 
   // ============================================
@@ -553,7 +615,9 @@ export class PedidosMeseroComponent implements OnInit {
   irDashboard(): void {
     this.router.navigate(['/mesero/dashboard']);
   }
-
+irPedidos(): void {
+  this.router.navigate(['/mesero/pedidos']);
+}
   cerrarSesion(): void {
     this.authService.logout();
     this.router.navigate(['/login-mesero']);

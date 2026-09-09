@@ -208,6 +208,7 @@
   }
 }
 
+/* Welcome Overlay */
 .welcome-overlay {
   position: fixed;
   top: 0;
@@ -236,8 +237,18 @@
 }
 
 .welcome-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  background: rgba(206, 131, 41, 0.15);
+  border-radius: 50%;
+}
+
+.welcome-icon svg {
+  stroke: #921a17;
 }
 
 .welcome-title {
@@ -306,5 +317,15 @@
   .welcome-card {
     padding: 30px 20px;
     margin: 20px;
+  }
+
+  .welcome-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .welcome-icon svg {
+    width: 48px;
+    height: 48px;
   }
 }

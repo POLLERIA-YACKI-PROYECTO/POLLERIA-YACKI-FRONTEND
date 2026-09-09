@@ -28,6 +28,10 @@ export class PersonalComponent implements OnInit {
   editando = signal(false);
   personalEdit = signal<any>(null);
 
+  // ✅ MODAL DE CONFIRMACIÓN
+  mostrarModalEliminar = signal(false);
+  personalAEliminar = signal<any>(null);
+
   nuevoPersonal = signal({
     nombre: '',
     apellido: '',
@@ -56,7 +60,6 @@ export class PersonalComponent implements OnInit {
     this.loading.set(true);
     this.usuarioService.obtenerUsuarios().subscribe({
       next: (usuarios) => {
-        // Mapear para mostrar el rol con formato
         const usuariosFormateados = usuarios.map((u: any) => ({
           ...u,
           rolDisplay: this.getRolDisplay(u.rol),
@@ -72,7 +75,6 @@ export class PersonalComponent implements OnInit {
     });
   }
 
-  // Función para obtener el display del rol
   getRolDisplay(rol: string): string {
     const rolesMap: any = {
       'admin': 'Administrador',
@@ -156,25 +158,39 @@ export class PersonalComponent implements OnInit {
     }
   }
 
-  eliminarPersonal(id: number): void {
-    const persona = this.personal().find(p => p.id === id);
-    if (persona && persona.rol === 'admin' && persona.id === 1) {
+  // ✅ ABRIR MODAL DE CONFIRMACIÓN
+  abrirModalEliminar(persona: any): void {
+    if (persona.rol === 'admin' && persona.id === 1) {
       alert('No se puede eliminar al administrador principal');
       return;
     }
+    this.personalAEliminar.set(persona);
+    this.mostrarModalEliminar.set(true);
+  }
 
-    if (confirm(`¿Está seguro de eliminar a ${persona?.nombre}?`)) {
-      this.usuarioService.eliminarUsuario(id).subscribe({
-        next: () => {
-          alert('Empleado eliminado correctamente');
-          this.cargarDatos();
-        },
-        error: (err) => {
-          console.error('Error al eliminar empleado:', err);
-          alert(err.error?.error || 'Error al eliminar empleado');
-        }
-      });
-    }
+  // ✅ CERRAR MODAL DE CONFIRMACIÓN
+  cerrarModalEliminar(): void {
+    this.mostrarModalEliminar.set(false);
+    this.personalAEliminar.set(null);
+  }
+
+  // ✅ CONFIRMAR ELIMINACIÓN
+  confirmarEliminar(): void {
+    const persona = this.personalAEliminar();
+    if (!persona) return;
+
+    this.usuarioService.eliminarUsuario(persona.id).subscribe({
+      next: () => {
+        alert('Empleado eliminado correctamente');
+        this.cerrarModalEliminar();
+        this.cargarDatos();
+      },
+      error: (err) => {
+        console.error('Error al eliminar empleado:', err);
+        alert(err.error?.error || 'Error al eliminar empleado');
+        this.cerrarModalEliminar();
+      }
+    });
   }
 
   // Clases CSS para cada rol

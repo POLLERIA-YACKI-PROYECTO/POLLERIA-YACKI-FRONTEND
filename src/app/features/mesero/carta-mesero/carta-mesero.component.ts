@@ -191,14 +191,6 @@ export class CartaMeseroComponent implements OnInit {
   }
 
   // ============================================
-  // AGREGAR AL PEDIDO
-  // ============================================
-  agregarAlPedido(producto: any): void {
-    // Aquí iría la lógica para agregar al pedido
-    alert(`Producto agregado: ${producto.nombre} - S/ ${producto.precio}`);
-  }
-
-  // ============================================
   // NAVEGACIÓN
   // ============================================
   irCarta(): void {

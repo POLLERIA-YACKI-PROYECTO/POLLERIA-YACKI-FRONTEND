@@ -5,8 +5,14 @@
   @if (mostrarBienvenida()) {
     <div class="welcome-overlay">
       <div class="welcome-card">
-        <div class="welcome-icon">👑</div>
-        <h2 class="welcome-title">¡Bienvenido Admin!</h2>
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h2 class="welcome-title">Bienvenido Administrador</h2>
         <p class="welcome-name">{{ nombreUsuario() }}</p>
         <p class="welcome-sub">Redirigiendo al panel de administración...</p>
         <div class="welcome-spinner"></div>
@@ -22,7 +28,7 @@
         class="logo"
         (error)="handleImageError($event)"
       >
-      <h1 class="brand-title">Polleria Yacky Admin</h1>
+      <h1 class="brand-title">Polleria Yacky</h1>
       <p class="brand-subtitle">Panel de Administración</p>
       <span class="rol-badge">Administrador</span>
     </div>

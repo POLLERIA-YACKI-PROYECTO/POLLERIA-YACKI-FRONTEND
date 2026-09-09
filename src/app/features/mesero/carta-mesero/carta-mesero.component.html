@@ -218,22 +218,14 @@
           <div class="producto-card" [class.agotado]="producto.agotado">
             <div class="producto-info">
               <h3 class="producto-nombre" [innerHTML]="resaltarCoincidencia(producto.nombre)"></h3>
-              <span class="producto-precio">S/ {{ producto.precio | number:'1.2-2' }}</span>
-              @if (producto.agotado) {
-                <span class="badge-agotado">Agotado</span>
-              }
+              <div class="producto-detalles">
+                <span class="producto-precio">S/ {{ producto.precio | number:'1.2-2' }}</span>
+                @if (producto.agotado) {
+                  <span class="badge-agotado">Agotado</span>
+                }
+              </div>
             </div>
-            <button
-              class="btn-agregar"
-              [disabled]="producto.agotado"
-              (click)="agregarAlPedido(producto)"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-              Agregar
-            </button>
+            <!-- ✅ ELIMINADO EL BOTÓN AGREGAR -->
           </div>
         }
         @empty {

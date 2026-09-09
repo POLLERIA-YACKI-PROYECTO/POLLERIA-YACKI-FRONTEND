@@ -207,7 +207,7 @@
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button class="btn-delete" (click)="eliminarPersonal(persona.id)" title="Eliminar">
+                  <button class="btn-delete" (click)="abrirModalEliminar(persona)" title="Eliminar">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="3 6 5 6 21 6"/>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -256,3 +256,83 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ MODAL DE CONFIRMACIÓN PARA ELIMINAR - DISEÑO BONITO -->
+@if (mostrarModalEliminar() && personalAEliminar()) {
+  <div class="modal-overlay" (click)="cerrarModalEliminar()">
+    <div class="modal-eliminar" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <div class="modal-icon eliminar-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Confirmar Eliminación</h2>
+            <p class="modal-subtitle">¿Estás seguro de eliminar este empleado?</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModalEliminar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Información del empleado a eliminar -->
+        <div class="empleado-info">
+          <div class="empleado-avatar">
+            <span>{{ personalAEliminar()?.nombre?.charAt(0) || '?' }}</span>
+          </div>
+          <div class="empleado-detalles">
+            <div class="empleado-nombre">
+              <strong>{{ personalAEliminar()?.nombreCompleto || personalAEliminar()?.nombre }}</strong>
+            </div>
+            <div class="empleado-datos">
+              <span class="empleado-dni">DNI: {{ personalAEliminar()?.dni }}</span>
+              <span class="empleado-rol">
+                <span class="rol-badge {{ getRolClass(personalAEliminar()?.rol) }}"
+                      [innerHTML]="getRolSvg(personalAEliminar()?.rol)">
+                </span>
+                {{ getRolDisplay(personalAEliminar()?.rol) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje de advertencia -->
+        <div class="advertencia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M12 8v4"/>
+            <path d="M12 16h.01"/>
+          </svg>
+          <div>
+            <span class="advertencia-titulo">¡Atención!</span>
+            <span class="advertencia-texto">Esta acción no se puede deshacer. El empleado será eliminado permanentemente.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar-modal" (click)="cerrarModalEliminar()">
+          Cancelar
+        </button>
+        <button class="btn-eliminar-modal" (click)="confirmarEliminar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+          Sí, Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+}

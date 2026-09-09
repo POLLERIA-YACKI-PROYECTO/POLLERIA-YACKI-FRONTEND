@@ -605,6 +605,368 @@
   margin: 0 auto 8px;
 }
 
+/* ============================================
+   MODAL DE CONFIRMACIÓN PARA ELIMINAR
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInOverlay 0.3s ease;
+  padding: 16px;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-eliminar {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUpModal 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideUpModal {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e8e0d6;
+  background: #faf8f5;
+}
+
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.modal-icon.eliminar-icon {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.modal-icon.eliminar-icon svg {
+  stroke: #dc2626;
+  width: 24px;
+  height: 24px;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: #5e412f;
+  line-height: 1.2;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #888;
+  margin: 2px 0 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.modal-close svg {
+  stroke: #888;
+  width: 20px;
+  height: 20px;
+  transition: stroke 0.3s ease;
+}
+
+.modal-close:hover svg {
+  stroke: #dc2626;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+/* Empleado info */
+.empleado-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #faf8f5;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.empleado-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #5e412f;
+  color: #e9bd6e;
+  font-size: 24px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empleado-detalles {
+  flex: 1;
+}
+
+.empleado-nombre {
+  font-size: 16px;
+  color: #5e412f;
+  margin-bottom: 4px;
+}
+
+.empleado-datos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #888;
+}
+
+.empleado-dni {
+  color: #666;
+}
+
+.empleado-rol {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Advertencia */
+.advertencia {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.12);
+  border-radius: 10px;
+}
+
+.advertencia svg {
+  width: 22px;
+  height: 22px;
+  stroke: #dc2626;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.advertencia div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.advertencia-titulo {
+  font-weight: 700;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.advertencia-texto {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid #e8e0d6;
+  background: #faf8f5;
+}
+
+.btn-cancelar-modal,
+.btn-eliminar-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  flex: 1;
+}
+
+.btn-cancelar-modal {
+  background: transparent;
+  border: 2px solid #e8e0d6;
+  color: #888;
+}
+
+.btn-cancelar-modal:hover {
+  border-color: #5e412f;
+  color: #5e412f;
+}
+
+.btn-eliminar-modal {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.btn-eliminar-modal:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.btn-eliminar-modal svg {
+  stroke: #ffffff;
+  width: 18px;
+  height: 18px;
+}
+
+/* TEMA OSCURO - MODAL */
+.personal-container.tema-oscuro .modal-eliminar {
+  background: #151515;
+  border-color: #2a2a2a;
+}
+
+.personal-container.tema-oscuro .modal-header {
+  background: #1a1a1a;
+  border-bottom-color: #2a2a2a;
+}
+
+.personal-container.tema-oscuro .modal-header h2 {
+  color: #ffffda;
+}
+
+.personal-container.tema-oscuro .modal-subtitle {
+  color: #888;
+}
+
+.personal-container.tema-oscuro .modal-icon.eliminar-icon {
+  background: rgba(243, 23, 48, 0.1);
+}
+
+.personal-container.tema-oscuro .modal-icon.eliminar-icon svg {
+  stroke: #f31730;
+}
+
+.personal-container.tema-oscuro .empleado-info {
+  background: #1a1a1a;
+}
+
+.personal-container.tema-oscuro .empleado-nombre {
+  color: #ffffda;
+}
+
+.personal-container.tema-oscuro .empleado-avatar {
+  background: #2a2a2a;
+  color: #e9bd6e;
+}
+
+.personal-container.tema-oscuro .empleado-dni {
+  color: #888;
+}
+
+.personal-container.tema-oscuro .advertencia {
+  background: rgba(243, 23, 48, 0.05);
+  border-color: rgba(243, 23, 48, 0.15);
+}
+
+.personal-container.tema-oscuro .advertencia svg {
+  stroke: #f31730;
+}
+
+.personal-container.tema-oscuro .advertencia-titulo {
+  color: #f31730;
+}
+
+.personal-container.tema-oscuro .advertencia-texto {
+  color: #888;
+}
+
+.personal-container.tema-oscuro .modal-footer {
+  border-top-color: #2a2a2a;
+  background: #1a1a1a;
+}
+
+.personal-container.tema-oscuro .btn-cancelar-modal {
+  border-color: #2a2a2a;
+  color: #888;
+}
+
+.personal-container.tema-oscuro .btn-cancelar-modal:hover {
+  border-color: #f31730;
+  color: #ffffda;
+}
+
+.personal-container.tema-oscuro .btn-eliminar-modal {
+  background: #f31730;
+  color: #ffffda;
+}
+
+.personal-container.tema-oscuro .btn-eliminar-modal:hover {
+  background: #cc1428;
+}
+
+.personal-container.tema-oscuro .btn-eliminar-modal svg {
+  stroke: #ffffda;
+}
+
 /* ANIMACIONES */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -622,7 +984,9 @@
   }
 }
 
-/* RESPONSIVE */
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 1024px) {
   .form-grid {
     grid-template-columns: 1fr 1fr 1fr;
@@ -697,6 +1061,55 @@
   .admin-notes p svg {
     width: 16px;
     height: 16px;
+  }
+
+  /* Modal responsive */
+  .modal-eliminar {
+    max-width: 98%;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 16px 18px;
+  }
+
+  .modal-body {
+    padding: 18px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 18px 18px;
+  }
+
+  .btn-cancelar-modal,
+  .btn-eliminar-modal {
+    flex: none;
+    width: 100%;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .empleado-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .empleado-datos {
+    justify-content: center;
   }
 }
 
@@ -795,6 +1208,57 @@
     width: 14px;
     height: 14px;
   }
+
+  /* Modal responsive mobile */
+  .modal-eliminar {
+    border-radius: 10px;
+  }
+
+  .modal-header h2 {
+    font-size: 15px;
+  }
+
+  .modal-subtitle {
+    font-size: 12px;
+  }
+
+  .modal-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .modal-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .empleado-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .empleado-nombre {
+    font-size: 14px;
+  }
+
+  .empleado-datos {
+    font-size: 12px;
+  }
+
+  .advertencia-titulo {
+    font-size: 13px;
+  }
+
+  .advertencia-texto {
+    font-size: 12px;
+  }
+
+  .btn-cancelar-modal,
+  .btn-eliminar-modal {
+    font-size: 13px;
+    padding: 10px 16px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -847,6 +1311,7 @@
     height: 12px;
   }
 }
+
 // Agregar al final del archivo personal.component.scss
 
 .rol-text {
