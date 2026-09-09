@@ -81,105 +81,212 @@
     </div>
   </div>
 
-  <!-- FORMULARIO CON IMAGEN -->
+  <!-- FORMULARIO DE PRODUCTO -->
   @if (mostrarFormulario()) {
-    <div class="formulario-card">
-      <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        {{ editando() ? 'Editar Producto' : 'Nuevo Producto' }}
-      </h3>
-      
-      <!-- PREVIEW DE IMAGEN -->
-      <div class="imagen-section">
-        <div class="imagen-preview" [class.has-image]="imagenPreview()" (click)="inputFile.click()">
-          @if (imagenPreview()) {
-            <img [src]="imagenPreview()" alt="Producto" (error)="$event.target.src='assets/images/productos/default-product.jpg'">
-            <button class="btn-eliminar-imagen" (click)="eliminarImagen($event)" type="button" title="Eliminar imagen">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-          } @else {
-            <div class="imagen-placeholder">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <path d="M21 15l-5-5L5 21"/>
-              </svg>
-              <span>Haz clic para subir imagen</span>
-              <small>JPG, PNG, GIF, WEBP (max 5MB)</small>
-            </div>
-          }
-        </div>
-        <input
-          #inputFile
-          type="file"
-          accept="image/*"
-          (change)="onFileSelected($event)"
-          hidden
-        >
-        <div class="imagen-info">
-          @if (editando() && productoEdit()?.imagen) {
-            <p>Imagen actual: {{ productoEdit()?.imagen }}</p>
-          }
-          @if (editando() && productoEdit()?.imagen === 'imagen.jpg') {
-            <p class="imagen-default">🖼️ Usando imagen por defecto</p>
-          }
-          <button 
-            *ngIf="editando() && productoEdit()?.imagen && productoEdit()?.imagen !== 'imagen.jpg'"
-            class="btn-restaurar-default" 
-            (click)="restaurarImagenDefault()" 
-            type="button"
-          >
+    <section class="formulario-card" aria-labelledby="tituloFormularioProducto">
+      <div class="formulario-header">
+        <div class="formulario-titulo">
+          <span class="formulario-icono" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 12a9 9 0 1 0 9-9m0 0v6m0-6h-6"/>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            Restaurar imagen por defecto
-          </button>
+          </span>
+
+          <div>
+            <h3 id="tituloFormularioProducto">
+              {{ editando() ? 'Editar Producto' : 'Nuevo Producto' }}
+            </h3>
+            <p>
+              {{ editando()
+                ? 'Actualiza la información y la presentación del producto.'
+                : 'Registra un producto nuevo para la carta.'
+              }}
+            </p>
+          </div>
         </div>
+
+        <button
+          class="btn-cerrar-formulario"
+          type="button"
+          (click)="toggleFormulario()"
+          aria-label="Cerrar formulario"
+          title="Cerrar"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
 
-      <!-- CAMPOS DEL FORMULARIO -->
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Categoría *</label>
-          <select [(ngModel)]="nuevoProducto().categoria_id" required>
-            <option value="">Seleccionar categoría</option>
-            @for (cat of categorias(); track cat.id) {
-              <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
+      <div class="formulario-contenido">
+        <div class="imagen-panel">
+          <span class="campo-etiqueta">Imagen del producto</span>
+
+          <button
+            class="imagen-preview"
+            [class.has-image]="imagenPreview()"
+            type="button"
+            (click)="inputFile.click()"
+            aria-label="Seleccionar imagen del producto"
+          >
+            @if (imagenPreview()) {
+              <img
+                [src]="imagenPreview()"
+                alt="Vista previa del producto"
+                (error)="manejarErrorImagen($event)"
+              >
+
+              <span class="imagen-cambiar">Cambiar imagen</span>
+            } @else {
+              <span class="imagen-placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="M21 15l-5-5L5 21"/>
+                </svg>
+                <strong>Seleccionar imagen</strong>
+                <small>JPG, PNG, GIF o WEBP. Máximo 20 MB.</small>
+              </span>
             }
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Nombre *</label>
-          <input type="text" [(ngModel)]="nuevoProducto().nombre" placeholder="Nombre del producto" required>
-        </div>
-        <div class="form-group">
-          <label>Precio *</label>
-          <input type="number" [(ngModel)]="nuevoProducto().precio" placeholder="0.00" step="0.01" min="0" required>
-        </div>
-        <div class="form-group">
-          <label>Stock</label>
-          <input type="number" [(ngModel)]="nuevoProducto().stock" placeholder="0" min="0">
-        </div>
-        <div class="form-group full-width">
-          <label>Descripción</label>
-          <input type="text" [(ngModel)]="nuevoProducto().descripcion" placeholder="Descripción del producto">
-        </div>
-        <div class="form-group btn-guardar-wrapper">
-          <button class="btn-success" (click)="guardarProducto()" [disabled]="!nuevoProducto().nombre || nuevoProducto().precio <= 0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 6L9 17l-5-5"/>
-            </svg>
-            Guardar
           </button>
+
+          <input
+            #inputFile
+            id="imagenProducto"
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            aria-label="Seleccionar imagen del producto"
+            (change)="onFileSelected($event)"
+            hidden
+          >
+
+          <div class="imagen-acciones">
+            @if (imagenFile()) {
+              <button
+                class="btn-imagen-secundario"
+                type="button"
+                (click)="limpiarImagenSeleccionada($event)"
+              >
+                Quitar selección
+              </button>
+            }
+
+            @if (
+              editando() &&
+              productoEdit()?.imagen &&
+              !esImagenDefault(productoEdit()?.imagen)
+            ) {
+              <button
+                class="btn-imagen-secundario"
+                type="button"
+                (click)="restaurarImagenDefault()"
+              >
+                Restaurar imagen
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="campos-panel">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="productoCategoria">Categoría *</label>
+              <select
+                id="productoCategoria"
+                [(ngModel)]="nuevoProducto().categoria_id"
+                required
+              >
+                <option [ngValue]="0">Seleccionar categoría</option>
+                @for (cat of categorias(); track cat.id) {
+                  <option [ngValue]="cat.id">
+                    {{ cat.icono }} {{ cat.nombre }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group form-group-wide">
+              <label for="productoNombre">Nombre *</label>
+              <input
+                id="productoNombre"
+                type="text"
+                [(ngModel)]="nuevoProducto().nombre"
+                placeholder="Ejemplo: Pollo a la brasa"
+                maxlength="120"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="productoPrecio">Precio *</label>
+              <div class="input-monetario">
+                <span>S/</span>
+                <input
+                  id="productoPrecio"
+                  type="number"
+                  [(ngModel)]="nuevoProducto().precio"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0.01"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="productoStock">Stock</label>
+              <input
+                id="productoStock"
+                type="number"
+                [(ngModel)]="nuevoProducto().stock"
+                placeholder="0"
+                min="0"
+                step="1"
+              >
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="productoDescripcion">Descripción</label>
+              <textarea
+                id="productoDescripcion"
+                [(ngModel)]="nuevoProducto().descripcion"
+                placeholder="Describe brevemente el producto"
+                rows="3"
+                maxlength="500"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="formulario-footer">
+            <button
+              class="btn-formulario-cancelar"
+              type="button"
+              (click)="toggleFormulario()"
+            >
+              Cancelar
+            </button>
+
+            <button
+              class="btn-success"
+              type="button"
+              (click)="guardarProducto()"
+              [disabled]="
+                !nuevoProducto().nombre.trim() ||
+                nuevoProducto().precio <= 0 ||
+                !nuevoProducto().categoria_id
+              "
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+              {{ editando() ? 'Guardar cambios' : 'Crear producto' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   }
 
   <!-- TABLA DE PRODUCTOS -->
@@ -214,15 +321,13 @@
               <td><span class="id-badge">#{{ producto.id }}</span></td>
               <td>
                 <div class="imagen-thumb-container">
-                  <img 
-                    [src]="getImagenUrl(producto.imagen)" 
+                  <img
+                    [src]="getImagenUrl(producto.imagen)"
                     [alt]="producto.nombre"
                     class="producto-thumb"
-                    (error)="$event.target.src='assets/images/default-product.png'"
+                    loading="lazy"
+                    (error)="manejarErrorImagen($event)"
                   >
-                  @if (producto.imagen === 'imagen.jpg' || !producto.imagen) {
-                    <span class="default-badge">Default</span>
-                  }
                 </div>
               </td>
               <td><span class="producto-nombre">{{ producto.nombre }}</span></td>
@@ -311,15 +416,5 @@
       </svg>
       Solo los administradores pueden crear, editar o eliminar productos
     </p>
-    <p>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 4h16v16H4z"/>
-        <path d="M8 8h8v8H8z"/>
-        <path d="M8 12h8"/>
-        <path d="M4 4L8 8"/>
-        <path d="M20 4L16 8"/>
-      </svg>
-      Todos los productos comparten la misma imagen por defecto (imagen.jpg)
-    </p>
   </div>
-</div>src/assets/images/productos/default-product.jpg
+</div>
