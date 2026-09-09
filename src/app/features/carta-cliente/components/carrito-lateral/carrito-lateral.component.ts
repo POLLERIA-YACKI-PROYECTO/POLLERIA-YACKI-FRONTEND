@@ -1,7 +1,14 @@
 // src/app/features/carta-cliente/components/carrito-lateral/carrito-lateral.component.ts
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  Output
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItemCarrito } from '../../../../core/models/interfaces';
+import { ProductoService } from '../../../../core/services/producto.service';
 
 @Component({
   selector: 'app-carrito-lateral',
@@ -11,6 +18,8 @@ import { ItemCarrito } from '../../../../core/models/interfaces';
   styleUrls: ['./carrito-lateral.component.scss']
 })
 export class CarritoLateralComponent {
+  private productoService = inject(ProductoService);
+
   @Input() visible = false;
   @Input() items: ItemCarrito[] = [];
   @Input() subtotal = 0;
@@ -27,29 +36,45 @@ export class CarritoLateralComponent {
   }
 
   get totalItems(): number {
-    return this.items.reduce((sum, item) => sum + item.cantidad, 0);
+    return this.items.reduce(
+      (suma, item) => suma + item.cantidad,
+      0
+    );
   }
 
   obtenerPrecioNumerico(precio: number | string): number {
-    const num = typeof precio === 'string' ? parseFloat(precio) : precio;
-    return isNaN(num) ? 0 : num;
+    const numero =
+      typeof precio === 'string'
+        ? Number.parseFloat(precio)
+        : precio;
+
+    return Number.isFinite(numero) ? numero : 0;
   }
 
-  getImagenUrl(imagen?: string): string {
-    if (!imagen) return 'assets/images/default-product.png';
-    if (imagen.startsWith('http')) return imagen;
-    return `assets/images/${imagen}`;
+  getImagenUrl(imagen?: string | null): string {
+    return this.productoService.getImagenUrl(imagen);
+  }
+
+  manejarErrorImagen(event: Event): void {
+    const imagen = event.target as HTMLImageElement;
+
+    if (imagen.dataset['fallbackAplicado'] === 'true') {
+      return;
+    }
+
+    imagen.dataset['fallbackAplicado'] = 'true';
+    imagen.src = this.productoService.getImagenUrl('imagen.jpg');
   }
 
   formatearPrecio(precio: number | string): string {
-    const num = typeof precio === 'string' ? parseFloat(precio) : precio;
-    if (isNaN(num)) return 'S/ 0.00';
-    return `S/ ${num.toFixed(2)}`;
+    return `S/ ${this.obtenerPrecioNumerico(precio).toFixed(2)}`;
   }
 
-  formatearSubtotal(precio: number | string, cantidad: number): string {
-    const num = this.obtenerPrecioNumerico(precio);
-    const total = num * cantidad;
-    return `S/ ${total.toFixed(2)}`;
+  formatearSubtotal(
+    precio: number | string,
+    cantidad: number
+  ): string {
+    const importe = this.obtenerPrecioNumerico(precio) * cantidad;
+    return `S/ ${importe.toFixed(2)}`;
   }
 }
