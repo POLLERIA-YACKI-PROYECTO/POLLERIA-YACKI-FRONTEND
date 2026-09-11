@@ -44,24 +44,27 @@ export class CartaClienteComponent implements OnInit {
   error = signal<string | null>(null);
   productos = signal<Producto[]>([]);
   productosFiltrados = signal<Producto[]>([]);
-  categoriaSeleccionada = signal<number>(1); // Por defecto: Brasas
+  categoriaSeleccionada = signal<number>(1);
   carrito = signal<ItemCarrito[]>([]);
   mostrarCarrito = signal(false);
   mostrarModalPago = signal(false);
   cargandoPedido = signal(false);
   busqueda = signal('');
 
-  // Computed properties
-  totalItems = computed(() => {
-    return this.carrito().reduce((sum, item) => sum + item.cantidad, 0);
-  });
+  // Cliente actual
+  clienteActual = signal<any>(this.authService.getUsuarioActual());
 
-  subtotal = computed(() => {
-    return this.carrito().reduce((sum, item) => {
+  // Computed
+  totalItems = computed(() =>
+    this.carrito().reduce((sum, item) => sum + item.cantidad, 0)
+  );
+
+  subtotal = computed(() =>
+    this.carrito().reduce((sum, item) => {
       const precio = this.obtenerPrecioNumerico(item.producto.precio);
-      return sum + (precio * item.cantidad);
-    }, 0);
-  });
+      return sum + precio * item.cantidad;
+    }, 0)
+  );
 
   igv = computed(() => this.subtotal() * 0.18);
   total = computed(() => this.subtotal() + this.igv());
@@ -72,28 +75,36 @@ export class CartaClienteComponent implements OnInit {
 
     if (!search) return productos;
 
-    return productos.filter(p =>
-      p.nombre.toLowerCase().includes(search) ||
-      (p.descripcion && p.descripcion.toLowerCase().includes(search))
+    return productos.filter(
+      (p) =>
+        p.nombre.toLowerCase().includes(search) ||
+        (p.descripcion && p.descripcion.toLowerCase().includes(search))
     );
   });
 
   ngOnInit(): void {
+    // Verificar sesión de cliente
+    if (!this.authService.isCliente()) {
+      console.warn('🚫 No es cliente → /login-cliente');
+      this.router.navigate(['/login-cliente']);
+      return;
+    }
     this.cargarProductos();
   }
 
   // ============================================
-  // CARGAR PRODUCTOS DESDE EL BACKEND
+  // CARGAR PRODUCTOS
   // ============================================
   cargarProductos(): void {
     this.loading.set(true);
     this.error.set(null);
 
-    this.productoService.obtenerProductos()
+    this.productoService
+      .obtenerProductos()
       .pipe(
         timeout(5000),
         catchError((err) => {
-          console.warn('⚠️ Error al cargar productos:', err.message);
+          console.warn('⚠️ Error al cargar productos:', err?.message);
           this.error.set('Error al cargar productos. Por favor, intente nuevamente.');
           this.loading.set(false);
           return of([]);
@@ -101,7 +112,6 @@ export class CartaClienteComponent implements OnInit {
       )
       .subscribe({
         next: (productos) => {
-          console.log('📦 Productos cargados:', productos?.length || 0);
           this.productos.set(productos || []);
           this.filtrarProductos();
           this.loading.set(false);
@@ -115,32 +125,31 @@ export class CartaClienteComponent implements OnInit {
   }
 
   // ============================================
-  // FILTRADO POR CATEGORÍA
+  // FILTRADO
   // ============================================
   filtrarProductos(): void {
     const catId = this.categoriaSeleccionada();
     const search = this.busqueda().toLowerCase().trim();
 
-    let filtrados = this.productos().filter(p =>
-      p.disponible !== false &&
-      p.agotado !== true
+    let filtrados = this.productos().filter(
+      (p) => p.disponible !== false && p.agotado !== true
     );
 
     if (catId) {
-      filtrados = filtrados.filter(p => p.categoria_id === catId);
+      filtrados = filtrados.filter((p) => p.categoria_id === catId);
     }
 
     if (search) {
-      filtrados = filtrados.filter(p =>
-        p.nombre.toLowerCase().includes(search) ||
-        (p.descripcion && p.descripcion.toLowerCase().includes(search))
+      filtrados = filtrados.filter(
+        (p) =>
+          p.nombre.toLowerCase().includes(search) ||
+          (p.descripcion && p.descripcion.toLowerCase().includes(search))
       );
     }
 
     this.productosFiltrados.set(filtrados);
   }
 
-  // ✅ Cuando se selecciona una categoría desde el nav
   onCategoriaChange(categoriaId: number): void {
     this.categoriaSeleccionada.set(categoriaId);
     this.filtrarProductos();
@@ -151,7 +160,9 @@ export class CartaClienteComponent implements OnInit {
   // ============================================
   agregarAlCarrito(producto: Producto): void {
     const carritoActual = this.carrito();
-    const itemExistente = carritoActual.find(item => item.producto.id === producto.id);
+    const itemExistente = carritoActual.find(
+      (item) => item.producto.id === producto.id
+    );
 
     if (itemExistente) {
       itemExistente.cantidad++;
@@ -165,24 +176,27 @@ export class CartaClienteComponent implements OnInit {
 
   eliminarDelCarrito(productoId: number): void {
     const carritoActual = this.carrito();
-    const itemExistente = carritoActual.find(item => item.producto.id === productoId);
+    const itemExistente = carritoActual.find(
+      (item) => item.producto.id === productoId
+    );
 
-    if (itemExistente) {
-      if (itemExistente.cantidad > 1) {
-        itemExistente.cantidad--;
-        this.carrito.set([...carritoActual]);
-      } else {
-        this.carrito.set(carritoActual.filter(item => item.producto.id !== productoId));
-      }
+    if (!itemExistente) return;
+
+    if (itemExistente.cantidad > 1) {
+      itemExistente.cantidad--;
+      this.carrito.set([...carritoActual]);
+    } else {
+      this.carrito.set(
+        carritoActual.filter((item) => item.producto.id !== productoId)
+      );
     }
   }
 
   vaciarCarrito(): void {
-    if (this.carrito().length > 0) {
-      if (confirm('¿Estás seguro de vaciar el carrito?')) {
-        this.carrito.set([]);
-        this.mostrarCarrito.set(false);
-      }
+    if (this.carrito().length === 0) return;
+    if (confirm('¿Estás seguro de vaciar el carrito?')) {
+      this.carrito.set([]);
+      this.mostrarCarrito.set(false);
     }
   }
 
@@ -215,8 +229,8 @@ export class CartaClienteComponent implements OnInit {
       return;
     }
 
-    if (usuario.rol !== 'cliente') {
-      alert('Esta sección es para clientes. Inicia sesión como cliente para continuar.');
+    if (!this.authService.isCliente()) {
+      alert('Esta sección es para clientes. Inicia sesión como cliente.');
       this.router.navigate(['/login-cliente']);
       return;
     }
@@ -226,7 +240,10 @@ export class CartaClienteComponent implements OnInit {
       return;
     }
 
-    if ((datosPago.tipoEntrega || 'local') === 'delivery' && !datosPago.direccion?.trim()) {
+    if (
+      (datosPago.tipoEntrega || 'local') === 'delivery' &&
+      !datosPago.direccion?.trim()
+    ) {
       alert('Para delivery debes ingresar la dirección de entrega.');
       this.cargandoPedido.set(false);
       return;
@@ -235,12 +252,14 @@ export class CartaClienteComponent implements OnInit {
     this.cargandoPedido.set(true);
 
     const pedido = {
-      items: this.carrito().map(item => ({
+      cliente_id: usuario.id,
+      items: this.carrito().map((item) => ({
         id: item.producto.id,
         nombre: item.producto.nombre,
         precio: this.obtenerPrecioNumerico(item.producto.precio),
         cantidad: item.cantidad,
-        subtotal: this.obtenerPrecioNumerico(item.producto.precio) * item.cantidad
+        subtotal:
+          this.obtenerPrecioNumerico(item.producto.precio) * item.cantidad
       })),
       subtotal: this.subtotal(),
       igv: this.igv(),
@@ -254,17 +273,19 @@ export class CartaClienteComponent implements OnInit {
       referencia: datosPago.referencia || '',
       observaciones: datosPago.observaciones || '',
       estado: 'pendiente',
-      fecha: new Date().toISOString(),
-      usuario: usuario
+      fecha: new Date().toISOString()
     };
 
     this.pedidoService.crearPedidoCliente(pedido).subscribe({
       next: (response: any) => {
-        if (response && response.success) {
+        if (response?.success !== false) {
           this.finalizarPedido();
         } else {
           this.cargandoPedido.set(false);
-          alert('Error al crear el pedido: ' + (response?.error || 'Error desconocido'));
+          alert(
+            'Error al crear el pedido: ' +
+              (response?.error || 'Error desconocido')
+          );
         }
       },
       error: (err: any) => {
@@ -308,8 +329,7 @@ export class CartaClienteComponent implements OnInit {
   }
 
   irHistorialCliente(): void {
-    const usuario = this.authService.getUsuarioActual();
-    if (usuario && usuario.rol === 'cliente') {
+    if (this.authService.isCliente()) {
       this.router.navigate(['/cliente/historial']);
       return;
     }
@@ -317,6 +337,11 @@ export class CartaClienteComponent implements OnInit {
   }
 
   irLoginCliente(): void {
+    this.router.navigate(['/login-cliente']);
+  }
+
+  cerrarSesion(): void {
+    this.authService.logout();
     this.router.navigate(['/login-cliente']);
   }
 }

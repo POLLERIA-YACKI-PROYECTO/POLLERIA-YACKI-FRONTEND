@@ -7,38 +7,38 @@ import { ClienteGuard } from './core/guards/cliente.guard';
 
 export const routes: Routes = [
   // ============================================
-  // RUTA PRINCIPAL - CARTA DEL CLIENTE
+  // RUTA PRINCIPAL → LOGIN CLIENTE
   // ============================================
   {
     path: '',
     redirectTo: '/login-cliente',
     pathMatch: 'full'
   },
-  {
-    path: 'carta',
-    loadChildren: () => import('./features/carta-cliente/carta-cliente.routes')
-      .then(m => m.CARTA_CLIENTE_ROUTES)
-  },
 
-  // Login
+  // ============================================
+  // LOGINS
+  // ============================================
   {
     path: 'login-admin',
-    loadComponent: () => import('./features/auth/login-admin/login-admin.component')
-      .then(m => m.LoginAdminComponent)
+    loadComponent: () =>
+      import('./features/auth/login-admin/login-admin.component')
+        .then(m => m.LoginAdminComponent)
   },
   {
     path: 'login-mesero',
-    loadComponent: () => import('./features/auth/login-mesero/login-mesero.component')
-      .then(m => m.LoginMeseroComponent)
+    loadComponent: () =>
+      import('./features/auth/login-mesero/login-mesero.component')
+        .then(m => m.LoginMeseroComponent)
   },
   {
     path: 'login-cliente',
-    loadComponent: () => import('./features/auth/login-cliente/login-cliente.component')
-      .then(m => m.LoginClienteComponent)
+    loadComponent: () =>
+      import('./features/auth/login-cliente/login-cliente.component')
+        .then(m => m.LoginClienteComponent)
   },
 
   // ============================================
-  // RUTAS DEL CLIENTE
+  // RUTAS DEL CLIENTE (protegidas)
   // ============================================
   {
     path: 'cliente',
@@ -46,13 +46,15 @@ export const routes: Routes = [
     children: [
       {
         path: 'carta',
-        loadComponent: () => import('./features/carta-cliente/carta-cliente.component')
-          .then(m => m.CartaClienteComponent)
+        loadComponent: () =>
+          import('./features/carta-cliente/carta-cliente.component')
+            .then(m => m.CartaClienteComponent)
       },
       {
         path: 'historial',
-        loadComponent: () => import('./features/cliente/cliente-historial/cliente-historial.component')
-          .then(m => m.ClienteHistorialComponent)
+        loadComponent: () =>
+          import('./features/cliente/cliente-historial/cliente-historial.component')
+            .then(m => m.ClienteHistorialComponent)
       },
       { path: '', redirectTo: 'carta', pathMatch: 'full' }
     ]
@@ -67,90 +69,107 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
-        loadComponent: () => import('./features/mesero/dashboard-mesero/dashboard-mesero.component')
-          .then(m => m.DashboardMeseroComponent)
+        loadComponent: () =>
+          import('./features/mesero/dashboard-mesero/dashboard-mesero.component')
+            .then(m => m.DashboardMeseroComponent)
       },
       {
         path: 'carta',
-        loadComponent: () => import('./features/mesero/carta-mesero/carta-mesero.component')
-          .then(m => m.CartaMeseroComponent)
+        loadComponent: () =>
+          import('./features/mesero/carta-mesero/carta-mesero.component')
+            .then(m => m.CartaMeseroComponent)
       },
       {
         path: 'mesas',
-        loadComponent: () => import('./features/mesero/mesas-mesero/mesas-mesero.component')
-          .then(m => m.MesasMeseroComponent)
+        loadComponent: () =>
+          import('./features/mesero/mesas-mesero/mesas-mesero.component')
+            .then(m => m.MesasMeseroComponent)
       },
       {
         path: 'pedidos',
-        loadComponent: () => import('./features/mesero/pedidos-mesero/pedidos-mesero.component')
-          .then(m => m.PedidosMeseroComponent)
+        loadComponent: () =>
+          import('./features/mesero/pedidos-mesero/pedidos-mesero.component')
+            .then(m => m.PedidosMeseroComponent)
       },
       {
         path: 'precios',
-        loadComponent: () => import('./features/mesero/precios-carta-mesero/precios-carta-mesero.component')
-          .then(m => m.PreciosCartaMeseroComponent)
+        loadComponent: () =>
+          import('./features/mesero/precios-carta-mesero/precios-carta-mesero.component')
+            .then(m => m.PreciosCartaMeseroComponent)
       },
       {
         path: 'ventas',
-        loadComponent: () => import('./features/mesero/ventas-mesero/ventas-mesero.component')
-          .then(m => m.VentasMeseroComponent)
+        loadComponent: () =>
+          import('./features/mesero/ventas-mesero/ventas-mesero.component')
+            .then(m => m.VentasMeseroComponent)
       },
       {
         path: 'tickets',
-        loadComponent: () => import('./features/mesero/ticket/ticket.component')
-          .then(m => m.TicketComponent)
+        loadComponent: () =>
+          import('./features/mesero/ticket/ticket.component')
+            .then(m => m.TicketComponent)
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
 
   // ============================================
-  // RUTAS DEL ADMINISTRADOR
+  // RUTAS DEL ADMIN
   // ============================================
   {
     path: 'admin',
     canActivate: [AuthGuard, AdminGuard],
-    loadComponent: () => import('./features/admin/admin.component')
-      .then(m => m.AdminComponent),
+    loadComponent: () =>
+      import('./features/admin/admin.component').then(m => m.AdminComponent),
     children: [
       {
         path: 'dashboard-admin',
-        loadComponent: () => import('./features/admin/dashboard-admin/dashboard-admin.component')
-          .then(m => m.DashboardAdminComponent)
+        loadComponent: () =>
+          import('./features/admin/dashboard-admin/dashboard-admin.component')
+            .then(m => m.DashboardAdminComponent)
       },
       {
         path: 'ventas-admin',
-        loadComponent: () => import('./features/admin/ventas-admin/ventas-admin.component')
-          .then(m => m.VentasAdminComponent)
+        loadComponent: () =>
+          import('./features/admin/ventas-admin/ventas-admin.component')
+            .then(m => m.VentasAdminComponent)
       },
       {
         path: 'carta-admin',
-        loadComponent: () => import('./features/admin/carta-admin/carta-admin.component')
-          .then(m => m.CartaAdminComponent)
+        loadComponent: () =>
+          import('./features/admin/carta-admin/carta-admin.component')
+            .then(m => m.CartaAdminComponent)
       },
       {
         path: 'precios-admin',
-        loadComponent: () => import('./features/admin/precios-admin/precios-admin.component')
-          .then(m => m.PreciosAdminComponent)
+        loadComponent: () =>
+          import('./features/admin/precios-admin/precios-admin.component')
+            .then(m => m.PreciosAdminComponent)
       },
       {
         path: 'mantenimiento',
-        loadComponent: () => import('./features/admin/mantenimiento/mantenimiento.component')
-          .then(m => m.MantenimientoComponent)
+        loadComponent: () =>
+          import('./features/admin/mantenimiento/mantenimiento.component')
+            .then(m => m.MantenimientoComponent)
       },
       {
         path: 'personal',
-        loadComponent: () => import('./features/admin/personal/personal.component')
-          .then(m => m.PersonalComponent)
+        loadComponent: () =>
+          import('./features/admin/personal/personal.component')
+            .then(m => m.PersonalComponent)
       },
       {
         path: 'reportes',
-        loadComponent: () => import('./features/admin/reportes/reportes.component')
-          .then(m => m.ReportesComponent)
+        loadComponent: () =>
+          import('./features/admin/reportes/reportes.component')
+            .then(m => m.ReportesComponent)
       },
       { path: '', redirectTo: 'dashboard-admin', pathMatch: 'full' }
     ]
   },
 
-  { path: '**', redirectTo: '/carta' }
+  // ============================================
+  // WILDCARD
+  // ============================================
+  { path: '**', redirectTo: '/login-cliente' }
 ];

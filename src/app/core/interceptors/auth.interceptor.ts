@@ -1,34 +1,46 @@
 // src/app/core/interceptors/auth.interceptor.ts
-import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler,
+  HttpEvent
+} from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private authService: AuthService) {}
+  private authService = inject(AuthService);
 
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  intercept(
+    req: HttpRequest<any>,
+    next: HttpHandler
+  ): Observable<HttpEvent<any>> {
     const token = this.authService.getToken();
 
-    // Rutas públicas que no requieren token
+    // Rutas públicas que NO requieren token
     const publicRoutes = [
       '/api/auth/login',
-      '/api/auth/register',
+      '/api/auth/login-admin',
+      '/api/auth/login-mesero',
+      '/api/auth/cliente/login',
+      '/api/auth/cliente/register',
+      '/api/health',
       '/api/categorias',
-      '/api/configuracion',
-      '/api/health'
+      '/api/configuracion'
     ];
 
-    const isPublicRoute = publicRoutes.some(route => req.url.includes(route));
-    const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(req.method);
+    const isPublicRoute = publicRoutes.some((route) =>
+      req.url.includes(route)
+    );
 
-    // Para rutas públicas con métodos seguros, no agregar token
-    if (isPublicRoute && isSafeMethod) {
+    // Si es pública, no agregar token
+    if (isPublicRoute) {
       return next.handle(req);
     }
 
-    // Para el resto de rutas, agregar token si existe
+    // Si hay token, clonar request con Authorization
     if (token) {
       const cloned = req.clone({
         setHeaders: {
