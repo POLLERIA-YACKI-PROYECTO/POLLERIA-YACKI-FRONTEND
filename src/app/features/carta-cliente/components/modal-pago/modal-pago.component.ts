@@ -20,18 +20,19 @@ export class ModalPagoComponent implements OnChanges {
 
   metodoPago = signal('efectivo');
   clienteNombre = signal('');
+  telefono = signal('');
+  direccion = signal('');
+  referencia = signal('');
   observaciones = signal('');
   tipoEntrega = signal('local');
   estadoPago = signal<'formulario' | 'procesando' | 'exitoso' | 'error'>('formulario');
   mensajeError = signal('');
 
-  // Métodos de pago que va a manejar Izipay
+  // Métodos aceptados por el backend del portal cliente.
   metodosPago = [
     { id: 'efectivo', label: 'Efectivo' },
     { id: 'tarjeta', label: 'Tarjeta' },
-    { id: 'yape', label: 'Yape' },
-    { id: 'plin', label: 'Plin' },
-    { id: 'transferencia', label: 'Transferencia' }
+    { id: 'yape', label: 'Yape' }
   ];
 
   ngOnChanges(): void {
@@ -67,7 +68,6 @@ export class ModalPagoComponent implements OnChanges {
     return `S/ ${num.toFixed(2)}`;
   }
 
-  // ✅ Enviar a Izipay
   onSubmit(): void {
     if (this.cargando) return;
 
@@ -80,9 +80,18 @@ export class ModalPagoComponent implements OnChanges {
     this.estadoPago.set('procesando');
 
     // Emitir evento para crear el pedido y redirigir a Izipay
+    if (this.tipoEntrega() === 'delivery' && !this.direccion().trim()) {
+      alert('Debes ingresar la dirección para delivery.');
+      this.estadoPago.set('formulario');
+      return;
+    }
+
     this.confirmar.emit({
       metodo: this.metodoPago(),
       clienteNombre: this.clienteNombre() || 'Cliente',
+      telefono: this.telefono(),
+      direccion: this.direccion(),
+      referencia: this.referencia(),
       observaciones: this.observaciones(),
       tipoEntrega: this.tipoEntrega(),
       total: this.total

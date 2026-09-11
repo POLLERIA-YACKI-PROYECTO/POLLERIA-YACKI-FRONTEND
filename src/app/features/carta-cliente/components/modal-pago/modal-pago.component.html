@@ -93,6 +93,36 @@
           >
         </div>
         <div class="campo">
+          <label>Teléfono</label>
+          <input
+            type="tel"
+            [(ngModel)]="telefono"
+            placeholder="Ej: 987654321"
+            class="input-text"
+            [disabled]="cargando"
+          >
+        </div>
+        <div class="campo" *ngIf="tipoEntrega() === 'delivery'">
+          <label>Dirección de entrega</label>
+          <input
+            type="text"
+            [(ngModel)]="direccion"
+            placeholder="Av. Los Pinos 456, Urb. San Isidro"
+            class="input-text"
+            [disabled]="cargando"
+          >
+        </div>
+        <div class="campo" *ngIf="tipoEntrega() === 'delivery'">
+          <label>Referencia</label>
+          <input
+            type="text"
+            [(ngModel)]="referencia"
+            placeholder="Frente a la farmacia, segundo piso"
+            class="input-text"
+            [disabled]="cargando"
+          >
+        </div>
+        <div class="campo">
           <label>Observaciones (opcional)</label>
           <textarea
             [(ngModel)]="observaciones"
@@ -109,7 +139,7 @@
     <div class="estado-procesando" *ngIf="mostrarProcesando">
       <div class="spinner-pago"></div>
       <span class="procesando-label">Procesando pago...</span>
-      <span class="procesando-sub">Serás redirigido a Izipay</span>
+      <span class="procesando-sub">Registrando tu pedido</span>
       <div class="izipay-logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
           <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -118,7 +148,7 @@
           <circle cx="16" cy="14" r="1"/>
           <path d="M12 2v20"/>
         </svg>
-        <span>Izipay</span>
+        <span>Pago seleccionado</span>
       </div>
     </div>
 
@@ -155,7 +185,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        Pagar con Izipay
+        Confirmar pedido
       </span>
       <span *ngIf="cargando" class="spinner-btn"></span>
     </button>

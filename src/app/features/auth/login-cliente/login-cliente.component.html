@@ -1,0 +1,67 @@
+<div class="cliente-login-shell">
+  <div class="cliente-login-card">
+    <div class="brand-block">
+      <div class="brand-badge">Doña Yacki</div>
+      <h1>{{ isLoginMode() ? 'Inicia sesión' : 'Crea tu cuenta' }}</h1>
+      <p>Disfruta de tu carta, pedidos por delivery y historial de compras.</p>
+    </div>
+
+    <div class="auth-panel">
+      <div class="switcher">
+        <button type="button" [class.active]="isLoginMode()" (click)="toggleMode()">Login</button>
+        <button type="button" [class.active]="!isLoginMode()" (click)="toggleMode()">Registro</button>
+      </div>
+
+      <div *ngIf="errorMessage()" class="error-box">
+        {{ errorMessage() }}
+      </div>
+
+      <form *ngIf="isLoginMode()" [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form">
+        <label>
+          <span>Correo electrónico</span>
+          <input type="email" formControlName="email" placeholder="cliente@correo.com" />
+        </label>
+
+        <label>
+          <span>Contraseña</span>
+          <input type="password" formControlName="password" placeholder="••••••••" />
+        </label>
+
+        <button class="primary-btn" type="submit" [disabled]="isLoading()">
+          {{ isLoading() ? 'Ingresando...' : 'Entrar a la carta' }}
+        </button>
+      </form>
+
+      <form *ngIf="!isLoginMode()" [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
+        <label>
+          <span>Nombre completo</span>
+          <input type="text" formControlName="nombre" placeholder="Tu nombre" />
+        </label>
+
+        <label>
+          <span>Correo electrónico</span>
+          <input type="email" formControlName="email" placeholder="cliente@correo.com" />
+        </label>
+
+        <label>
+          <span>Teléfono</span>
+          <input type="tel" formControlName="telefono" placeholder="987654321" />
+        </label>
+
+        <label>
+          <span>Dirección</span>
+          <input type="text" formControlName="direccion" placeholder="Av. Principal 123" />
+        </label>
+
+        <label>
+          <span>Contraseña</span>
+          <input type="password" formControlName="password" placeholder="Mínimo 4 caracteres" />
+        </label>
+
+        <button class="primary-btn" type="submit" [disabled]="isLoading()">
+          {{ isLoading() ? 'Creando cuenta...' : 'Registrarme' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

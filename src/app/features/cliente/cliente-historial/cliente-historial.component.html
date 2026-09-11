@@ -1,0 +1,49 @@
+<section class="cliente-historial">
+  <div class="historial-header">
+    <div>
+      <p class="eyebrow">Mi cuenta</p>
+      <h1>Historial de pedidos</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="volverCarta()">Volver a la carta</button>
+      <button class="btn-tertiary" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="historial-list" *ngIf="pedidos().length; else vacio">
+    <article class="pedido-card" *ngFor="let pedido of pedidos()">
+      <div class="pedido-topo">
+        <div>
+          <span class="pedido-label">Pedido</span>
+          <h3>#{{ pedido.id }}</h3>
+        </div>
+        <span class="estado-badge">{{ pedido.estado || 'Pendiente' }}</span>
+      </div>
+
+      <div class="pedido-meta">
+        <span>{{ pedido.fecha || 'Hoy' }}</span>
+        <span>{{ pedido.tipo_entrega || 'local' }}</span>
+        <span>{{ pedido.metodo_pago || 'efectivo' }}</span>
+      </div>
+
+      <ul class="items-list">
+        <li *ngFor="let item of pedido.items || []">
+          {{ item.nombre }} x {{ item.cantidad }}
+        </li>
+      </ul>
+
+      <div class="pedido-total">
+        <strong>Total</strong>
+        <span>S/ {{ (pedido.total || 0) | number:'1.2-2' }}</span>
+      </div>
+    </article>
+  </div>
+
+  <ng-template #vacio>
+    <div class="empty-state">
+      <h3>Aún no tienes pedidos</h3>
+      <p>Haz tu primer pedido desde la carta y lo verás aquí.</p>
+      <button class="btn-primary" (click)="volverCarta()">Ir a la carta</button>
+    </div>
+  </ng-template>
+</section>

@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
 import { AdminGuard } from './core/guards/admin.guard';
 import { MeseroGuard } from './core/guards/mesero.guard';
+import { ClienteGuard } from './core/guards/cliente.guard';
 
 export const routes: Routes = [
   // ============================================
@@ -10,7 +11,7 @@ export const routes: Routes = [
   // ============================================
   {
     path: '',
-    redirectTo: '/carta',
+    redirectTo: '/login-cliente',
     pathMatch: 'full'
   },
   {
@@ -29,6 +30,32 @@ export const routes: Routes = [
     path: 'login-mesero',
     loadComponent: () => import('./features/auth/login-mesero/login-mesero.component')
       .then(m => m.LoginMeseroComponent)
+  },
+  {
+    path: 'login-cliente',
+    loadComponent: () => import('./features/auth/login-cliente/login-cliente.component')
+      .then(m => m.LoginClienteComponent)
+  },
+
+  // ============================================
+  // RUTAS DEL CLIENTE
+  // ============================================
+  {
+    path: 'cliente',
+    canActivate: [ClienteGuard],
+    children: [
+      {
+        path: 'carta',
+        loadComponent: () => import('./features/carta-cliente/carta-cliente.component')
+          .then(m => m.CartaClienteComponent)
+      },
+      {
+        path: 'historial',
+        loadComponent: () => import('./features/cliente/cliente-historial/cliente-historial.component')
+          .then(m => m.ClienteHistorialComponent)
+      },
+      { path: '', redirectTo: 'carta', pathMatch: 'full' }
+    ]
   },
 
   // ============================================

@@ -210,13 +210,25 @@ export class CartaClienteComponent implements OnInit {
     const usuario = this.authService.getUsuarioActual();
 
     if (!token || !usuario) {
-      alert('Debes iniciar sesión para realizar un pedido.');
-      this.router.navigate(['/login-admin']);
+      alert('Debes iniciar sesión como cliente para realizar un pedido.');
+      this.router.navigate(['/login-cliente']);
+      return;
+    }
+
+    if (usuario.rol !== 'cliente') {
+      alert('Esta sección es para clientes. Inicia sesión como cliente para continuar.');
+      this.router.navigate(['/login-cliente']);
       return;
     }
 
     if (this.carrito().length === 0) {
       alert('El carrito está vacío');
+      return;
+    }
+
+    if ((datosPago.tipoEntrega || 'local') === 'delivery' && !datosPago.direccion?.trim()) {
+      alert('Para delivery debes ingresar la dirección de entrega.');
+      this.cargandoPedido.set(false);
       return;
     }
 
@@ -236,20 +248,20 @@ export class CartaClienteComponent implements OnInit {
       tipo_entrega: datosPago.tipoEntrega || 'local',
       metodo_pago: datosPago.metodo || 'efectivo',
       pagado: false,
-      cliente_nombre: datosPago.clienteNombre || 'Cliente',
+      cliente_nombre: datosPago.clienteNombre || usuario.nombre || 'Cliente',
+      telefono: datosPago.telefono || usuario.telefono || '',
+      direccion_entrega: datosPago.direccion || usuario.direccion || null,
+      referencia: datosPago.referencia || '',
       observaciones: datosPago.observaciones || '',
-      estado: 'pendiente'
+      estado: 'pendiente',
+      fecha: new Date().toISOString(),
+      usuario: usuario
     };
 
-    this.pedidoService.crearPedido(pedido).subscribe({
+    this.pedidoService.crearPedidoCliente(pedido).subscribe({
       next: (response: any) => {
         if (response && response.success) {
-          const pedidoId = response.pedido?.id;
-          if (pedidoId) {
-            this.redirigirAIzipay(pedidoId, this.total(), datosPago.metodo);
-          } else {
-            this.finalizarPedido();
-          }
+          this.finalizarPedido();
         } else {
           this.cargandoPedido.set(false);
           alert('Error al crear el pedido: ' + (response?.error || 'Error desconocido'));
@@ -263,34 +275,13 @@ export class CartaClienteComponent implements OnInit {
     });
   }
 
-  redirigirAIzipay(pedidoId: number, monto: number, metodo: string): void {
-    this.simularPagoIzipay(pedidoId);
-  }
-
-  simularPagoIzipay(pedidoId: number): void {
-    setTimeout(() => {
-      this.pedidoService.marcarPagado(pedidoId, 'izipay').subscribe({
-        next: () => {
-          this.finalizarPedido();
-        },
-        error: (err) => {
-          if (err.status === 400 && err.error?.error?.includes('ya está pagado')) {
-            this.finalizarPedido();
-          } else {
-            this.cargandoPedido.set(false);
-            alert('Error al confirmar el pago. Por favor, contacta al administrador.');
-          }
-        }
-      });
-    }, 3000);
-  }
-
   finalizarPedido(): void {
     this.cargandoPedido.set(false);
     this.mostrarModalPago.set(false);
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
     alert('¡Pedido realizado con éxito! Tu pedido está siendo preparado.');
+    this.router.navigate(['/cliente/historial']);
   }
 
   // ============================================
@@ -314,5 +305,18 @@ export class CartaClienteComponent implements OnInit {
 
   irAdmin(): void {
     this.router.navigate(['/login-admin']);
+  }
+
+  irHistorialCliente(): void {
+    const usuario = this.authService.getUsuarioActual();
+    if (usuario && usuario.rol === 'cliente') {
+      this.router.navigate(['/cliente/historial']);
+      return;
+    }
+    this.router.navigate(['/login-cliente']);
+  }
+
+  irLoginCliente(): void {
+    this.router.navigate(['/login-cliente']);
   }
 }
