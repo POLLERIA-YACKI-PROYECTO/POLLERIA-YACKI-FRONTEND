@@ -1,11 +1,14 @@
 <!-- src/app/features/admin/admin.component.html -->
 <div class="admin-container">
-  <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
-  
+  <app-header
+    [usuario]="usuario()"
+    (logout)="cerrarSesion()"
+  ></app-header>
+
   <div class="admin-layout">
     <app-sidebar></app-sidebar>
-    
-    <main class="admin-content">
+
+    <main class="admin-content" aria-label="Contenido administrativo">
       <router-outlet></router-outlet>
     </main>
   </div>

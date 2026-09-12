@@ -1,6 +1,5 @@
 // src/app/features/admin/admin.component.ts
-import { Component, signal, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { HeaderComponent } from '../shared/components/header/header.component';
@@ -9,32 +8,26 @@ import { SidebarComponent } from '../shared/components/sidebar/sidebar.component
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent, SidebarComponent],
+  imports: [RouterOutlet, HeaderComponent, SidebarComponent],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss'],
-  host: { 'class': 'admin-mode' }
+  host: { class: 'admin-mode' }
 })
 export class AdminComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
 
   usuario = signal<any>(null);
-  temaOscuro = signal<boolean>(false);
 
   ngOnInit(): void {
     this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario()) {
-      this.router.navigate(['/login-admin']);
-      return;
-    }
-    if (this.usuario()?.rol !== 'admin' && this.usuario()?.rol !== 'cajero') {
-      this.router.navigate(['/login-admin']);
-      return;
-    }
-  }
 
-  toggleTema(): void {
-    this.temaOscuro.set(!this.temaOscuro());
+    if (
+      !this.usuario() ||
+      (this.usuario()?.rol !== 'admin' && this.usuario()?.rol !== 'cajero')
+    ) {
+      this.router.navigate(['/login-admin']);
+    }
   }
 
   cerrarSesion(): void {

@@ -1,33 +1,32 @@
 // src/app/features/admin/admin.component.scss
 .admin-container {
-  min-height: 100vh;
-  background: #f5f0e8;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
-}
-
-.admin-container.tema-oscuro {
-  background: #0a0a0a;
+  min-height: 100dvh;
+  background: #f5f0e8;
 }
 
 .admin-layout {
   display: flex;
   flex: 1;
+  min-width: 0;
 }
 
 .admin-content {
   flex: 1;
-  padding: 24px;
+  min-width: 0;
+  height: calc(100dvh - 80px);
+  padding: 24px 28px;
+  overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(100vh - 80px);
   background: #f5f0e8;
-  transition: all 0.3s ease;
+  scroll-behavior: smooth;
 }
 
-.admin-container.tema-oscuro .admin-content {
-  background: #0a0a0a;
-  color: #ffffda;
+@media (max-width: 1200px) {
+  .admin-content {
+    padding: 22px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -36,13 +35,15 @@
   }
 
   .admin-content {
-    max-height: none;
-    padding: 16px;
+    height: auto;
+    min-height: calc(100dvh - 142px);
+    padding: 18px 16px;
+    overflow: visible;
   }
 }
 
 @media (max-width: 480px) {
   .admin-content {
-    padding: 12px;
+    padding: 14px 12px;
   }
 }

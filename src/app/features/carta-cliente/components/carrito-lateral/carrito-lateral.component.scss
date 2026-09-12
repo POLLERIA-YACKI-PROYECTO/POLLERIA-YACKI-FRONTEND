@@ -386,3 +386,30 @@
     min-height: 48px;
   }
 }
+
+
+/* Integración visual con la carta del cliente */
+.carrito-lateral {
+  border-left: 1px solid rgba(45, 31, 20, 0.12);
+}
+
+.carrito-header {
+  background: linear-gradient(90deg, #2d1f14 0%, #382416 100%);
+}
+
+.carrito-item {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.carrito-item:hover {
+  border-color: #ddd1c4;
+  box-shadow: 0 5px 14px rgba(45, 31, 20, 0.08);
+}
+
+.item-imagen img {
+  transition: transform 0.25s ease;
+}
+
+.carrito-item:hover .item-imagen img {
+  transform: scale(1.04);
+}
