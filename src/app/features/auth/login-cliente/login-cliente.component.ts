@@ -40,13 +40,13 @@ export class LoginClienteComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
 
-    this.registerForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9,11}$')]],
-      direccion: ['', [Validators.required, Validators.minLength(5)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
-    });
+ this.registerForm = this.fb.group({
+  nombre: ['', [Validators.required, Validators.minLength(2)]],
+  email: ['', [Validators.required, Validators.email]],
+  telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
+  direccion: ['', [Validators.required, Validators.minLength(5)]],
+  password: ['', [Validators.required, Validators.minLength(6)]]
+});
   }
 
   ngOnInit(): void {
@@ -146,4 +146,11 @@ export class LoginClienteComponent implements OnInit {
     this.loginForm.reset();
     this.registerForm.reset();
   }
+  onTelefonoInput(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  // Solo números, máximo 9 dígitos
+  const limpio = input.value.replace(/\D/g, '').slice(0, 9);
+  input.value = limpio;
+  this.registerForm.get('telefono')?.setValue(limpio, { emitEvent: false });
+}
 }

@@ -848,3 +848,10 @@
     border: 2px solid var(--ink);
   }
 }
+.field-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--red);
+}

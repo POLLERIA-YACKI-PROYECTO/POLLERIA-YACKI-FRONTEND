@@ -85,7 +85,6 @@ export class CartaClienteComponent implements OnInit {
   ngOnInit(): void {
     // Verificar sesión de cliente
     if (!this.authService.isCliente()) {
-      console.warn('🚫 No es cliente → /login-cliente');
       this.router.navigate(['/login-cliente']);
       return;
     }
@@ -104,7 +103,7 @@ export class CartaClienteComponent implements OnInit {
       .pipe(
         timeout(5000),
         catchError((err) => {
-          console.warn('⚠️ Error al cargar productos:', err?.message);
+          console.warn('Error al cargar productos:', err?.message);
           this.error.set('Error al cargar productos. Por favor, intente nuevamente.');
           this.loading.set(false);
           return of([]);
@@ -117,7 +116,7 @@ export class CartaClienteComponent implements OnInit {
           this.loading.set(false);
         },
         error: (err) => {
-          console.error('❌ Error al cargar productos:', err);
+          console.error('Error al cargar productos:', err);
           this.error.set('Error al cargar los productos. Por favor, intente nuevamente.');
           this.loading.set(false);
         }
@@ -302,7 +301,8 @@ export class CartaClienteComponent implements OnInit {
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
     alert('¡Pedido realizado con éxito! Tu pedido está siendo preparado.');
-    this.router.navigate(['/cliente/historial']);
+    // Se queda en la carta (no hay ruta de historial activa)
+    this.router.navigate(['/cliente/carta']);
   }
 
   // ============================================
@@ -326,14 +326,6 @@ export class CartaClienteComponent implements OnInit {
 
   irAdmin(): void {
     this.router.navigate(['/login-admin']);
-  }
-
-  irHistorialCliente(): void {
-    if (this.authService.isCliente()) {
-      this.router.navigate(['/cliente/historial']);
-      return;
-    }
-    this.router.navigate(['/login-cliente']);
   }
 
   irLoginCliente(): void {

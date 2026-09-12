@@ -36,6 +36,11 @@ export const routes: Routes = [
       import('./features/auth/login-cliente/login-cliente.component')
         .then(m => m.LoginClienteComponent)
   },
+  {
+  path: 'admin/historial-cliente',
+  loadComponent: () => import('./features/admin/historial-cliente/historial-cliente.component')
+    .then(m => m.HistorialClienteComponent)
+},
 
   // ============================================
   // RUTAS DEL CLIENTE (protegidas)
@@ -50,12 +55,7 @@ export const routes: Routes = [
           import('./features/carta-cliente/carta-cliente.component')
             .then(m => m.CartaClienteComponent)
       },
-      {
-        path: 'historial',
-        loadComponent: () =>
-          import('./features/cliente/cliente-historial/cliente-historial.component')
-            .then(m => m.ClienteHistorialComponent)
-      },
+  
       { path: '', redirectTo: 'carta', pathMatch: 'full' }
     ]
   },

@@ -673,7 +673,7 @@
 }
 
 /* ============================================
-   TEMA CLARO
+   TEMA CLARO (CORREGIDO - textos visibles)
    ============================================ */
 .ventas-mesero-container.tema-claro {
   background: #f5f0e8;
@@ -692,11 +692,13 @@
   color: #666;
 }
 
+/* --- STATS --- */
 .ventas-mesero-container.tema-claro .stat-card,
 .ventas-mesero-container.tema-claro .resumen-card,
 .ventas-mesero-container.tema-claro .tabla-container {
   background: #ffffff;
   border-color: #d4c8b8;
+  color: #2e2e2e;
 }
 
 .ventas-mesero-container.tema-claro .stat-card:hover,
@@ -712,6 +714,57 @@
   stroke: #ce8329;
 }
 
+.ventas-mesero-container.tema-claro .stat-value {
+  color: #28a428;
+}
+
+.ventas-mesero-container.tema-claro .stat-label {
+  color: #666;
+}
+
+.ventas-mesero-container.tema-claro .stat-card.local .stat-value {
+  color: #b8860b;
+}
+
+.ventas-mesero-container.tema-claro .stat-card.delivery .stat-value {
+  color: #f31730;
+}
+
+.ventas-mesero-container.tema-claro .stat-card.total .stat-value {
+  color: #b8860b;
+}
+
+/* --- RESUMEN --- */
+.ventas-mesero-container.tema-claro .resumen-header {
+  background: #faf8f5;
+  border-bottom-color: #d4c8b8;
+}
+
+.ventas-mesero-container.tema-claro .resumen-title {
+  color: #5e412f;
+}
+
+.ventas-mesero-container.tema-claro .resumen-label {
+  color: #777;
+}
+
+.ventas-mesero-container.tema-claro .resumen-value {
+  color: #28a428;
+}
+
+.ventas-mesero-container.tema-claro .resumen-card.local .resumen-value {
+  color: #b8860b;
+}
+
+.ventas-mesero-container.tema-claro .resumen-card.delivery .resumen-value {
+  color: #f31730;
+}
+
+.ventas-mesero-container.tema-claro .resumen-card.general .resumen-value {
+  color: #28a428;
+}
+
+/* --- TABLA --- */
 .ventas-mesero-container.tema-claro .tabla-header {
   background: #faf8f5;
   border-bottom-color: #d4c8b8;
@@ -721,12 +774,17 @@
   color: #5e412f;
 }
 
+.ventas-mesero-container.tema-claro .total-items {
+  color: #777;
+}
+
 .ventas-mesero-container.tema-claro .ventas-tabla th {
-  color: #888;
+  color: #666;
   border-bottom-color: #d4c8b8;
 }
 
 .ventas-mesero-container.tema-claro .ventas-tabla td {
+  color: #2e2e2e;
   border-bottom-color: #f0ece4;
 }
 
@@ -734,8 +792,24 @@
   background: #faf8f5;
 }
 
+.ventas-mesero-container.tema-claro .cliente-cell {
+  color: #2e2e2e;
+}
+
+.ventas-mesero-container.tema-claro .total-col {
+  color: #28a428;
+}
+
+.ventas-mesero-container.tema-claro .fecha-col {
+  color: #777;
+}
+
 .ventas-mesero-container.tema-claro .total-row {
   background: #f5f0e8;
+}
+
+.ventas-mesero-container.tema-claro .total-row td {
+  color: #2e2e2e;
 }
 
 .ventas-mesero-container.tema-claro .id-badge {
@@ -743,6 +817,33 @@
   color: #ce8329;
 }
 
+/* --- BADGES --- */
+.ventas-mesero-container.tema-claro .tipo-badge.tipo-local {
+  background: rgba(184, 134, 11, 0.12);
+  color: #b8860b;
+}
+
+.ventas-mesero-container.tema-claro .tipo-badge.tipo-delivery {
+  background: rgba(243, 23, 48, 0.12);
+  color: #f31730;
+}
+
+.ventas-mesero-container.tema-claro .estado-completada {
+  background: rgba(46, 204, 113, 0.15);
+  color: #1e8b4d;
+}
+
+.ventas-mesero-container.tema-claro .estado-pendiente {
+  background: rgba(243, 156, 18, 0.15);
+  color: #b9770e;
+}
+
+.ventas-mesero-container.tema-claro .estado-cancelada {
+  background: rgba(231, 76, 60, 0.15);
+  color: #c0392b;
+}
+
+/* --- MENÚ / BOTONES --- */
 .ventas-mesero-container.tema-claro .menu-toggle {
   background: #ffffff;
   border-color: #d4c8b8;
@@ -781,12 +882,25 @@
   background: #28a428;
 }
 
+/* --- EMPTY / LOADING --- */
+.ventas-mesero-container.tema-claro .empty-state {
+  color: #999;
+}
+
+.ventas-mesero-container.tema-claro .empty-state svg {
+  stroke: #bbb;
+}
+
 .ventas-mesero-container.tema-claro .empty-state p {
   color: #999;
 }
 
 .ventas-mesero-container.tema-claro .empty-state span {
   color: #bbb;
+}
+
+.ventas-mesero-container.tema-claro .loading-spinner p {
+  color: #777;
 }
 
 .ventas-mesero-container.tema-claro .spinner {
