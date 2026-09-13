@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { PedidoService } from '../../../core/services/pedido.service';
 
 @Component({
   selector: 'app-cliente-historial',
@@ -12,6 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class ClienteHistorialComponent implements OnInit {
   private authService = inject(AuthService);
+  private pedidoService = inject(PedidoService);
   private router = inject(Router);
 
   pedidos = signal<any[]>([]);
@@ -23,8 +25,13 @@ export class ClienteHistorialComponent implements OnInit {
       return;
     }
 
-    const historial = JSON.parse(localStorage.getItem('cliente_pedidos') || '[]');
-    this.pedidos.set(historial);
+    this.pedidoService.obtenerHistorialCliente().subscribe({
+      next: (historial) => this.pedidos.set(Array.isArray(historial) ? historial : []),
+      error: (error) => {
+        console.error('Error al cargar historial de pedidos:', error);
+        this.pedidos.set([]);
+      }
+    });
   }
 
   volverCarta(): void {

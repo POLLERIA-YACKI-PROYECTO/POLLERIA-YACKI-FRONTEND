@@ -2,6 +2,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface LoginClienteRequest {
   email: string;
@@ -27,7 +28,7 @@ export interface ClienteResponse {
 })
 export class AuthService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
 
   private readonly tokenKey = 'auth_token';
   private readonly usuarioKey = 'usuario_actual';
@@ -103,7 +104,16 @@ export class AuthService {
       .pipe(
         tap((response) => {
           if (response?.token && response?.cliente) {
-            this.guardarSesion(response.cliente, response.token, 'cliente');
+            this.guardarSesion(
+              {
+                ...response.cliente,
+                nombre: payload.nombre,
+                telefono: payload.telefono,
+                direccion: payload.direccion
+              },
+              response.token,
+              'cliente'
+            );
           }
         })
       );

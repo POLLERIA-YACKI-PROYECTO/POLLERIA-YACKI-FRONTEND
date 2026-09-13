@@ -56,11 +56,11 @@ export class PedidoService {
   }
 
   crearPedidoCliente(pedido: any): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/cliente/pedidos`, pedido, { headers: this.getHeaders() });
+    return this.http.post(this.apiUrl, pedido, { headers: this.getHeaders() });
   }
 
   obtenerHistorialCliente(): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/cliente/pedidos`, { headers: this.getHeaders() });
+    return this.http.get(this.apiUrl, { headers: this.getHeaders() });
   }
 
   cambiarEstado(id: number, estado: string): Observable<any> {

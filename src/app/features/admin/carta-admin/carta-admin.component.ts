@@ -21,6 +21,7 @@ export class CartaAdminComponent implements OnInit {
   private router = inject(Router);
 
   @ViewChild('inputFile') inputFile!: ElementRef<HTMLInputElement>;
+  @ViewChild('formularioProducto') formularioProducto?: ElementRef<HTMLElement>;
 
   productos = signal<any[]>([]);
   productosFiltrados = signal<any[]>([]);
@@ -309,6 +310,7 @@ export class CartaAdminComponent implements OnInit {
       this.imagenPreview.set(null);
     }
     this.mostrarFormulario.set(true);
+    setTimeout(() => this.formularioProducto?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   guardarProducto(): void {
@@ -343,7 +345,15 @@ export class CartaAdminComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error al actualizar producto:', err);
-          alert('Error al actualizar producto');
+          alert(
+            err?.error?.error ||
+              err?.error?.message ||
+              (err?.status === 401
+                ? 'Tu sesión expiró. Cierra sesión e inicia nuevamente.'
+                : err?.status === 403
+                  ? 'No tienes permisos para editar productos.'
+                  : `Error al actualizar producto (${err?.status || 'sin respuesta'})`),
+          );
         },
       });
     } else {
