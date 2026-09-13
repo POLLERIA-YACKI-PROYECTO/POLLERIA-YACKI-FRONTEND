@@ -34,11 +34,11 @@ export class CartaAdminComponent implements OnInit {
   productoEdit = signal<any>(null);
   editando = signal(false);
 
-  // ✅ MODAL DE CONFIRMACIÓN PARA ELIMINAR
+  // MODAL DE CONFIRMACIÓN PARA ELIMINAR
   mostrarModalEliminar = signal(false);
   productoAEliminar = signal<any>(null);
 
-  // ✅ MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN
+  // MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN
   mostrarModalRestaurar = signal(false);
   productoARestaurar = signal<any>(null);
 
@@ -198,19 +198,19 @@ export class CartaAdminComponent implements OnInit {
     return this.productoService.esImagenDefault(imagen);
   }
 
-  // ✅ ABRIR MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN
+  // ABRIR MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN
   abrirModalRestaurar(producto: any): void {
     this.productoARestaurar.set(producto);
     this.mostrarModalRestaurar.set(true);
   }
 
-  // ✅ CERRAR MODAL DE RESTAURAR
+  // CERRAR MODAL DE RESTAURAR
   cerrarModalRestaurar(): void {
     this.mostrarModalRestaurar.set(false);
     this.productoARestaurar.set(null);
   }
 
-  // ✅ CONFIRMAR RESTAURAR IMAGEN
+  // CONFIRMAR RESTAURAR IMAGEN
   confirmarRestaurar(): void {
     const producto = this.productoARestaurar();
     if (!producto) return;
@@ -229,7 +229,7 @@ export class CartaAdminComponent implements OnInit {
     });
   }
 
-  // ✅ RESTAURAR IMAGEN DESDE EL FORMULARIO
+  // RESTAURAR IMAGEN DESDE EL FORMULARIO
   restaurarImagenDefault(): void {
     if (!this.productoEdit()) return;
 
@@ -275,7 +275,20 @@ export class CartaAdminComponent implements OnInit {
   // CRUD DE PRODUCTOS
   // ============================================
   toggleFormulario(): void {
-    this.mostrarFormulario.set(!this.mostrarFormulario());
+    if (this.mostrarFormulario()) {
+      this.cerrarFormulario();
+      return;
+    }
+
+    this.mostrarFormulario.set(true);
+  }
+
+  cerrarFormulario(): void {
+    if (!this.mostrarFormulario()) {
+      return;
+    }
+
+    this.mostrarFormulario.set(false);
     if (!this.mostrarFormulario()) {
       this.editando.set(false);
       this.productoEdit.set(null);
@@ -373,19 +386,19 @@ export class CartaAdminComponent implements OnInit {
     });
   }
 
-  // ✅ ABRIR MODAL DE CONFIRMACIÓN PARA ELIMINAR
+  // ABRIR MODAL DE CONFIRMACIÓN PARA ELIMINAR
   abrirModalEliminar(producto: any): void {
     this.productoAEliminar.set(producto);
     this.mostrarModalEliminar.set(true);
   }
 
-  // ✅ CERRAR MODAL DE CONFIRMACIÓN
+  // CERRAR MODAL DE CONFIRMACIÓN
   cerrarModalEliminar(): void {
     this.mostrarModalEliminar.set(false);
     this.productoAEliminar.set(null);
   }
 
-  // ✅ CONFIRMAR ELIMINACIÓN
+  // CONFIRMAR ELIMINACIÓN
   confirmarEliminar(): void {
     const producto = this.productoAEliminar();
     if (!producto) return;

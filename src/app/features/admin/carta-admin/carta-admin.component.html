@@ -83,7 +83,18 @@
 
   <!-- FORMULARIO DE PRODUCTO -->
   @if (mostrarFormulario()) {
-    <section class="formulario-card" aria-labelledby="tituloFormularioProducto">
+    <div
+      class="formulario-modal-overlay"
+      role="presentation"
+      (click)="cerrarFormulario()"
+    >
+      <section
+        class="formulario-card formulario-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloFormularioProducto"
+        (click)="$event.stopPropagation()"
+      >
       <div class="formulario-header">
         <div class="formulario-titulo">
           <span class="formulario-icono" aria-hidden="true">
@@ -109,7 +120,7 @@
         <button
           class="btn-cerrar-formulario"
           type="button"
-          (click)="toggleFormulario()"
+          (click)="cerrarFormulario()"
           aria-label="Cerrar formulario"
           title="Cerrar"
         >
@@ -263,7 +274,7 @@
             <button
               class="btn-formulario-cancelar"
               type="button"
-              (click)="toggleFormulario()"
+              (click)="cerrarFormulario()"
             >
               Cancelar
             </button>
@@ -286,7 +297,8 @@
           </div>
         </div>
       </div>
-    </section>
+      </section>
+    </div>
   }
 
   <!-- TABLA DE PRODUCTOS -->
@@ -419,7 +431,7 @@
   </div>
 </div>
 
-<!-- ✅ MODAL DE CONFIRMACIÓN PARA ELIMINAR PRODUCTO -->
+<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR PRODUCTO -->
 @if (mostrarModalEliminar() && productoAEliminar()) {
   <div class="modal-overlay" (click)="cerrarModalEliminar()">
     <div class="modal-eliminar" (click)="$event.stopPropagation()">
@@ -503,7 +515,7 @@
   </div>
 }
 
-<!-- ✅ MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN -->
+<!-- MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN -->
 @if (mostrarModalRestaurar() && productoARestaurar()) {
   <div class="modal-overlay" (click)="cerrarModalRestaurar()">
     <div class="modal-restaurar" (click)="$event.stopPropagation()">
