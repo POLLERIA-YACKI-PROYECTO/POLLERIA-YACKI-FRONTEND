@@ -69,7 +69,8 @@
     align-items: center;
   }
 
-  .btn-admin {
+  .btn-admin,
+  .btn-logout {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -100,6 +101,15 @@
 
     &:active {
       transform: scale(0.92);
+    }
+  }
+
+  .btn-logout:hover {
+    background: rgba(197, 48, 42, 0.25);
+    border-color: #ea1b5c;
+
+    svg {
+      stroke: #ea1b5c;
     }
   }
 
@@ -404,7 +414,8 @@
       font-size: 8px;
     }
 
-    .btn-admin {
+    .btn-admin,
+    .btn-logout {
       width: 30px;
       height: 30px;
 

@@ -34,7 +34,6 @@ export class LoginMeseroComponent implements OnInit {
   ngOnInit(): void {
     const usuario = this.authService.getUsuarioActual();
     if (usuario && usuario.rol === 'mesero') {
-      // ✅ CORREGIDO: Redirigir a /mesero/dashboard
       this.router.navigate(['/mesero/dashboard']);
     }
   }
@@ -46,7 +45,7 @@ export class LoginMeseroComponent implements OnInit {
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
-      this.errorMessage.set('Por favor ingrese un DNI válido (8 dígitos)');
+      this.errorMessage.set('Por favor ingrese un DNI valido (8 digitos)');
       return;
     }
 
@@ -62,15 +61,50 @@ export class LoginMeseroComponent implements OnInit {
         this.mostrarBienvenida.set(true);
 
         setTimeout(() => {
-          // ✅ CORREGIDO: Redirigir a /mesero/dashboard
           this.router.navigate(['/mesero/dashboard']);
         }, 2000);
       },
       error: (error) => {
         this.isLoading.set(false);
-        this.errorMessage.set(error.message || 'Error al iniciar sesión');
+        this.errorMessage.set(this.obtenerMensajeError(error));
       }
     });
+  }
+
+  private obtenerMensajeError(error: any): string {
+    // Si el backend manda un mensaje claro, usarlo
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+
+    if (error?.error?.error) {
+      return error.error.error;
+    }
+
+    // Si el AuthService ya limpio el error
+    if (error?.message && typeof error.message === 'string' && !error.message.includes('Http failure')) {
+      return error.message;
+    }
+
+    // Manejo por codigo de estado HTTP
+    switch (error?.status) {
+      case 0:
+        return 'No se pudo conectar con el servidor';
+      case 400:
+        return 'DNI invalido o incorrecto';
+      case 401:
+        return 'DNI invalido o incorrecto';
+      case 403:
+        return 'Acceso denegado. Se requiere rol de mesero';
+      case 404:
+        return 'DNI invalido o incorrecto';
+      case 500:
+      case 502:
+      case 503:
+        return 'Error del servidor, intente mas tarde';
+      default:
+        return 'DNI invalido o incorrecto';
+    }
   }
 
   irLoginAdmin(): void {

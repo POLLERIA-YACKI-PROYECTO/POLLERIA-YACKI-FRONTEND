@@ -1,0 +1,295 @@
+<!-- src/app/features/admin/historial-cliente/historial-cliente.component.html -->
+
+<!-- HEADER GLOBAL (logo, usuario, cerrar sesión) -->
+<app-header
+  [usuario]="usuario()"
+  (logout)="cerrarSesion()">
+</app-header>
+
+<!-- LAYOUT: SIDEBAR + CONTENIDO -->
+<div class="admin-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="admin-content">
+    <div class="historial-container" [class.tema-oscuro]="temaOscuro()">
+      <div class="historial-content">
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+          <div class="header-left">
+            <h2>
+              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Historial de Clientes
+            </h2>
+            <p class="subtitle">Quién se registró, quién inició sesión y quién ha comprado</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn-tema" (click)="toggleTema()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              {{ temaOscuro() ? 'Claro' : 'Oscuro' }}
+            </button>
+            <button class="btn-primary" (click)="cargarTodo()" [disabled]="loading()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+              Actualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- LOADING -->
+        @if (loading()) {
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Cargando historial de clientes...</p>
+          </div>
+        }
+
+        <!-- ERROR -->
+        @if (error() && !loading()) {
+          <div class="error-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ error() }}</span>
+            <button (click)="cargarTodo()">Reintentar</button>
+          </div>
+        }
+
+        <!-- STATS -->
+        @if (!loading() && estadisticas()) {
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ estadisticas()!.total_clientes }}</span>
+                <span class="stat-label">Clientes registrados</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ estadisticas()!.clientes_con_compras }}</span>
+                <span class="stat-label">Con compras</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ estadisticas()!.clientes_sin_compras }}</span>
+                <span class="stat-label">Sin compras</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ estadisticas()!.total_logins }}</span>
+                <span class="stat-label">Logins totales</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ estadisticas()!.total_registros }}</span>
+                <span class="stat-label">Registros totales</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M12 7v5l3 2"/>
+                </svg>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ estadisticas()!.actividad_hoy }}</span>
+                <span class="stat-label">Actividad hoy</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- TABLA -->
+        @if (!loading()) {
+          <div class="tabla-container">
+            <div class="tabla-header">
+              <div class="tabla-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                </svg>
+                <span>Lista de Clientes ({{ clientesFiltrados().length }})</span>
+              </div>
+              <span class="total-items">{{ clientesFiltrados().length }} registros</span>
+            </div>
+
+            <!-- FILTROS Y BÚSQUEDA -->
+            <div class="filtros-bar">
+              <div class="tabs">
+                <button [class.active]="tabActual() === 'todos'" (click)="cambiarTab('todos')">
+                  Todos ({{ clientes().length }})
+                </button>
+                <button [class.active]="tabActual() === 'con-compras'" (click)="cambiarTab('con-compras')">
+                  Con compras ({{ clientesConCompras().length }})
+                </button>
+                <button [class.active]="tabActual() === 'sin-compras'" (click)="cambiarTab('sin-compras')">
+                  Sin compras ({{ clientesSinCompras().length }})
+                </button>
+              </div>
+
+              <div class="buscador">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="text"
+                  [ngModel]="busqueda()"
+                  (ngModelChange)="busqueda.set($event)"
+                  placeholder="Buscar por nombre, email o teléfono..."
+                >
+                @if (busqueda()) {
+                  <button class="btn-clear" (click)="limpiarBusqueda()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="tabla-scroll">
+              <table class="tabla-clientes">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Contacto</th>
+                    <th>Registro</th>
+                    <th>Último acceso</th>
+                    <th>Pedidos</th>
+                    <th>Total gastado</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (cliente of clientesFiltrados(); track cliente.id) {
+                    <tr>
+                      <td class="nombre-col">
+                        <span class="avatar" [style.background]="getAvatarColor(cliente.id)">
+                          {{ getIniciales(cliente) }}
+                        </span>
+                        <div class="nombre-info">
+                          <span class="nombre-texto">{{ cliente.nombre }} {{ cliente.apellido || '' }}</span>
+                          @if (cliente.tipo_cliente) {
+                            <span class="tipo-badge {{ cliente.tipo_cliente }}">{{ cliente.tipo_cliente }}</span>
+                          }
+                        </div>
+                      </td>
+                      <td>
+                        <div class="contacto-cell">
+                          @if (cliente.email) {
+                            <span class="contacto-item">{{ cliente.email }}</span>
+                          }
+                          @if (cliente.telefono) {
+                            <span class="contacto-item">{{ cliente.telefono }}</span>
+                          }
+                        </div>
+                      </td>
+                      <td>{{ formatearFecha(cliente.fecha_registro) }}</td>
+                      <td>{{ formatearFecha(cliente.ultimo_acceso) }}</td>
+                      <td>
+                        <span class="pedidos-badge">{{ cliente.total_pedidos || 0 }}</span>
+                      </td>
+                      <td class="total-col">{{ formatearPrecio(cliente.total_gastado) }}</td>
+                      <td>
+                        @if (cliente.estado_compra === 'compro') {
+                          <span class="estado-badge estado-completada">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Compró
+                          </span>
+                        } @else {
+                          <span class="estado-badge estado-pendiente">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                              <line x1="18" y1="6" x2="6" y2="18"/>
+                              <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            No compró
+                          </span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @empty {
+                    <tr>
+                      <td colspan="7" class="text-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="8" x2="12" y2="12"/>
+                          <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        No hay clientes registrados
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+</div>
