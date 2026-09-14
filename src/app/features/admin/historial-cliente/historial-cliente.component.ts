@@ -79,7 +79,7 @@ export class HistorialClienteComponent implements OnInit {
   clientesSinCompras = signal<ClienteHistorial[]>([]);
   estadisticas = signal<Estadisticas | null>(null);
 
-  // ✅ Modal de detalle de compras
+  // Modal de detalle de compras
   mostrarModalDetalle = signal<boolean>(false);
   clienteSeleccionado = signal<ClienteHistorial | null>(null);
   comprasDetalle = signal<CompraDetalle[]>([]);
@@ -160,7 +160,7 @@ export class HistorialClienteComponent implements OnInit {
   }
 
   // ============================================
-  // ✅ VER DETALLE DE COMPRAS
+  // VER DETALLE DE COMPRAS
   // ============================================
   verDetalleCompras(cliente: ClienteHistorial): void {
     this.clienteSeleccionado.set(cliente);

@@ -1,5 +1,4 @@
 // src/app/core/services/usuario.service.ts
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -30,6 +29,10 @@ export class UsuarioService {
     return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
+  obtenerPorRol(rol: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/rol/${rol}`, { headers: this.getHeaders() });
+  }
+
   crearUsuario(usuario: any): Observable<any> {
     return this.http.post(this.apiUrl, usuario, { headers: this.getHeaders() });
   }
@@ -40,5 +43,9 @@ export class UsuarioService {
 
   eliminarUsuario(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+  }
+
+  toggleActivo(id: number): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/${id}/toggle`, {}, { headers: this.getHeaders() });
   }
 }

@@ -27,7 +27,7 @@ export interface ReporteCajero {
   total: number;
 }
 
-// ✅ NUEVO: Desglose por día para el reporte semanal
+// NUEVO: Desglose por día para el reporte semanal
 export interface DiaSemana {
   dia: string;        // 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'
   fecha: string;      // 'dd/mm'
@@ -46,5 +46,5 @@ export interface ReporteSemanal {
   totalLocal: number;
   totalMotorizado: number;
   total: number;
-  dias: DiaSemana[];      // ✅ Desglose de los 7 días
+  dias: DiaSemana[];      // Desglose de los 7 días
 }

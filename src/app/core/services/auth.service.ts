@@ -47,7 +47,7 @@ export class AuthService {
     localStorage.setItem(this.tokenKey, token);
     localStorage.setItem(this.usuarioKey, JSON.stringify(usuarioNormalizado));
 
-    console.log('🔐 Sesión guardada:', {
+    console.log('Sesión guardada:', {
       tipo: usuarioNormalizado.tipo,
       rol: usuarioNormalizado.rol,
       nombre: usuarioNormalizado.nombre
@@ -146,7 +146,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.usuarioKey);
-    console.log('🚪 Sesión cerrada');
+    console.log('Sesión cerrada');
   }
 
   // ============================================

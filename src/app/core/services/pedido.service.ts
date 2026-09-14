@@ -21,9 +21,11 @@ export class PedidoService {
     });
   }
 
-  // ✅ Obtener TODOS los pedidos del usuario autenticado
+  // ============================================
+  // OBTENER PEDIDOS
+  // ============================================
   obtenerPedidos(): Observable<any[]> {
-    console.log('📤 Solicitando todos los pedidos');
+    console.log('Solicitando todos los pedidos');
     return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
@@ -35,12 +37,12 @@ export class PedidoService {
     return this.http.get<any[]>(`${this.apiUrl}/pagados`, { headers: this.getHeaders() });
   }
 
-  // ✅ OBTENER PEDIDOS ENTREGADOS DEL MESERO
   obtenerPedidosPagadosMesero(): Observable<any[]> {
-    console.log('📤 Solicitando pedidos entregados del mesero');
-    return this.http.get<any[]>(`${this.apiUrl}/entregados/mesero`, { 
-      headers: this.getHeaders() 
-    });
+    console.log('Solicitando pedidos entregados del mesero');
+    return this.http.get<any[]>(
+      `${this.apiUrl}/entregados/mesero`,
+      { headers: this.getHeaders() }
+    );
   }
 
   obtenerPedidosPorTipo(tipo: string): Observable<any[]> {
@@ -51,25 +53,39 @@ export class PedidoService {
     return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
+  obtenerHistorialCliente(): Observable<any> {
+    return this.http.get(this.apiUrl, { headers: this.getHeaders() });
+  }
+
+  // ============================================
+  // CREAR PEDIDO
+  // ============================================
   crearPedido(pedido: any): Observable<any> {
     return this.http.post(this.apiUrl, pedido, { headers: this.getHeaders() });
   }
 
   crearPedidoCliente(pedido: any): Observable<any> {
-    return this.http.post(this.apiUrl, pedido, { headers: this.getHeaders() });
+    return this.http.post(`${this.apiUrl}/cliente`, pedido, { headers: this.getHeaders() });
   }
 
-  obtenerHistorialCliente(): Observable<any> {
-    return this.http.get(this.apiUrl, { headers: this.getHeaders() });
-  }
-
+  // ============================================
+  // ACTUALIZAR
+  // ============================================
   cambiarEstado(id: number, estado: string): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}/estado`, { estado }, { headers: this.getHeaders() });
+    return this.http.put(
+      `${this.apiUrl}/${id}/estado`,
+      { estado },
+      { headers: this.getHeaders() }
+    );
   }
 
   marcarPagado(id: number, metodo_pago: string): Observable<any> {
-    console.log('📤 Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
-    return this.http.patch(`${this.apiUrl}/${id}/pagar`, { metodo_pago }, { headers: this.getHeaders() });
+    console.log('Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
+    return this.http.patch(
+      `${this.apiUrl}/${id}/pagar`,
+      { metodo_pago },
+      { headers: this.getHeaders() }
+    );
   }
 
   eliminarPedido(id: number): Observable<any> {

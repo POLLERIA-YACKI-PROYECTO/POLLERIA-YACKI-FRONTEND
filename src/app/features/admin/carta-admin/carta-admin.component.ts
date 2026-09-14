@@ -383,19 +383,19 @@ export class CartaAdminComponent implements OnInit {
     });
   }
 
-  // ✅ ABRIR MODAL DE CONFIRMACIÓN PARA ELIMINAR
+  // ABRIR MODAL DE CONFIRMACIÓN PARA ELIMINAR
   abrirModalEliminar(producto: any): void {
     this.productoAEliminar.set(producto);
     this.mostrarModalEliminar.set(true);
   }
 
-  // ✅ CERRAR MODAL DE CONFIRMACIÓN
+  // CERRAR MODAL DE CONFIRMACIÓN
   cerrarModalEliminar(): void {
     this.mostrarModalEliminar.set(false);
     this.productoAEliminar.set(null);
   }
 
-  // ✅ CONFIRMAR ELIMINACIÓN
+  // CONFIRMAR ELIMINACIÓN
   confirmarEliminar(): void {
     const producto = this.productoAEliminar();
     if (!producto) return;

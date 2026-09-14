@@ -178,7 +178,7 @@ export class DashboardAdminComponent implements OnInit {
       },
     });
 
-    // 5. ✅ RESUMEN UNIFICADO (ventas + pedidos web confirmados)
+    // 5. RESUMEN UNIFICADO (ventas + pedidos web confirmados)
     this.dashboardService.obtenerResumenUnificado().subscribe({
       next: (response) => {
         if (response?.success) {
@@ -277,7 +277,7 @@ export class DashboardAdminComponent implements OnInit {
     return textos[estado] || estado;
   }
 
-  // ✅ Origen de la venta
+  // Origen de la venta
   getOrigenLabel(origen: string): string {
     const labels: any = {
       venta: 'Mesero',
@@ -290,7 +290,7 @@ export class DashboardAdminComponent implements OnInit {
     return origen === 'pedido_web' ? 'origen-web' : 'origen-venta';
   }
 
-  // ✅ Tipo de entrega
+  // Tipo de entrega
   getTipoLabel(tipo: string): string {
     const labels: any = {
       local: 'Local',

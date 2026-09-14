@@ -49,7 +49,7 @@ export class ReporteService {
   }
 
   // ============================================
-  // ✅ NUEVO: REPORTE SEMANAL
+  // NUEVO: REPORTE SEMANAL
   // ============================================
   getReporteSemanal(fechaInicio: string, fechaFin: string): Observable<any> {
     const params = new HttpParams()
@@ -59,7 +59,7 @@ export class ReporteService {
   }
 
   // ============================================
-  // ✅ NUEVO: REPORTE POR CLIENTE
+  // NUEVO: REPORTE POR CLIENTE
   // ============================================
   getReportePorCliente(fechaInicio: string, fechaFin: string): Observable<any> {
     const params = new HttpParams()
@@ -69,7 +69,7 @@ export class ReporteService {
   }
 
   // ============================================
-  // ✅ NUEVO: REPORTE MOTORIZADA
+  // NUEVO: REPORTE MOTORIZADA
   // ============================================
   getReporteMotorizada(fechaInicio: string, fechaFin: string): Observable<any> {
     const params = new HttpParams()

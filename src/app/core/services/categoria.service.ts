@@ -21,37 +21,37 @@ export class CategoriaService {
     });
   }
 
-  // ✅ PÚBLICO - Sin autenticación
+  // PÚBLICO - Sin autenticación
   obtenerCategorias(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }
 
-  // ✅ PÚBLICO - Sin autenticación
+  // PÚBLICO - Sin autenticación
   obtenerCategoriasActivas(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/activas`);
   }
 
-  // ✅ PÚBLICO - Sin autenticación
+  // PÚBLICO - Sin autenticación
   obtenerCategoria(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`);
   }
 
-  // ✅ PÚBLICO - Sin autenticación
+  // PÚBLICO - Sin autenticación
   obtenerProductosPorCategoria(id: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/${id}/productos`);
   }
 
-  // 🔒 REQUIERE AUTENTICACIÓN
+  // REQUIERE AUTENTICACIÓN
   crearCategoria(categoria: any): Observable<any> {
     return this.http.post(this.apiUrl, categoria, { headers: this.getHeaders() });
   }
 
-  // 🔒 REQUIERE AUTENTICACIÓN
+  // REQUIERE AUTENTICACIÓN
   actualizarCategoria(id: number, categoria: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}`, categoria, { headers: this.getHeaders() });
   }
 
-  // 🔒 REQUIERE AUTENTICACIÓN
+  // REQUIERE AUTENTICACIÓN
   eliminarCategoria(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }

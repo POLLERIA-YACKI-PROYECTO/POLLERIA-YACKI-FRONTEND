@@ -20,7 +20,7 @@ export const ClienteGuard: CanActivateFn = (route, state) => {
 
   // Sin token o sin usuario → login
   if (!token || !usuario) {
-    console.warn('🚫 ClienteGuard: sin sesión → /login-cliente');
+    console.warn(' ClienteGuard: sin sesión → /login-cliente');
     return router.parseUrl('/login-cliente');
   }
 
@@ -28,7 +28,7 @@ export const ClienteGuard: CanActivateFn = (route, state) => {
   const esCliente = usuario.tipo === 'cliente' || usuario.rol === 'cliente';
 
   if (!esCliente) {
-    console.warn('🚫 ClienteGuard: no es cliente → /login-cliente');
+    console.warn('ClienteGuard: no es cliente → /login-cliente');
     return router.parseUrl('/login-cliente');
   }
 
