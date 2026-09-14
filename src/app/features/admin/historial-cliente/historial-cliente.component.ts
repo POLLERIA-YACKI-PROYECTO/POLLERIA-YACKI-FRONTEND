@@ -14,6 +14,7 @@ interface ClienteHistorial {
   apellido?: string;
   email?: string;
   telefono?: string;
+  dni?: string;
   tipo_cliente?: string;
   puntos?: number;
   fecha_registro: string;
@@ -22,6 +23,22 @@ interface ClienteHistorial {
   total_gastado: number;
   ultima_compra?: string;
   estado_compra: 'compro' | 'no_compro';
+}
+
+interface CompraDetalle {
+  origen: 'venta' | 'pedido_cliente';
+  id: number;
+  items: any[];
+  subtotal: number;
+  igv: number;
+  total: number;
+  metodo_pago: string;
+  tipo_entrega: string;
+  estado: string;
+  fecha: string;
+  cliente_nombre: string;
+  vendedor_nombre?: string;
+  vendedor_apellido?: string;
 }
 
 interface Estadisticas {
@@ -49,10 +66,7 @@ export class HistorialClienteComponent implements OnInit {
   private router = inject(Router);
   private apiUrl = 'http://localhost:3000/api/historial';
 
-  // Usuario actual (para el header)
   usuario = signal<any>(null);
-
-  // Estado
   temaOscuro = signal<boolean>(false);
   loading = signal<boolean>(true);
   error = signal<string | null>(null);
@@ -65,7 +79,12 @@ export class HistorialClienteComponent implements OnInit {
   clientesSinCompras = signal<ClienteHistorial[]>([]);
   estadisticas = signal<Estadisticas | null>(null);
 
-  // Computed
+  // ✅ Modal de detalle de compras
+  mostrarModalDetalle = signal<boolean>(false);
+  clienteSeleccionado = signal<ClienteHistorial | null>(null);
+  comprasDetalle = signal<CompraDetalle[]>([]);
+  cargandoCompras = signal<boolean>(false);
+
   clientesFiltrados = computed(() => {
     const term = this.busqueda().toLowerCase().trim();
     let lista: ClienteHistorial[] = [];
@@ -82,7 +101,8 @@ export class HistorialClienteComponent implements OnInit {
       (c.nombre || '').toLowerCase().includes(term) ||
       (c.apellido || '').toLowerCase().includes(term) ||
       (c.email || '').toLowerCase().includes(term) ||
-      (c.telefono || '').includes(term)
+      (c.telefono || '').includes(term) ||
+      (c.dni || '').includes(term)
     );
   });
 
@@ -105,50 +125,74 @@ export class HistorialClienteComponent implements OnInit {
     return new HttpHeaders({ 'Authorization': `Bearer ${token}` });
   }
 
- cargarTodo(): void {
-  this.loading.set(true);
-  this.error.set(null);
+  // ============================================
+  // CARGAR DATOS
+  // ============================================
+  cargarTodo(): void {
+    this.loading.set(true);
+    this.error.set(null);
 
-  this.http.get<any>(`${this.apiUrl}/resumen-completo`, { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => {
-        this.estadisticas.set(data.estadisticas);
-        this.clientes.set(data.clientes);
-        this.clientesConCompras.set(data.clientesConCompras);
-        this.clientesSinCompras.set(data.clientesSinCompras);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error historial:', err);
+    this.http.get<any>(`${this.apiUrl}/resumen-completo`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.estadisticas.set(data.estadisticas);
+          this.clientes.set(data.clientes || []);
+          this.clientesConCompras.set(data.clientesConCompras || []);
+          this.clientesSinCompras.set(data.clientesSinCompras || []);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Error historial:', err);
 
-        let mensaje = 'No se pudo cargar el historial de clientes';
-        if (err?.status === 429) {
-          mensaje = 'Demasiadas peticiones. Espera un momento y reintenta.';
-        } else if (err?.status === 401) {
-          mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
-        } else if (err?.status === 0) {
-          mensaje = 'No se pudo conectar con el servidor.';
+          let mensaje = 'No se pudo cargar el historial de clientes';
+          if (err?.status === 429) {
+            mensaje = 'Demasiadas peticiones. Espera un momento y reintenta.';
+          } else if (err?.status === 401) {
+            mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+          } else if (err?.status === 0) {
+            mensaje = 'No se pudo conectar con el servidor.';
+          }
+
+          this.error.set(mensaje);
+          this.loading.set(false);
         }
-
-        this.error.set(mensaje);
-        this.loading.set(false);
-      }
-    });
-
-
-    this.http.get<ClienteHistorial[]>(`${this.apiUrl}/clientes/con-compras`, { headers: this.getHeaders() })
-      .subscribe({
-        next: (data) => this.clientesConCompras.set(data),
-        error: (err) => console.error('Error con compras:', err)
-      });
-
-    this.http.get<ClienteHistorial[]>(`${this.apiUrl}/clientes/sin-compras`, { headers: this.getHeaders() })
-      .subscribe({
-        next: (data) => this.clientesSinCompras.set(data),
-        error: (err) => console.error('Error sin compras:', err)
       });
   }
 
+  // ============================================
+  // ✅ VER DETALLE DE COMPRAS
+  // ============================================
+  verDetalleCompras(cliente: ClienteHistorial): void {
+    this.clienteSeleccionado.set(cliente);
+    this.mostrarModalDetalle.set(true);
+    this.cargandoCompras.set(true);
+    this.comprasDetalle.set([]);
+
+    this.http.get<CompraDetalle[]>(
+      `${this.apiUrl}/cliente/${cliente.id}/compras`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (compras) => {
+        this.comprasDetalle.set(compras || []);
+        this.cargandoCompras.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar compras:', err);
+        this.comprasDetalle.set([]);
+        this.cargandoCompras.set(false);
+      }
+    });
+  }
+
+  cerrarModalDetalle(): void {
+    this.mostrarModalDetalle.set(false);
+    this.clienteSeleccionado.set(null);
+    this.comprasDetalle.set([]);
+  }
+
+  // ============================================
+  // TABS Y BÚSQUEDA
+  // ============================================
   cambiarTab(tab: Tab): void {
     this.tabActual.set(tab);
   }
@@ -157,6 +201,9 @@ export class HistorialClienteComponent implements OnInit {
     this.busqueda.set('');
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   formatearPrecio(valor: number | string): string {
     const num = typeof valor === 'string' ? parseFloat(valor) : valor;
     return `S/ ${(isNaN(num) ? 0 : num).toFixed(2)}`;
@@ -185,5 +232,26 @@ export class HistorialClienteComponent implements OnInit {
   totalClientesTexto(): string {
     const total = this.clientes().length;
     return total === 1 ? '1 cliente' : `${total} clientes`;
+  }
+
+  getMetodoPagoLabel(metodo: string): string {
+    const labels: Record<string, string> = {
+      'efectivo': 'Efectivo',
+      'tarjeta': 'Tarjeta',
+      'yape': 'Yape',
+      'plin': 'Plin',
+      'transferencia': 'Transferencia'
+    };
+    return labels[metodo] || metodo;
+  }
+
+  getTipoEntregaLabel(tipo: string): string {
+    const labels: Record<string, string> = {
+      'local': 'Local',
+      'delivery': 'Delivery',
+      'paraLlevar': 'Para Llevar',
+      'motorizada': 'Motorizado'
+    };
+    return labels[tipo] || tipo;
   }
 }

@@ -27,7 +27,6 @@
           </svg>
         </button>
 
-        <!-- NUEVO: Cerrar sesión -->
         <button class="btn-logout" (click)="cerrarSesion()" title="Cerrar sesión" aria-label="Cerrar sesión">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -74,13 +73,11 @@
 
   <!-- PRODUCTOS -->
   <main class="productos-container">
-    <!-- Loading -->
     <div class="loading-state" *ngIf="loading()">
       <div class="spinner"></div>
       <p>Cargando deliciosas opciones...</p>
     </div>
 
-    <!-- Error -->
     <div class="error-state" *ngIf="error() && !loading()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
@@ -91,7 +88,6 @@
       <button class="btn-reintentar" (click)="cargarProductos()">Reintentar</button>
     </div>
 
-    <!-- Grid de productos -->
     <div class="productos-grid" *ngIf="!loading() && !error()">
       <app-producto-card
         *ngFor="let producto of productosFiltradosPorBusqueda()"
@@ -129,8 +125,14 @@
     [visible]="mostrarModalPago()"
     [total]="total()"
     [cargando]="cargandoPedido()"
+    [pedidoId]="pedidoCreadoId()"
+    [numeroYape]="'902458936'"
+    [numeroPlin]="'902458936'"
     (cerrar)="cerrarModalPago()"
     (confirmar)="procesarPedido($event)"
+    (subirComprobante)="subirComprobante($event)"
+    (confirmarEfectivoCaja)="confirmarEfectivo($event)"
+    (confirmarMaquina)="confirmarMaquina($event)"
   ></app-modal-pago>
 
   <!-- FLOATING CARRITO -->

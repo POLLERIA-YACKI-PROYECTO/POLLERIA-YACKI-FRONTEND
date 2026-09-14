@@ -37,10 +37,10 @@ export const routes: Routes = [
         .then(m => m.LoginClienteComponent)
   },
   {
-  path: 'admin/historial-cliente',
-  loadComponent: () => import('./features/admin/historial-cliente/historial-cliente.component')
-    .then(m => m.HistorialClienteComponent)
-},
+    path: 'admin/historial-cliente',
+    loadComponent: () => import('./features/admin/historial-cliente/historial-cliente.component')
+      .then(m => m.HistorialClienteComponent)
+  },
 
   // ============================================
   // RUTAS DEL CLIENTE (protegidas)
@@ -55,7 +55,6 @@ export const routes: Routes = [
           import('./features/carta-cliente/carta-cliente.component')
             .then(m => m.CartaClienteComponent)
       },
-  
       { path: '', redirectTo: 'carta', pathMatch: 'full' }
     ]
   },
@@ -133,6 +132,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/admin/ventas-admin/ventas-admin.component')
             .then(m => m.VentasAdminComponent)
+      },
+      // ✅ NUEVA RUTA: Pedidos de Clientes (Carta Web)
+      {
+        path: 'pedidos-clientes',
+        loadComponent: () =>
+          import('./features/admin/pedidos-clientes-carta-admin/pedidos-clientes-admin.component')
+            .then(m => m.PedidosClientesAdminComponent)
       },
       {
         path: 'carta-admin',

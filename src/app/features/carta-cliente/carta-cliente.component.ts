@@ -7,7 +7,7 @@ import { catchError, timeout, of } from 'rxjs';
 
 // Services
 import { ProductoService } from '../../core/services/producto.service';
-import { PedidoService } from '../../core/services/pedido.service';
+import { PedidoClienteService } from '../../core/services/pedido-cliente.service';
 import { AuthService } from '../../core/services/auth.service';
 
 // Interfaces
@@ -35,7 +35,7 @@ import { CategoriasNavComponent } from './components/categorias-nav/categorias-n
 })
 export class CartaClienteComponent implements OnInit {
   private productoService = inject(ProductoService);
-  private pedidoService = inject(PedidoService);
+  private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -50,6 +50,9 @@ export class CartaClienteComponent implements OnInit {
   mostrarModalPago = signal(false);
   cargandoPedido = signal(false);
   busqueda = signal('');
+
+  // ✅ ID del pedido creado (para el modal)
+  pedidoCreadoId = signal<number | null>(null);
 
   // Cliente actual
   clienteActual = signal<any>(this.authService.getUsuarioActual());
@@ -83,7 +86,6 @@ export class CartaClienteComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Verificar sesión de cliente
     if (!this.authService.isCliente()) {
       this.router.navigate(['/login-cliente']);
       return;
@@ -211,13 +213,18 @@ export class CartaClienteComponent implements OnInit {
       alert('El carrito está vacío. Agrega productos antes de continuar.');
       return;
     }
+    this.pedidoCreadoId.set(null);
     this.mostrarModalPago.set(true);
   }
 
   cerrarModalPago(): void {
     this.mostrarModalPago.set(false);
+    this.pedidoCreadoId.set(null);
   }
 
+  // ============================================
+  // PROCESAR PEDIDO
+  // ============================================
   procesarPedido(datosPago: any): void {
     const token = this.authService.getToken();
     const usuario = this.authService.getUsuarioActual();
@@ -240,7 +247,7 @@ export class CartaClienteComponent implements OnInit {
     }
 
     if (
-      (datosPago.tipoEntrega || 'local') === 'delivery' &&
+      (datosPago.tipoEntrega || 'delivery') === 'delivery' &&
       !datosPago.direccion?.trim()
     ) {
       alert('Para delivery debes ingresar la dirección de entrega.');
@@ -252,33 +259,38 @@ export class CartaClienteComponent implements OnInit {
 
     const pedido = {
       cliente_id: usuario.id,
+      cliente_nombre: datosPago.clienteNombre || usuario.nombre || 'Cliente',
+      cliente_telefono: datosPago.telefono || usuario.telefono || '',
+      cliente_direccion: datosPago.direccion || usuario.direccion || null,
+      cliente_referencia: datosPago.referencia || '',
       items: this.carrito().map((item) => ({
-        id: item.producto.id,
+        producto_id: item.producto.id,
         nombre: item.producto.nombre,
         precio: this.obtenerPrecioNumerico(item.producto.precio),
         cantidad: item.cantidad,
-        subtotal:
-          this.obtenerPrecioNumerico(item.producto.precio) * item.cantidad
+        subtotal: this.obtenerPrecioNumerico(item.producto.precio) * item.cantidad
       })),
       subtotal: this.subtotal(),
       igv: this.igv(),
       total: this.total(),
-      tipo_entrega: datosPago.tipoEntrega || 'local',
+      tipo_entrega: datosPago.tipoEntrega || 'delivery',
       metodo_pago: datosPago.metodo || 'efectivo',
-      pagado: false,
-      cliente_nombre: datosPago.clienteNombre || usuario.nombre || 'Cliente',
-      telefono: datosPago.telefono || usuario.telefono || '',
-      direccion_entrega: datosPago.direccion || usuario.direccion || null,
-      referencia: datosPago.referencia || '',
-      observaciones: datosPago.observaciones || '',
-      estado: 'pendiente',
-      fecha: new Date().toISOString()
+      tipo_transferencia: datosPago.tipoTransferencia || null,
+      observaciones: datosPago.observaciones || ''
     };
 
-    this.pedidoService.crearPedidoCliente(pedido).subscribe({
+    this.pedidoClienteService.crearPedido(pedido).subscribe({
       next: (response: any) => {
         if (response?.success !== false) {
-          this.finalizarPedido();
+          const pedidoId = response?.pedido?.id;
+
+          if (pedidoId) {
+            this.pedidoCreadoId.set(pedidoId);
+            this.cargandoPedido.set(false);
+            // El modal detecta el cambio y muestra el estado correcto
+          } else {
+            this.finalizarPedido();
+          }
         } else {
           this.cargandoPedido.set(false);
           alert(
@@ -294,23 +306,70 @@ export class CartaClienteComponent implements OnInit {
           err?.error?.detalle ||
           err?.error?.error ||
           err?.error?.message ||
-          (err?.status === 401
-            ? 'Tu sesión expiró. Inicia sesión nuevamente.'
-            : err?.status === 403
-              ? 'No tienes permisos para crear pedidos.'
-              : `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`);
+          `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`;
         alert(mensaje);
       }
     });
   }
 
+  // ============================================
+  // ✅ SUBIR COMPROBANTE (Yape / Plin / Transferencia QR)
+  // ============================================
+  subirComprobante(evento: { pedidoId: number; archivo: File }): void {
+    this.cargandoPedido.set(true);
+
+    this.pedidoClienteService
+      .subirComprobante(evento.pedidoId, evento.archivo)
+      .subscribe({
+        next: () => {
+          this.cargandoPedido.set(false);
+          this.mostrarExitoPendienteValidacion();
+        },
+        error: (err) => {
+          console.error('Error al subir comprobante:', err);
+          this.cargandoPedido.set(false);
+          alert('Error al subir el comprobante. Intenta nuevamente.');
+        }
+      });
+  }
+
+  // ============================================
+  // ✅ CONFIRMAR EFECTIVO (solo avisa)
+  // ============================================
+  confirmarEfectivo(evento: { pedidoId: number }): void {
+    this.mostrarExitoPendienteValidacion();
+  }
+
+  // ============================================
+  // ✅ CONFIRMAR MÁQUINA IZIPAY (solo avisa)
+  // ============================================
+  confirmarMaquina(evento: { pedidoId: number }): void {
+    this.mostrarExitoPendienteValidacion();
+  }
+
+  // ============================================
+  // MOSTRAR ÉXITO (pendiente de validación)
+  // ============================================
+  private mostrarExitoPendienteValidacion(): void {
+    this.cargandoPedido.set(false);
+    this.mostrarModalPago.set(false);
+    this.pedidoCreadoId.set(null);
+    this.carrito.set([]);
+    this.mostrarCarrito.set(false);
+    alert('¡Pedido registrado! El cajero verificará tu pago y confirmará el pedido.');
+    this.router.navigate(['/cliente/carta']);
+  }
+
+  // ============================================
+  // FINALIZAR (fallback)
+  // ============================================
   finalizarPedido(): void {
     this.cargandoPedido.set(false);
     this.mostrarModalPago.set(false);
+    this.pedidoCreadoId.set(null);
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
-    alert('¡Pedido realizado con éxito! Tu pedido está siendo preparado.');
-    // Se queda en la carta (no hay ruta de historial activa)
+    alert('¡Pedido realizado con éxito!');
     this.router.navigate(['/cliente/carta']);
   }
 

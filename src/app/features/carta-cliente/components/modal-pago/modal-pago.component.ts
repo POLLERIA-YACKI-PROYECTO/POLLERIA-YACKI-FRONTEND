@@ -1,8 +1,30 @@
 // src/app/features/carta-cliente/components/modal-pago/modal-pago.component.ts
-import { Component, Input, Output, EventEmitter, signal, OnChanges, inject } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  signal,
+  OnChanges,
+  SimpleChanges,
+  inject
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../../../core/services/auth.service';
+
+type EstadoPago =
+  | 'formulario'
+  | 'creando'
+  | 'qr_yape_plin'
+  | 'qr_izipay'
+  | 'maquina_izipay'
+  | 'efectivo_caja'
+  | 'exitoso'
+  | 'error';
+
+type MetodoPago = 'efectivo' | 'yape' | 'plin' | 'transferencia' | 'tarjeta';
 
 @Component({
   selector: 'app-modal-pago',
@@ -13,58 +35,91 @@ import { AuthService } from '../../../../core/services/auth.service';
 })
 export class ModalPagoComponent implements OnChanges {
   private authService = inject(AuthService);
+  private sanitizer = inject(DomSanitizer);
 
   @Input() visible = false;
   @Input() total = 0;
   @Input() cargando = false;
+  @Input() pedidoId: number | null = null;
+  @Input() numeroYape: string = '902458936';
+  @Input() numeroPlin: string = '902458936';
 
   @Output() cerrar = new EventEmitter<void>();
   @Output() confirmar = new EventEmitter<any>();
+  @Output() subirComprobante = new EventEmitter<{ pedidoId: number; archivo: File }>();
+  @Output() confirmarEfectivoCaja = new EventEmitter<{ pedidoId: number }>();
+  @Output() confirmarMaquina = new EventEmitter<{ pedidoId: number }>();
 
-  metodoPago = signal('efectivo');
+  metodoPago = signal<MetodoPago>('efectivo');
   clienteNombre = signal('');
   telefono = signal('');
   direccion = signal('');
   referencia = signal('');
   observaciones = signal('');
-  tipoEntrega = signal('local');
-  estadoPago = signal<'formulario' | 'procesando' | 'exitoso' | 'error'>('formulario');
+  tipoEntrega = signal('delivery');
+  estadoPago = signal<EstadoPago>('formulario');
   mensajeError = signal('');
+  qrDataUrl = signal<string>('');
 
-  // Métodos aceptados por el backend del portal cliente.
+  // ✅ Sub-opción transferencia
+  tipoTransferencia = signal<'qr' | 'maquina'>('qr');
+
+  // ✅ Archivo del comprobante
+  comprobanteArchivo = signal<File | null>(null);
+  comprobantePreview = signal<string>('');
+
   metodosPago = [
-    { id: 'efectivo', label: 'Efectivo' },
-    { id: 'tarjeta', label: 'Tarjeta' },
-    { id: 'yape', label: 'Yape' }
+    { id: 'efectivo' as MetodoPago, label: 'Efectivo', sub: 'Pagar en caja', icon: 'efectivo' },
+    { id: 'yape' as MetodoPago, label: 'Yape', sub: 'QR', icon: 'yape' },
+    { id: 'plin' as MetodoPago, label: 'Plin', sub: 'QR', icon: 'plin' },
+    { id: 'transferencia' as MetodoPago, label: 'Transferencia', sub: 'QR / POS', icon: 'transferencia' },
+    { id: 'tarjeta' as MetodoPago, label: 'Tarjeta', sub: 'Izipay', icon: 'tarjeta' }
   ];
 
-  ngOnChanges(): void {
-    if (this.visible) {
-      this.resetEstado();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['pedidoId'] && this.pedidoId) {
+      this.onPedidoCreado(this.pedidoId);
+      return;
+    }
+
+    if (changes['visible'] && this.visible) {
+      if (this.pedidoId) {
+        this.onPedidoCreado(this.pedidoId);
+      } else {
+        this.resetEstado();
+      }
     }
   }
 
-  get mostrarFormulario(): boolean {
-    return this.estadoPago() === 'formulario';
-  }
+  // ============================================
+  // GETTERS
+  // ============================================
+  get mostrarFormulario(): boolean { return this.estadoPago() === 'formulario'; }
+  get mostrarCreando(): boolean { return this.estadoPago() === 'creando'; }
+  get mostrarQRYapePlin(): boolean { return this.estadoPago() === 'qr_yape_plin'; }
+  get mostrarQRIzipay(): boolean { return this.estadoPago() === 'qr_izipay'; }
+  get mostrarMaquinaIzipay(): boolean { return this.estadoPago() === 'maquina_izipay'; }
+  get mostrarEfectivoCaja(): boolean { return this.estadoPago() === 'efectivo_caja'; }
+  get mostrarExitoso(): boolean { return this.estadoPago() === 'exitoso'; }
+  get mostrarError(): boolean { return this.estadoPago() === 'error'; }
 
-  get mostrarProcesando(): boolean {
-    return this.estadoPago() === 'procesando';
-  }
+  get esYape(): boolean { return this.metodoPago() === 'yape'; }
+  get esPlin(): boolean { return this.metodoPago() === 'plin'; }
+  get esTransferencia(): boolean { return this.metodoPago() === 'transferencia'; }
+  get esEfectivo(): boolean { return this.metodoPago() === 'efectivo'; }
 
-  get mostrarExitoso(): boolean {
-    return this.estadoPago() === 'exitoso';
-  }
-
-  get mostrarError(): boolean {
-    return this.estadoPago() === 'error';
-  }
-
+  // ============================================
+  // RESET
+  // ============================================
   resetEstado(): void {
     const cliente = this.authService.getUsuarioActual() || {};
 
     this.estadoPago.set('formulario');
     this.mensajeError.set('');
+    this.qrDataUrl.set('');
+    this.tipoTransferencia.set('qr');
+    this.comprobanteArchivo.set(null);
+    this.comprobantePreview.set('');
     this.clienteNombre.set(cliente.nombre || '');
     this.telefono.set(cliente.telefono || '');
     this.direccion.set(cliente.direccion || '');
@@ -78,6 +133,9 @@ export class ModalPagoComponent implements OnChanges {
     return `S/ ${num.toFixed(2)}`;
   }
 
+  // ============================================
+  // SUBMIT
+  // ============================================
   onSubmit(): void {
     if (this.cargando) return;
 
@@ -86,15 +144,12 @@ export class ModalPagoComponent implements OnChanges {
       return;
     }
 
-    // Cambiar a estado procesando
-    this.estadoPago.set('procesando');
-
-    // Emitir evento para crear el pedido y redirigir a Izipay
     if (this.tipoEntrega() === 'delivery' && !this.direccion().trim()) {
       alert('Debes ingresar la dirección para delivery.');
-      this.estadoPago.set('formulario');
       return;
     }
+
+    this.estadoPago.set('creando');
 
     this.confirmar.emit({
       metodo: this.metodoPago(),
@@ -104,24 +159,228 @@ export class ModalPagoComponent implements OnChanges {
       referencia: this.referencia(),
       observaciones: this.observaciones(),
       tipoEntrega: this.tipoEntrega(),
-      total: this.total
+      total: this.total,
+      tipoTransferencia: this.esTransferencia ? this.tipoTransferencia() : null
     });
   }
 
+  // ============================================
+  // CUANDO EL PADRE CREA EL PEDIDO
+  // ============================================
+  private onPedidoCreado(pedidoId: number): void {
+    const metodo = this.metodoPago();
+
+    switch (metodo) {
+      case 'efectivo':
+        this.estadoPago.set('efectivo_caja');
+        break;
+
+      case 'yape':
+      case 'plin':
+        this.generarQRYapePlin();
+        this.estadoPago.set('qr_yape_plin');
+        break;
+
+      case 'transferencia':
+        if (this.tipoTransferencia() === 'qr') {
+          this.generarQRIzipay();
+          this.estadoPago.set('qr_izipay');
+        } else {
+          this.estadoPago.set('maquina_izipay');
+        }
+        break;
+
+      case 'tarjeta':
+        // Redirigir a Izipay o mostrar mensaje
+        this.estadoPago.set('maquina_izipay');
+        break;
+
+      default:
+        this.estadoPago.set('exitoso');
+    }
+  }
+
+  // ============================================
+  // GENERAR QR
+  // ============================================
+  private generarQRYapePlin(): void {
+    const metodo = this.metodoPago();
+    const numero = metodo === 'yape' ? this.numeroYape : this.numeroPlin;
+    const nombre = metodo === 'yape' ? 'Yape' : 'Plin';
+    const color = metodo === 'yape' ? '#6E00A0' : '#00C3B4';
+
+    const svg = this.generarQRSVG(nombre, numero, color);
+    this.qrDataUrl.set(svg);
+  }
+
+  private generarQRIzipay(): void {
+    const svg = this.generarQRSVG('Izipay', 'Transferencia', '#F58220');
+    this.qrDataUrl.set(svg);
+  }
+
+  private generarQRSVG(nombre: string, numero: string, color: string): string {
+    const tamano = 25;
+    const celda = 8;
+    const padding = 40;
+    const dimension = tamano * celda + padding * 2;
+
+    let celdas = '';
+    const semilla = this.hashCode(numero + nombre);
+
+    for (let y = 0; y < tamano; y++) {
+      for (let x = 0; x < tamano; x++) {
+        const esEsquinaTL = x < 7 && y < 7;
+        const esEsquinaTR = x >= tamano - 7 && y < 7;
+        const esEsquinaBL = x < 7 && y >= tamano - 7;
+
+        let relleno = false;
+
+        if (esEsquinaTL || esEsquinaTR || esEsquinaBL) {
+          const lx = esEsquinaTR ? x - (tamano - 7) : x;
+          const ly = esEsquinaBL ? y - (tamano - 7) : y;
+          const enBorde = lx === 0 || lx === 6 || ly === 0 || ly === 6;
+          const enCentro = lx >= 2 && lx <= 4 && ly >= 2 && ly <= 4;
+          relleno = enBorde || enCentro;
+        } else {
+          const valor = (semilla + x * 7 + y * 13) % 3;
+          relleno = valor === 0;
+        }
+
+        if (relleno) {
+          celdas += `<rect x="${padding + x * celda}" y="${padding + y * celda}" width="${celda}" height="${celda}" fill="#000000"/>`;
+        }
+      }
+    }
+
+    const centroX = dimension / 2;
+    const centroY = dimension / 2;
+    const logoSize = 100;
+
+    const logo = `
+      <rect x="${centroX - logoSize / 2 - 8}" y="${centroY - logoSize / 2 - 8}" 
+            width="${logoSize + 16}" height="${logoSize + 16}" 
+            fill="#ffffff" rx="12"/>
+      <rect x="${centroX - logoSize / 2}" y="${centroY - logoSize / 2}" 
+            width="${logoSize}" height="${logoSize}" 
+            fill="${color}" rx="10"/>
+      <text x="${centroX}" y="${centroY + 8}" 
+            font-family="Arial, sans-serif" font-size="20" font-weight="bold" 
+            fill="#ffffff" text-anchor="middle">${nombre}</text>
+    `;
+
+    const svgContent = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dimension} ${dimension + 60}" width="100%" height="100%">
+        <rect width="${dimension}" height="${dimension + 60}" fill="#ffffff"/>
+        <rect x="20" y="20" width="${dimension - 40}" height="${dimension - 40}" fill="#ffffff" rx="20" stroke="${color}" stroke-width="2"/>
+        ${celdas}
+        ${logo}
+        <text x="${dimension / 2}" y="${dimension + 25}" 
+              font-family="Arial, sans-serif" font-size="15" font-weight="bold" 
+              fill="${color}" text-anchor="middle">${nombre} · ${numero}</text>
+      </svg>
+    `;
+
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
+  }
+
+  private hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  // ============================================
+  // SELECCIONAR COMPROBANTE
+  // ============================================
+  onComprobanteSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const archivo = input.files[0];
+
+    if (archivo.size > 5 * 1024 * 1024) {
+      alert('El archivo no debe superar los 5MB');
+      return;
+    }
+
+    if (!/image\/(jpeg|jpg|png|webp)|application\/pdf/.test(archivo.type)) {
+      alert('Solo se permiten imágenes o PDF');
+      return;
+    }
+
+    this.comprobanteArchivo.set(archivo);
+
+    if (archivo.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.comprobantePreview.set(e.target?.result as string);
+      };
+      reader.readAsDataURL(archivo);
+    } else {
+      this.comprobantePreview.set('');
+    }
+  }
+
+  quitarComprobante(): void {
+    this.comprobanteArchivo.set(null);
+    this.comprobantePreview.set('');
+  }
+
+  // ============================================
+  // CONFIRMAR CON COMPROBANTE (Yape/Plin/Izipay QR)
+  // ============================================
+  confirmarConComprobante(): void {
+    const archivo = this.comprobanteArchivo();
+    if (!archivo) {
+      alert('Debes adjuntar el comprobante de pago');
+      return;
+    }
+    if (!this.pedidoId) {
+      alert('Error: No hay pedido asociado');
+      return;
+    }
+
+    this.estadoPago.set('creando');
+
+    this.subirComprobante.emit({
+      pedidoId: this.pedidoId,
+      archivo
+    });
+  }
+
+  // ============================================
+  // CONFIRMAR EFECTIVO
+  // ============================================
+  confirmarEfectivo(): void {
+    if (!this.pedidoId) return;
+    this.estadoPago.set('exitoso');
+    this.confirmarEfectivoCaja.emit({ pedidoId: this.pedidoId });
+  }
+
+  // ============================================
+  // CONFIRMAR MÁQUINA IZIPAY
+  // ============================================
+  confirmarMaquinaIzipay(): void {
+    if (!this.pedidoId) return;
+    this.estadoPago.set('exitoso');
+    this.confirmarMaquina.emit({ pedidoId: this.pedidoId });
+  }
+
+  // ============================================
+  // CERRAR
+  // ============================================
   cerrarModal(): void {
     if (this.cargando) return;
     this.resetEstado();
     this.cerrar.emit();
   }
 
-  // ✅ Cuando Izipay confirma el pago (llamado desde el padre)
-  pagoExitoso(): void {
-    this.estadoPago.set('exitoso');
-    setTimeout(() => {
-      this.cerrarModal();
-    }, 3000);
-  }
-
+  // ============================================
+  // ERROR
+  // ============================================
   pagoError(mensaje: string): void {
     this.estadoPago.set('error');
     this.mensajeError.set(mensaje || 'Error al procesar el pago');
@@ -129,5 +388,19 @@ export class ModalPagoComponent implements OnChanges {
 
   reintentar(): void {
     this.resetEstado();
+  }
+
+  // ============================================
+  // SVG DE ICONOS
+  // ============================================
+  getMetodoPagoSVG(metodo: string): SafeHtml {
+    const icons: Record<string, string> = {
+      efectivo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 10v4M18 10v4"/></svg>`,
+      yape: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M8 12l3 3 5-6"/></svg>`,
+      plin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 7v5l3 2"/></svg>`,
+      transferencia: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M3 12h18"/><path d="M18 7l5 5-5 5"/><path d="M6 7l-5 5 5 5"/></svg>`,
+      tarjeta: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="6" cy="15" r="1"/></svg>`
+    };
+    return this.sanitizer.bypassSecurityTrustHtml(icons[metodo] || icons['efectivo']);
   }
 }

@@ -31,8 +31,14 @@ export class LoginClienteComponent implements OnInit {
   showPassword = signal(false);
   currentYear = new Date().getFullYear();
 
-  currentUser = signal<any>(this.authService.getUsuarioActual());
-  isLoggedIn = computed(() => !!this.currentUser());
+  // ✅ CAMBIO: Ya NO usamos signal para el usuario actual
+  // Esto evita que al recargar muestre la vista de perfil
+  currentUser = signal<any>(null);
+
+  // ✅ CAMBIO: isLoggedIn ahora depende de una bandera de sesión
+  // que se resetea al recargar (solo se activa tras login exitoso en esta sesión)
+  private sesionActivaEnEstaVista = signal(false);
+  isLoggedIn = computed(() => this.sesionActivaEnEstaVista());
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -40,21 +46,33 @@ export class LoginClienteComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
 
- this.registerForm = this.fb.group({
-  nombre: ['', [Validators.required, Validators.minLength(2)]],
-  email: ['', [Validators.required, Validators.email]],
-  telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
-  direccion: ['', [Validators.required, Validators.minLength(5)]],
-  password: ['', [Validators.required, Validators.minLength(6)]]
-});
+    this.registerForm = this.fb.group({
+      nombre: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{9}$')]],
+      direccion: ['', [Validators.required, Validators.minLength(5)]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
   }
 
   ngOnInit(): void {
-    // Si ya hay sesión de cliente, redirigir directo a la carta
-    if (this.authService.isCliente() && this.authService.getToken()) {
-      console.log('✅ Sesión de cliente ya activa → /cliente/carta');
-      this.router.navigate(['/cliente/carta']);
-    }
+    // ✅ CAMBIO: Al recargar, SIEMPRE limpiamos el estado
+    // y forzamos la vista de login/registro
+    this.sesionActivaEnEstaVista.set(false);
+    this.currentUser.set(null);
+    this.isLoginMode.set(true);
+    this.errorMessage.set('');
+    this.loginForm.reset();
+    this.registerForm.reset();
+
+    // ❌ ELIMINADO: Ya NO redirigimos automáticamente a /cliente/carta
+    // if (this.authService.isCliente() && this.authService.getToken()) {
+    //   this.router.navigate(['/cliente/carta']);
+    // }
+
+    // ✅ Opcional: Si quieres que el usuario tenga que volver a loguearse,
+    // puedes limpiar el token viejo al entrar aquí:
+    // this.authService.logout();
   }
 
   toggleMode(): void {
@@ -87,7 +105,12 @@ export class LoginClienteComponent implements OnInit {
     this.authService.loginCliente({ email, password }).subscribe({
       next: (response) => {
         this.isLoading.set(false);
+
+        // ✅ CAMBIO: Activamos la bandera de sesión SOLO aquí,
+        // después de un login exitoso en esta vista
+        this.sesionActivaEnEstaVista.set(true);
         this.currentUser.set(this.authService.getUsuarioActual());
+
         console.log('✅ Login exitoso → /cliente/carta');
         this.router.navigate(['/cliente/carta']);
       },
@@ -121,7 +144,11 @@ export class LoginClienteComponent implements OnInit {
     this.authService.registerCliente(payload).subscribe({
       next: () => {
         this.isLoading.set(false);
+
+        // ✅ CAMBIO: Activamos la bandera tras registro exitoso
+        this.sesionActivaEnEstaVista.set(true);
         this.currentUser.set(this.authService.getUsuarioActual());
+
         console.log('✅ Registro exitoso → /cliente/carta');
         this.router.navigate(['/cliente/carta']);
       },
@@ -143,16 +170,18 @@ export class LoginClienteComponent implements OnInit {
 
   cerrarSesion(): void {
     this.authService.logout();
+    this.sesionActivaEnEstaVista.set(false);
     this.currentUser.set(null);
     this.isLoginMode.set(true);
     this.loginForm.reset();
     this.registerForm.reset();
+    this.errorMessage.set('');
   }
+
   onTelefonoInput(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  // Solo números, máximo 9 dígitos
-  const limpio = input.value.replace(/\D/g, '').slice(0, 9);
-  input.value = limpio;
-  this.registerForm.get('telefono')?.setValue(limpio, { emitEvent: false });
-}
+    const input = event.target as HTMLInputElement;
+    const limpio = input.value.replace(/\D/g, '').slice(0, 9);
+    input.value = limpio;
+    this.registerForm.get('telefono')?.setValue(limpio, { emitEvent: false });
+  }
 }

@@ -1,4 +1,5 @@
-// src/app/features/carta-cliente/components/modal-pago/modal-pago.component.scss
+/* src/app/features/carta-cliente/components/modal-pago/modal-pago.component.scss */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -42,6 +43,9 @@
     transform: translate(-50%, -50%) scale(1);
   }
 
+  /* ============================================
+     HEADER
+     ============================================ */
   .modal-header {
     padding: 18px 24px 14px;
     border-bottom: 3px solid #fef900;
@@ -99,6 +103,9 @@
     }
   }
 
+  /* ============================================
+     BODY
+     ============================================ */
   .modal-body {
     padding: 20px 24px;
     overflow-y: auto;
@@ -114,6 +121,9 @@
     }
   }
 
+  /* ============================================
+     RESUMEN
+     ============================================ */
   .resumen-pago {
     background: linear-gradient(135deg, #01a850, #00c060);
     color: #fff;
@@ -144,6 +154,9 @@
     }
   }
 
+  /* ============================================
+     TIPO DE ENTREGA
+     ============================================ */
   .tipo-entrega {
     margin-bottom: 18px;
 
@@ -205,6 +218,9 @@
     }
   }
 
+  /* ============================================
+     MÉTODOS DE PAGO
+     ============================================ */
   .metodos-pago {
     margin-bottom: 18px;
 
@@ -218,14 +234,16 @@
 
     .metodos-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
 
       .metodo-item {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 10px 8px;
+        gap: 4px;
+        padding: 10px 6px;
         border: 2px solid #e8e0d6;
         border-radius: 10px;
         cursor: pointer;
@@ -236,18 +254,36 @@
           display: none;
         }
 
+        .metodo-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+
+          svg {
+            stroke: #999;
+            transition: stroke 0.2s ease;
+          }
+        }
+
         .metodo-label {
-          font-size: 12px;
-          font-weight: 500;
-          color: #424242;
+          font-size: 11px;
+          font-weight: 600;
+          color: #666;
         }
 
         &.active {
           border-color: #c5302a;
           background: #fdf5f3;
           box-shadow: 0 0 0 3px rgba(197, 48, 42, 0.15);
+
           .metodo-label {
             color: #c5302a;
+          }
+
+          .metodo-icon svg {
+            stroke: #c5302a;
           }
         }
 
@@ -259,6 +295,9 @@
     }
   }
 
+  /* ============================================
+     DATOS CLIENTE
+     ============================================ */
   .datos-cliente {
     .campo {
       margin-bottom: 12px;
@@ -301,18 +340,21 @@
     }
   }
 
-  .estado-procesando {
+  /* ============================================
+     ESTADO: CREANDO
+     ============================================ */
+  .estado-creando {
     text-align: center;
-    padding: 30px 20px;
+    padding: 40px 20px;
 
     .spinner-pago {
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       border: 4px solid #e8e0d6;
       border-top-color: #c5302a;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
+      margin: 0 auto 20px;
     }
 
     .procesando-label {
@@ -328,42 +370,323 @@
       display: block;
       margin-top: 4px;
     }
+  }
 
-    .izipay-logo {
-      margin-top: 16px;
+  /* ============================================
+     ESTADO: QR
+     ============================================ */
+  .estado-qr {
+    padding: 8px 0;
+    text-align: center;
+
+    .qr-header {
+      margin-bottom: 20px;
+
+      h3 {
+        margin: 12px 0 4px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #2d1f14;
+      }
+
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: #888;
+      }
+    }
+
+    .metodo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+
+      &.yape {
+        background: linear-gradient(135deg, #6E00A0, #8B2BC7);
+      }
+
+      &.plin {
+        background: linear-gradient(135deg, #00C3B4, #00D9C9);
+      }
+
+      .metodo-badge-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        svg {
+          stroke: #ffffff;
+        }
+      }
+    }
+
+    .qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .qr-imagen {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      background: #fff;
-      padding: 12px 20px;
-      border-radius: 10px;
+      width: 260px;
+      height: 260px;
+      padding: 10px;
+      background: #ffffff;
       border: 2px solid #e8e0d6;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 
-      svg {
-        stroke: #c5302a;
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+    }
+
+    .qr-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+
+      .spinner-qr {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e8e0d6;
+        border-top-color: #c5302a;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
       }
 
       span {
-        font-size: 16px;
+        font-size: 14px;
+        color: #888;
+      }
+    }
+
+    .qr-monto {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #01a850, #00c060);
+      border-radius: 12px;
+      color: #ffffff;
+
+      .monto-label {
+        font-size: 12px;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .monto-valor {
+        font-size: 26px;
+        font-weight: 800;
+        color: #fef900;
+      }
+    }
+
+    .qr-instrucciones {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      background: #faf8f5;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .instruccion {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #424242;
+
+      .instruccion-num {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        background: #c5302a;
+        color: #ffffff;
+        border-radius: 50%;
+        font-size: 12px;
         font-weight: 700;
+      }
+    }
+
+    .qr-acciones {
+      margin-bottom: 12px;
+
+      .btn-ya-pague {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, #01a850, #00c060);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        svg {
+          stroke: #ffffff;
+        }
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(1, 168, 80, 0.35);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+
+    .qr-numero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #666;
+
+      strong {
         color: #2d1f14;
+        font-size: 15px;
+        letter-spacing: 0.5px;
       }
     }
   }
 
+  /* ============================================
+     ESTADO: ESPERANDO
+     ============================================ */
+  .estado-esperando {
+    text-align: center;
+    padding: 40px 20px;
+
+    .spinner-esperando {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+
+      .pulse-ring {
+        position: absolute;
+        inset: 0;
+        border: 3px solid #01a850;
+        border-radius: 50%;
+        animation: pulseRing 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .pulse-dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 32px;
+        height: 32px;
+        background: #01a850;
+        border-radius: 50%;
+        animation: pulseDot 1.8s ease-in-out infinite;
+      }
+    }
+
+    .procesando-label {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d1f14;
+      display: block;
+    }
+
+    .procesando-sub {
+      font-size: 14px;
+      color: #888;
+      display: block;
+      margin-top: 4px;
+    }
+  }
+
+  /* ============================================
+     ESTADO: PROCESANDO
+     ============================================ */
+  .estado-procesando {
+    text-align: center;
+    padding: 40px 20px;
+
+    .spinner-pago {
+      width: 56px;
+      height: 56px;
+      border: 4px solid #e8e0d6;
+      border-top-color: #c5302a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    .procesando-label {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d1f14;
+      display: block;
+    }
+
+    .procesando-sub {
+      font-size: 14px;
+      color: #888;
+      display: block;
+      margin-top: 4px;
+    }
+  }
+
+  /* ============================================
+     ESTADO: EXITOSO
+     ============================================ */
   .estado-exitoso {
     text-align: center;
-    padding: 30px 20px;
+    padding: 40px 20px;
 
-    svg {
-      stroke: #01a850;
-      margin-bottom: 12px;
+    .exito-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      background: rgba(1, 168, 80, 0.1);
+      border-radius: 50%;
+
+      svg {
+        stroke: #01a850;
+      }
     }
 
     .exitoso-label {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 20px;
+      font-weight: 700;
       color: #01a850;
       display: block;
     }
@@ -372,17 +695,20 @@
       font-size: 14px;
       color: #888;
       display: block;
-      margin-top: 4px;
+      margin-top: 6px;
     }
   }
 
+  /* ============================================
+     ESTADO: ERROR
+     ============================================ */
   .estado-error {
     text-align: center;
-    padding: 30px 20px;
+    padding: 40px 20px;
 
     svg {
       stroke: #ea1b5c;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .error-label {
@@ -422,6 +748,9 @@
     }
   }
 
+  /* ============================================
+     FOOTER
+     ============================================ */
   .modal-footer {
     padding: 14px 24px 20px;
     border-top: 1px solid #f0ece4;
@@ -485,25 +814,40 @@
         opacity: 0.6;
         cursor: not-allowed;
       }
-
-      .spinner-btn {
-        width: 20px;
-        height: 20px;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        border-top-color: #fff;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        display: inline-block;
-      }
     }
   }
 }
 
+/* ============================================
+   ANIMACIONES
+   ============================================ */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-// Responsive
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 768px) {
   .modal-pago {
     max-width: 480px;
@@ -519,6 +863,11 @@
     .modal-footer {
       padding: 12px 18px 16px;
       border-radius: 0 0 16px 16px;
+    }
+
+    .estado-qr .qr-imagen {
+      width: 220px;
+      height: 220px;
     }
   }
 }
@@ -552,12 +901,13 @@
     .resumen-pago .total-monto { font-size: 24px; }
 
     .metodos-pago .metodos-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 6px;
 
       .metodo-item {
         padding: 8px 4px;
-        .metodo-label { font-size: 11px; }
+        .metodo-label { font-size: 10px; }
+        .metodo-icon { width: 22px; height: 22px; }
       }
     }
 
@@ -566,5 +916,504 @@
       padding: 8px 12px;
       svg { width: 16px; height: 16px; }
     }
+
+    .estado-qr {
+      .qr-imagen {
+        width: 200px;
+        height: 200px;
+      }
+
+      .qr-header h3 { font-size: 17px; }
+
+      .qr-monto .monto-valor { font-size: 22px; }
+
+      .instruccion {
+        font-size: 12px;
+        gap: 8px;
+      }
+    }
   }
+}
+/* ============================================
+   GRID DE 5 MÉTODOS
+   ============================================ */
+.metodos-grid-5 {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+
+.metodo-item {
+  .metodo-sub {
+    font-size: 9px;
+    color: #999;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  &.active .metodo-sub {
+    color: #c5302a;
+  }
+}
+
+/* ============================================
+   SUB-OPCIONES (Transferencia)
+   ============================================ */
+.sub-opciones {
+  margin-top: 12px;
+  padding: 12px;
+  background: #faf8f5;
+  border-radius: 10px;
+  border: 1px dashed #d0c8bc;
+
+  .sub-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #424242;
+    margin-bottom: 8px;
+  }
+
+  .sub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+
+    .sub-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border: 2px solid #e8e0d6;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      svg {
+        stroke: #999;
+      }
+
+      &:hover:not(:disabled) {
+        border-color: #c5302a;
+        color: #c5302a;
+
+        svg {
+          stroke: #c5302a;
+        }
+      }
+
+      &.active {
+        border-color: #c5302a;
+        background: #c5302a;
+        color: #fff;
+
+        svg {
+          stroke: #fff;
+        }
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+/* ============================================
+   ESTADO: EFECTIVO - CANCELAR EN CAJA
+   ============================================ */
+.estado-efectivo,
+.estado-maquina,
+.estado-pasarela {
+  text-align: center;
+  padding: 20px 10px;
+
+  .efectivo-icon,
+  .maquina-icon,
+  .pasarela-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    background: rgba(1, 168, 80, 0.1);
+    border-radius: 50%;
+
+    svg {
+      stroke: #01a850;
+    }
+  }
+
+  .efectivo-title,
+  .maquina-title,
+  .pasarela-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2d1f14;
+    margin: 0 0 8px;
+  }
+
+  .efectivo-sub,
+  .maquina-sub,
+  .pasarela-sub {
+    font-size: 14px;
+    color: #888;
+    margin: 0 0 20px;
+    line-height: 1.5;
+  }
+
+  .efectivo-info {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 20px;
+      background: #faf8f5;
+      border-radius: 10px;
+      border: 1px solid #e8e0d6;
+      min-width: 120px;
+
+      .info-label {
+        font-size: 10px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+
+      .info-valor {
+        font-size: 18px;
+        font-weight: 700;
+        color: #01a850;
+      }
+    }
+  }
+
+  .efectivo-pasos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: #faf8f5;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: left;
+
+    .paso {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #424242;
+
+      .paso-num {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        background: #01a850;
+        color: #ffffff;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      strong {
+        color: #c5302a;
+      }
+    }
+  }
+
+  .efectivo-acciones {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .btn-ya-pague {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #01a850, #00c060);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      svg {
+        stroke: #ffffff;
+      }
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(1, 168, 80, 0.35);
+      }
+    }
+
+    .btn-cerrar-modal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 24px;
+      background: transparent;
+      color: #666;
+      border: 2px solid #e8e0d6;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      svg {
+        stroke: currentColor;
+      }
+
+      &:hover {
+        border-color: #c5302a;
+        color: #c5302a;
+      }
+    }
+  }
+
+  /* Pasarela específico */
+  .pasarela-progress {
+    margin: 20px 0;
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e8e0d6;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+
+      .progress-fill {
+        height: 100%;
+        width: 60%;
+        background: linear-gradient(90deg, #01a850, #00c060);
+        border-radius: 999px;
+        animation: progressPulse 1.5s ease-in-out infinite;
+      }
+    }
+
+    .progress-text {
+      font-size: 12px;
+      color: #888;
+    }
+  }
+
+  .pasarela-info {
+    padding: 12px 16px;
+    background: #faf8f5;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+  }
+}
+
+@keyframes progressPulse {
+  0%, 100% {
+    width: 30%;
+    opacity: 1;
+  }
+  50% {
+    width: 90%;
+    opacity: 0.8;
+  }
+}
+
+/* ============================================
+   MÉTODO BADGE IZIPAY
+   ============================================ */
+.metodo-badge.izipay {
+  background: linear-gradient(135deg, #F58220, #FF9F45);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 480px) {
+  .metodos-grid-5 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .sub-opciones .sub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .estado-efectivo .efectivo-info,
+  .estado-maquina .efectivo-info {
+    flex-direction: column;
+    align-items: center;
+
+    .info-item {
+      width: 100%;
+    }
+  }
+}
+/* ============================================
+   SUBIR CAPTURA / COMPROBANTE
+   ============================================ */
+.subir-captura {
+  margin: 16px 0;
+  padding: 14px;
+  background: #faf8f5;
+  border-radius: 12px;
+  border: 2px dashed #d0c8bc;
+
+  .captura-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: #ffffff;
+    border: 2px solid #e8e0d6;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5e412f;
+    transition: all 0.2s ease;
+
+    svg {
+      stroke: #c5302a;
+    }
+
+    &:hover {
+      border-color: #c5302a;
+      background: #fdf5f3;
+    }
+  }
+
+  .captura-preview {
+    position: relative;
+    margin-top: 12px;
+
+    img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #e8e0d6;
+      background: #ffffff;
+    }
+
+    .btn-quitar {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ea1b5c;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      svg {
+        stroke: #ffffff;
+      }
+
+      &:hover {
+        background: #c5302a;
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .archivo-adjunto {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid #e8e0d6;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #5e412f;
+
+    svg {
+      stroke: #c5302a;
+      flex-shrink: 0;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
+/* Badge pendiente */
+.pendiente-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px 18px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 50%;
+    animation: pulseDotBadge 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes pulseDotBadge {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+/* Método badge izipay */
+.metodo-badge.izipay {
+  background: linear-gradient(135deg, #F58220, #FF9F45);
+}
+
+/* Botón ya pagué deshabilitado */
+.btn-ya-pague:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }

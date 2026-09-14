@@ -32,6 +32,10 @@ export class VentaService {
   obtenerVentasPorTipo(tipo: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/tipo/${tipo}`, { headers: this.getHeaders() });
   }
+  // src/app/core/services/venta.service.ts
+obtenerPedidosWebPendientes(): Observable<any[]> {
+  return this.http.get<any[]>(`${this.apiUrl}/pedidos-web/pendientes`);
+}
 
   obtenerResumenPorUsuario(usuarioId: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/resumen/usuario/${usuarioId}`, { headers: this.getHeaders() });

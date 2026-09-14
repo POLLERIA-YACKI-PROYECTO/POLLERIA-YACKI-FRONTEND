@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
+import { PedidoClienteService } from '../../../core/services/pedido-cliente.service'; // ✅ NUEVO
 import { AuthService } from '../../../core/services/auth.service';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -19,6 +20,7 @@ import { Subject, takeUntil } from 'rxjs';
 export class VentasAdminComponent implements OnInit, OnDestroy {
   private pedidoService = inject(PedidoService);
   private ventaService = inject(VentaService);
+  private pedidoClienteService = inject(PedidoClienteService); // ✅ NUEVO
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
@@ -55,8 +57,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   tipoPago = signal<string>('');
   mostrarMensajeExito = signal<boolean>(false);
   mostrarResumen = signal<boolean>(false);
-
-  // Resultado del pago
   resultadoPago = signal<any>(null);
 
   ngOnInit(): void {
@@ -65,7 +65,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login-admin']);
       return;
     }
-    console.log('👤 Usuario admin:', this.usuario());
     this.cargarDatos();
   }
 
@@ -74,10 +73,14 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // ============================================
+  // ✅ CARGAR DATOS - Combina pedidos + ventas + pedidos web
+  // ============================================
   cargarDatos(): void {
     this.loading.set(true);
     this.errorMessage.set('');
 
+    // 1. Pedidos pendientes (tabla pedidos)
     this.pedidoService.obtenerPedidosPendientes()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -86,13 +89,13 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             pedido =>
               pedido.pagado !== 1 &&
               pedido.pagado !== true &&
-              pedido.estado !== 'cancelado' &&
-              pedido.estado !== 'cancelada'
+              pedido.estado !== 'cancelado'
           );
 
           const pendientesConNombre = pendientes.map(p => ({
             ...p,
-            usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido'
+            usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido',
+            origen: 'pedido'
           }));
 
           this.pedidosPendientes.set(pendientesConNombre);
@@ -100,13 +103,42 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.checkLoading();
         },
         error: (error: any) => {
-          console.error('Error al cargar pedidos pendientes:', error);
+          console.error('Error pedidos pendientes:', error);
           this.pedidosPendientes.set([]);
           this.totalPendientes.set(0);
           this.checkLoading();
         }
       });
 
+    // 2. ✅ Pedidos web pendientes (tabla pedidos_cliente)
+    this.ventaService.obtenerPedidosWebPendientes()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (pedidosWeb: any[]) => {
+          const webPendientes = (Array.isArray(pedidosWeb) ? pedidosWeb : []).map(p => ({
+            ...p,
+            usuario_nombre: 'Cliente Web',
+            origen: 'pedido_web'
+          }));
+
+          const todosPendientes = [...this.pedidosPendientes(), ...webPendientes];
+          todosPendientes.sort((a, b) => {
+            const fA = new Date(a.created_at).getTime();
+            const fB = new Date(b.created_at).getTime();
+            return fB - fA;
+          });
+
+          this.pedidosPendientes.set(todosPendientes);
+          this.totalPendientes.set(todosPendientes.length);
+          this.checkLoading();
+        },
+        error: (error: any) => {
+          console.error('Error pedidos web pendientes:', error);
+          this.checkLoading();
+        }
+      });
+
+    // 3. Ventas completadas (ventas + pedidos_cliente pagados)
     this.ventaService.obtenerVentas()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -115,7 +147,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
           const ventasConNombre = ventasCompletadas.map(v => ({
             ...v,
-            usuario_nombre: v.usuario_nombre_completo || v.usuario_nombre || 'Desconocido'
+            usuario_nombre: v.usuario_nombre_completo || v.usuario_nombre || 'Desconocido',
+            origen: v.origen || 'venta'
           }));
 
           this.pedidosPagados.set(ventasConNombre);
@@ -125,7 +158,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.checkLoading();
         },
         error: (error: any) => {
-          console.error('Error al cargar ventas:', error);
+          console.error('Error ventas:', error);
           this.pedidosPagados.set([]);
           this.ventasLocal.set([]);
           this.ventasDelivery.set([]);
@@ -197,7 +230,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.totalVentasDelivery.set(delivery.length);
   }
 
-  // ✅ ABRIR MODAL DE PAGO
   abrirModalPago(pedido: any): void {
     if (!pedido || !pedido.id) {
       alert('Error: Pedido inválido');
@@ -210,7 +242,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Resetear estados
     this.pagoCompletado.set(false);
     this.procesandoPago.set(false);
     this.mostrarMensajeExito.set(false);
@@ -224,7 +255,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.mostrarModalPago.set(true);
   }
 
-  // ✅ CERRAR MODAL DE PAGO
   cerrarModalPago(): void {
     this.mostrarModalPago.set(false);
     this.pedidoEnPago.set(null);
@@ -237,7 +267,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.resultadoPago.set(null);
   }
 
-  // ✅ CONFIRMAR PAGO DESDE EL MODAL
+  // ============================================
+  // ✅ CONFIRMAR PAGO - Detecta si es pedido normal o web
+  // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoEnPago();
     if (!pedido) return;
@@ -248,19 +280,24 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Mostrar estado de procesamiento
     this.procesandoPago.set(true);
     this.mensajePago.set('Procesando pago...');
     this.tipoPago.set('procesando');
 
-    this.pedidoService.marcarPagado(pedido.id, metodo)
+    // ✅ Detectar origen del pedido
+    const esPedidoWeb = pedido.origen === 'pedido_web';
+
+    const request$ = esPedidoWeb
+      ? this.pedidoClienteService.marcarPagado(pedido.id, metodo)
+      : this.pedidoService.marcarPagado(pedido.id, metodo);
+
+    request$
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          console.log('✅ Respuesta del servidor:', response);
+          console.log('✅ Respuesta:', response);
 
-          if (response && response.success === true) {
-            // Pago completado con éxito
+          if (response && (response.success === true || response.pedido)) {
             this.procesandoPago.set(false);
             this.pagoCompletado.set(true);
             this.mostrarMensajeExito.set(true);
@@ -279,7 +316,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
               this.cerrarModalPago();
               this.cargarDatos();
             }, 3000);
-
           } else {
             this.procesandoPago.set(false);
             this.mensajePago.set('Error: Respuesta inesperada del servidor');
@@ -310,7 +346,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ MÉTODOS DE VERIFICACIÓN
   estaPagado(pedido: any): boolean {
     return pedido.pagado === 1 || pedido.pagado === true;
   }
@@ -337,7 +372,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     return this.getEstadoTexto(pedido.estado);
   }
 
-  // ✅ MÉTODOS DE UTILIDAD
   getTipoEntregaLabel(tipo: string): string {
     const labels: any = {
       'local': 'Local',
@@ -435,7 +469,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   recargarDatos(): void {
-    console.log('🔄 Recargando datos manualmente...');
     this.cargarDatos();
   }
 }

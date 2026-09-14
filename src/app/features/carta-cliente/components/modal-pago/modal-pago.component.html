@@ -8,9 +8,20 @@
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 6v6l4 2"/>
       </svg>
-      <h2>Finalizar Pedido</h2>
+      <h2>
+        @switch (estadoPago()) {
+          @case ('formulario') { Finalizar Pedido }
+          @case ('creando') { Procesando }
+          @case ('qr_yape_plin') { Escanear QR }
+          @case ('qr_izipay') { Transferencia Izipay }
+          @case ('maquina_izipay') { Pago en Máquina }
+          @case ('efectivo_caja') { Pagar en Caja }
+          @case ('exitoso') { ¡Pedido Registrado! }
+          @case ('error') { Error }
+        }
+      </h2>
     </div>
-    <button class="btn-cerrar" (click)="cerrarModal()" [disabled]="cargando || mostrarProcesando">
+    <button class="btn-cerrar" (click)="cerrarModal()" [disabled]="cargando">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
         <line x1="18" y1="6" x2="6" y2="18"/>
         <line x1="6" y1="6" x2="18" y2="18"/>
@@ -27,30 +38,21 @@
       </div>
     </div>
 
-    <!-- FORMULARIO DE PAGO -->
-    <ng-container *ngIf="mostrarFormulario">
-      <!-- Tipo de entrega -->
+    <!-- ============================================ -->
+    <!-- FORMULARIO                                   -->
+    <!-- ============================================ -->
+    @if (mostrarFormulario) {
       <div class="tipo-entrega">
         <span class="tipo-label">Tipo de entrega</span>
         <div class="tipo-opciones">
-          <button
-            class="tipo-btn"
-            [class.active]="tipoEntrega() === 'local'"
-            (click)="tipoEntrega.set('local')"
-            [disabled]="cargando"
-          >
+          <button class="tipo-btn" [class.active]="tipoEntrega() === 'local'" (click)="tipoEntrega.set('local')" [disabled]="cargando">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
               <rect x="2" y="7" width="20" height="14" rx="2"/>
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
             </svg>
             Local
           </button>
-          <button
-            class="tipo-btn"
-            [class.active]="tipoEntrega() === 'delivery'"
-            (click)="tipoEntrega.set('delivery')"
-            [disabled]="cargando"
-          >
+          <button class="tipo-btn" [class.active]="tipoEntrega() === 'delivery'" (click)="tipoEntrega.set('delivery')" [disabled]="cargando">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
               <rect x="1" y="4" width="15" height="13" rx="2"/>
               <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
@@ -62,132 +64,394 @@
         </div>
       </div>
 
-      <!-- Métodos de pago -->
       <div class="metodos-pago">
         <span class="metodos-label">Método de pago</span>
-        <div class="metodos-grid">
-          <label class="metodo-item" *ngFor="let metodo of metodosPago"
-                 [class.active]="metodoPago() === metodo.id">
-            <input
-              type="radio"
-              name="metodoPago"
-              [value]="metodo.id"
-              [(ngModel)]="metodoPago"
-              [disabled]="cargando"
-            >
-            <span class="metodo-label">{{ metodo.label }}</span>
-          </label>
+        <div class="metodos-grid metodos-grid-5">
+          @for (metodo of metodosPago; track metodo.id) {
+            <label class="metodo-item" [class.active]="metodoPago() === metodo.id">
+              <input type="radio" name="metodoPago" [value]="metodo.id" [(ngModel)]="metodoPago" [disabled]="cargando">
+              <span class="metodo-icon" [innerHTML]="getMetodoPagoSVG(metodo.icon)"></span>
+              <span class="metodo-label">{{ metodo.label }}</span>
+              <span class="metodo-sub">{{ metodo.sub }}</span>
+            </label>
+          }
         </div>
+
+        @if (esTransferencia) {
+          <div class="sub-opciones">
+            <span class="sub-label">¿Cómo deseas transferir?</span>
+            <div class="sub-grid">
+              <button class="sub-btn" [class.active]="tipoTransferencia() === 'qr'" (click)="tipoTransferencia.set('qr')" [disabled]="cargando">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+                QR Izipay
+              </button>
+              <button class="sub-btn" [class.active]="tipoTransferencia() === 'maquina'" (click)="tipoTransferencia.set('maquina')" [disabled]="cargando">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <rect x="4" y="2" width="16" height="20" rx="2"/>
+                  <line x1="8" y1="6" x2="16" y2="6"/>
+                  <line x1="8" y1="10" x2="16" y2="10"/>
+                  <circle cx="12" cy="16" r="2"/>
+                </svg>
+                Máquina POS
+              </button>
+            </div>
+          </div>
+        }
       </div>
 
-      <!-- Datos del cliente -->
       <div class="datos-cliente">
         <div class="campo">
           <label>Tu nombre (opcional)</label>
-          <input
-            type="text"
-            [(ngModel)]="clienteNombre"
-            placeholder="¿Cómo te llamamos?"
-            class="input-text"
-            [disabled]="cargando"
-          >
+          <input type="text" [(ngModel)]="clienteNombre" placeholder="¿Cómo te llamamos?" class="input-text" [disabled]="cargando">
         </div>
         <div class="campo">
           <label>Teléfono</label>
-          <input
-            type="tel"
-            [(ngModel)]="telefono"
-            placeholder="Ej: 987654321"
-            class="input-text"
-            [disabled]="cargando"
-          >
+          <input type="tel" [(ngModel)]="telefono" placeholder="Ej: 987654321" class="input-text" [disabled]="cargando">
         </div>
-        <div class="campo" *ngIf="tipoEntrega() === 'delivery'">
-          <label>Dirección de entrega</label>
-          <input
-            type="text"
-            [(ngModel)]="direccion"
-            placeholder="Av. Los Pinos 456, Urb. San Isidro"
-            class="input-text"
-            [disabled]="cargando"
-          >
-        </div>
-        <div class="campo" *ngIf="tipoEntrega() === 'delivery'">
-          <label>Referencia</label>
-          <input
-            type="text"
-            [(ngModel)]="referencia"
-            placeholder="Frente a la farmacia, segundo piso"
-            class="input-text"
-            [disabled]="cargando"
-          >
-        </div>
+        @if (tipoEntrega() === 'delivery') {
+          <div class="campo">
+            <label>Dirección de entrega</label>
+            <input type="text" [(ngModel)]="direccion" placeholder="Av. Los Pinos 456" class="input-text" [disabled]="cargando">
+          </div>
+          <div class="campo">
+            <label>Referencia</label>
+            <input type="text" [(ngModel)]="referencia" placeholder="Frente a la farmacia" class="input-text" [disabled]="cargando">
+          </div>
+        }
         <div class="campo">
           <label>Observaciones (opcional)</label>
-          <textarea
-            [(ngModel)]="observaciones"
-            placeholder="Ej: Sin ají, con extra papas..."
-            class="input-textarea"
-            rows="2"
-            [disabled]="cargando"
-          ></textarea>
+          <textarea [(ngModel)]="observaciones" placeholder="Ej: Sin ají, con extra papas..." class="input-textarea" rows="2" [disabled]="cargando"></textarea>
         </div>
       </div>
-    </ng-container>
+    }
 
-    <!-- ESTADO: PROCESANDO PAGO -->
-    <div class="estado-procesando" *ngIf="mostrarProcesando">
-      <div class="spinner-pago"></div>
-      <span class="procesando-label">Procesando pago...</span>
-      <span class="procesando-sub">Registrando tu pedido</span>
-      <div class="izipay-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
-          <rect x="2" y="4" width="20" height="16" rx="2"/>
-          <line x1="2" y1="10" x2="22" y2="10"/>
-          <circle cx="8" cy="14" r="1"/>
-          <circle cx="16" cy="14" r="1"/>
-          <path d="M12 2v20"/>
-        </svg>
-        <span>Pago seleccionado</span>
+    <!-- ============================================ -->
+    <!-- CREANDO                                      -->
+    <!-- ============================================ -->
+    @if (mostrarCreando) {
+      <div class="estado-creando">
+        <div class="spinner-pago"></div>
+        <span class="procesando-label">Procesando...</span>
+        <span class="procesando-sub">Por favor espera un momento</span>
       </div>
-    </div>
+    }
 
-    <!-- ESTADO: PAGO EXITOSO -->
-    <div class="estado-exitoso" *ngIf="mostrarExitoso">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-      <span class="exitoso-label">¡Pago confirmado!</span>
-      <span class="exitoso-sub">Tu pedido está siendo preparado</span>
-    </div>
+    <!-- ============================================ -->
+    <!-- EFECTIVO - PAGAR EN CAJA                     -->
+    <!-- ============================================ -->
+    @if (mostrarEfectivoCaja) {
+      <div class="estado-efectivo">
+        <div class="efectivo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="64" height="64">
+            <rect x="2" y="6" width="20" height="12" rx="2"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M6 10v4M18 10v4"/>
+          </svg>
+        </div>
+        <h3 class="efectivo-title">Paga en Caja</h3>
+        <p class="efectivo-sub">Tu pedido quedará <strong>pendiente</strong> hasta que el cajero confirme el pago</p>
 
-    <!-- ESTADO: ERROR -->
-    <div class="estado-error" *ngIf="mostrarError">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <span class="error-label">Error en el pago</span>
-      <span class="error-sub">{{ mensajeError() }}</span>
-      <button class="btn-reintentar" (click)="reintentar()" [disabled]="cargando">
-        Reintentar
-      </button>
-    </div>
+        <div class="efectivo-info">
+          <div class="info-item">
+            <span class="info-label">Pedido N°</span>
+            <span class="info-valor">#{{ pedidoId }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Total</span>
+            <span class="info-valor">{{ formatearPrecio(total) }}</span>
+          </div>
+        </div>
+
+        <div class="efectivo-pasos">
+          <div class="paso">
+            <div class="paso-num">1</div>
+            <span>Acércate a la caja del local</span>
+          </div>
+          <div class="paso">
+            <div class="paso-num">2</div>
+            <span>Indica tu pedido: <strong>#{{ pedidoId }}</strong></span>
+          </div>
+          <div class="paso">
+            <div class="paso-num">3</div>
+            <span>El cajero confirmará tu pago</span>
+          </div>
+        </div>
+
+        <div class="efectivo-acciones">
+          <button class="btn-ya-pague" (click)="confirmarEfectivo()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Ya estoy en caja
+          </button>
+          <button class="btn-cerrar-modal" (click)="cerrarModal()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ============================================ -->
+    <!-- QR YAPE / PLIN                               -->
+    <!-- ============================================ -->
+    @if (mostrarQRYapePlin) {
+      <div class="estado-qr">
+        <div class="qr-header">
+          <div class="metodo-badge {{ metodoPago() }}">
+            <span class="metodo-badge-icon" [innerHTML]="getMetodoPagoSVG(metodoPago())"></span>
+            <span>{{ esYape ? 'Yape' : 'Plin' }}</span>
+          </div>
+          <h3>Escanea y sube tu captura</h3>
+          <p>1. Escanea el QR · 2. Realiza el pago · 3. Sube tu comprobante</p>
+        </div>
+
+        <div class="qr-container">
+          <div class="qr-imagen">
+            @if (qrDataUrl()) {
+              <img [src]="qrDataUrl()" alt="QR de pago" width="220" height="220">
+            }
+          </div>
+          <div class="qr-monto">
+            <span class="monto-label">Monto a pagar</span>
+            <span class="monto-valor">{{ formatearPrecio(total) }}</span>
+          </div>
+        </div>
+
+        <div class="qr-numero">
+          <span>O yapea al:</span>
+          <strong>{{ esYape ? numeroYape : numeroPlin }}</strong>
+        </div>
+
+        <!-- ✅ SUBIR CAPTURA -->
+        <div class="subir-captura">
+          <label class="captura-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Adjuntar captura del pago</span>
+            <input type="file" accept="image/*,application/pdf" (change)="onComprobanteSeleccionado($event)" hidden>
+          </label>
+
+          @if (comprobantePreview()) {
+            <div class="captura-preview">
+              <img [src]="comprobantePreview()" alt="Captura">
+              <button type="button" class="btn-quitar" (click)="quitarComprobante()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          }
+
+          @if (comprobanteArchivo() && !comprobantePreview()) {
+            <div class="archivo-adjunto">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span>{{ comprobanteArchivo()?.name }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="qr-acciones">
+          <button class="btn-ya-pague" (click)="confirmarConComprobante()" [disabled]="!comprobanteArchivo()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Ya pagué, enviar comprobante
+          </button>
+          <button class="btn-cerrar-modal" (click)="cerrarModal()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ============================================ -->
+    <!-- QR IZIPAY (Transferencia)                    -->
+    <!-- ============================================ -->
+    @if (mostrarQRIzipay) {
+      <div class="estado-qr">
+        <div class="qr-header">
+          <div class="metodo-badge izipay">
+            <span class="metodo-badge-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+              </svg>
+            </span>
+            <span>Izipay</span>
+          </div>
+          <h3>Transferencia con QR</h3>
+          <p>Escanea con tu app bancaria y sube tu captura</p>
+        </div>
+
+        <div class="qr-container">
+          <div class="qr-imagen">
+            @if (qrDataUrl()) {
+              <img [src]="qrDataUrl()" alt="QR Izipay" width="220" height="220">
+            }
+          </div>
+          <div class="qr-monto">
+            <span class="monto-label">Monto a transferir</span>
+            <span class="monto-valor">{{ formatearPrecio(total) }}</span>
+          </div>
+        </div>
+
+        <!-- ✅ SUBIR CAPTURA -->
+        <div class="subir-captura">
+          <label class="captura-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>Adjuntar captura del pago</span>
+            <input type="file" accept="image/*,application/pdf" (change)="onComprobanteSeleccionado($event)" hidden>
+          </label>
+
+          @if (comprobantePreview()) {
+            <div class="captura-preview">
+              <img [src]="comprobantePreview()" alt="Captura">
+              <button type="button" class="btn-quitar" (click)="quitarComprobante()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="qr-acciones">
+          <button class="btn-ya-pague" (click)="confirmarConComprobante()" [disabled]="!comprobanteArchivo()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Ya transferí, enviar comprobante
+          </button>
+          <button class="btn-cerrar-modal" (click)="cerrarModal()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ============================================ -->
+    <!-- MÁQUINA IZIPAY                               -->
+    <!-- ============================================ -->
+    @if (mostrarMaquinaIzipay) {
+      <div class="estado-maquina">
+        <div class="maquina-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="100" height="100">
+            <rect x="4" y="2" width="16" height="20" rx="2"/>
+            <rect x="7" y="5" width="10" height="7" rx="1"/>
+            <line x1="7" y1="15" x2="17" y2="15"/>
+            <line x1="7" y1="17" x2="17" y2="17"/>
+            <circle cx="10" cy="20" r="0.5" fill="currentColor"/>
+            <circle cx="12" cy="20" r="0.5" fill="currentColor"/>
+            <circle cx="14" cy="20" r="0.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <h3 class="maquina-title">Paga en la Máquina Izipay</h3>
+        <p class="maquina-sub">Acércate a la máquina POS para completar tu pago</p>
+
+        <div class="efectivo-info">
+          <div class="info-item">
+            <span class="info-label">Pedido N°</span>
+            <span class="info-valor">#{{ pedidoId }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Total</span>
+            <span class="info-valor">{{ formatearPrecio(total) }}</span>
+          </div>
+        </div>
+
+        <div class="efectivo-pasos">
+          <div class="paso">
+            <div class="paso-num">1</div>
+            <span>Acércate a la máquina Izipay</span>
+          </div>
+          <div class="paso">
+            <div class="paso-num">2</div>
+            <span>Ingresa el monto: <strong>{{ formatearPrecio(total) }}</strong></span>
+          </div>
+          <div class="paso">
+            <div class="paso-num">3</div>
+            <span>Acerca tu tarjeta o celular para pagar</span>
+          </div>
+        </div>
+
+        <div class="efectivo-acciones">
+          <button class="btn-ya-pague" (click)="confirmarMaquinaIzipay()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Ya pagué en la máquina
+          </button>
+          <button class="btn-cerrar-modal" (click)="cerrarModal()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- ============================================ -->
+    <!-- ÉXITO                                        -->
+    <!-- ============================================ -->
+    @if (mostrarExitoso) {
+      <div class="estado-exitoso">
+        <div class="exito-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="64" height="64">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <span class="exitoso-label">¡Pedido Registrado!</span>
+        <span class="exitoso-sub">El cajero verificará tu pago y confirmará el pedido</span>
+        <div class="pendiente-badge">
+          <span class="dot"></span>
+          Pendiente de validación
+        </div>
+      </div>
+    }
+
+    <!-- ============================================ -->
+    <!-- ERROR                                        -->
+    <!-- ============================================ -->
+    @if (mostrarError) {
+      <div class="estado-error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="64" height="64">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="error-label">Error en el pago</span>
+        <span class="error-sub">{{ mensajeError() }}</span>
+        <button class="btn-reintentar" (click)="reintentar()">Reintentar</button>
+      </div>
+    }
   </div>
 
   <!-- Footer -->
-  <div class="modal-footer" *ngIf="mostrarFormulario">
-    <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="cargando">Cancelar</button>
-    <button class="btn-confirmar" (click)="onSubmit()" [disabled]="cargando">
-      <span *ngIf="!cargando">
+  @if (mostrarFormulario) {
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="cargando">Cancelar</button>
+      <button class="btn-confirmar" (click)="onSubmit()" [disabled]="cargando">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
         Confirmar pedido
-      </span>
-      <span *ngIf="cargando" class="spinner-btn"></span>
-    </button>
-  </div>
+      </button>
+    </div>
+  }
 </div>
