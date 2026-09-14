@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
-import { PedidoClienteService } from '../../../core/services/pedido-cliente.service'; // ✅ NUEVO
+import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -20,7 +20,7 @@ import { Subject, takeUntil } from 'rxjs';
 export class VentasAdminComponent implements OnInit, OnDestroy {
   private pedidoService = inject(PedidoService);
   private ventaService = inject(VentaService);
-  private pedidoClienteService = inject(PedidoClienteService); // ✅ NUEVO
+  private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
   private router = inject(Router);
@@ -74,13 +74,13 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR DATOS - Combina pedidos + ventas + pedidos web
+  // ✅ CARGAR DATOS
   // ============================================
   cargarDatos(): void {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    // 1. Pedidos pendientes (tabla pedidos)
+    // 1. Pedidos pendientes (tabla pedidos) + pedidos web pendientes
     this.pedidoService.obtenerPedidosPendientes()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -95,7 +95,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           const pendientesConNombre = pendientes.map(p => ({
             ...p,
             usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido',
-            origen: 'pedido'
+            origen: 'pedido',
+            id_unico: `P-${p.id}`
           }));
 
           this.pedidosPendientes.set(pendientesConNombre);
@@ -110,17 +111,19 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
         }
       });
 
-    // 2. ✅ Pedidos web pendientes (tabla pedidos_cliente)
-    this.ventaService.obtenerPedidosWebPendientes()
+    // 2. ✅ Pedidos web pendientes (por confirmar)
+    this.pedidoClienteService.obtenerPendientes()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (pedidosWeb: any[]) => {
           const webPendientes = (Array.isArray(pedidosWeb) ? pedidosWeb : []).map(p => ({
             ...p,
             usuario_nombre: 'Cliente Web',
-            origen: 'pedido_web'
+            origen: 'pedido_web',
+            id_unico: `PC-${p.id}`
           }));
 
+          // Combinar con pendientes normales
           const todosPendientes = [...this.pedidosPendientes(), ...webPendientes];
           todosPendientes.sort((a, b) => {
             const fA = new Date(a.created_at).getTime();
@@ -138,23 +141,58 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
         }
       });
 
-    // 3. Ventas completadas (ventas + pedidos_cliente pagados)
+    // 3. ✅ Ventas completadas (SOLO las que NO son de pedido_web duplicadas)
     this.ventaService.obtenerVentas()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (ventas: any[]) => {
           const ventasCompletadas = Array.isArray(ventas) ? ventas : [];
 
-          const ventasConNombre = ventasCompletadas.map(v => ({
-            ...v,
-            usuario_nombre: v.usuario_nombre_completo || v.usuario_nombre || 'Desconocido',
-            origen: v.origen || 'venta'
-          }));
+          const ventasConNombre = ventasCompletadas.map(v => {
+            // ✅ Detectar origen correctamente
+            const esPedidoWeb = 
+              v.origen === 'pedido_web' || 
+              (v.pedido_cliente_id !== null && v.pedido_cliente_id !== undefined);
 
-          this.pedidosPagados.set(ventasConNombre);
-          this.totalPagados.set(ventasConNombre.length);
-          this.organizarVentas(ventasConNombre);
-          this.totalRecaudado.set(this.calcularTotalRegistros(ventasConNombre));
+            // ✅ Determinar el nombre a mostrar
+            let nombreMostrar = 'Desconocido';
+            if (esPedidoWeb) {
+              nombreMostrar = 'Cliente Web';
+            } else if (v.usuario_nombre_completo) {
+              nombreMostrar = v.usuario_nombre_completo;
+            } else if (v.usuario_nombre) {
+              nombreMostrar = v.usuario_apellido
+                ? `${v.usuario_nombre} ${v.usuario_apellido}`
+                : v.usuario_nombre;
+            } else if (v.usuario_rol === 'admin') {
+              nombreMostrar = 'Admin';
+            }
+
+            return {
+              ...v,
+              usuario_nombre: nombreMostrar,
+              origen: esPedidoWeb ? 'pedido_web' : 'venta',
+              // ✅ ID único para evitar duplicados
+              id_unico: esPedidoWeb 
+                ? `PC-${v.pedido_cliente_id || v.id}` 
+                : `V-${v.id}`,
+              // ✅ ID visible
+              id_visible: esPedidoWeb 
+                ? `PC-${v.pedido_cliente_id || v.id}` 
+                : `V-${v.id}`
+            };
+          });
+
+          // ✅ Eliminar duplicados por id_unico
+          const ventasUnicas = ventasConNombre.filter(
+            (venta, index, self) =>
+              index === self.findIndex(v => v.id_unico === venta.id_unico)
+          );
+
+          this.pedidosPagados.set(ventasUnicas);
+          this.totalPagados.set(ventasUnicas.length);
+          this.organizarVentas(ventasUnicas);
+          this.totalRecaudado.set(this.calcularTotalRegistros(ventasUnicas));
           this.checkLoading();
         },
         error: (error: any) => {
@@ -251,7 +289,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.resultadoPago.set(null);
 
     this.pedidoEnPago.set(pedido);
-    this.metodoSeleccionado.set('efectivo');
+    this.metodoSeleccionado.set(pedido.metodo_pago || 'efectivo');
     this.mostrarModalPago.set(true);
   }
 
@@ -268,7 +306,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CONFIRMAR PAGO - Detecta si es pedido normal o web
+  // ✅ CONFIRMAR PAGO
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoEnPago();
@@ -284,11 +322,10 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.mensajePago.set('Procesando pago...');
     this.tipoPago.set('procesando');
 
-    // ✅ Detectar origen del pedido
     const esPedidoWeb = pedido.origen === 'pedido_web';
 
     const request$ = esPedidoWeb
-      ? this.pedidoClienteService.marcarPagado(pedido.id, metodo)
+      ? this.pedidoClienteService.confirmarPago(pedido.id, pedido.tipo_entrega)
       : this.pedidoService.marcarPagado(pedido.id, metodo);
 
     request$
@@ -332,7 +369,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
           }
 
-          if (err.status === 400 && mensaje.includes('ya está pagado')) {
+          if (err.status === 400 && mensaje.includes('ya')) {
             this.mensajePago.set('Este pedido ya estaba pagado');
             this.tipoPago.set('info');
             setTimeout(() => {

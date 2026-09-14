@@ -1,5 +1,7 @@
 <!-- src/app/features/admin/pedidos-clientes-admin/pedidos-clientes-admin.component.html -->
 <div class="pedidos-clientes-admin">
+
+  <!-- HEADER -->
   <div class="page-header">
     <div class="header-left">
       <h2>
@@ -9,9 +11,9 @@
           <line x1="20" y1="8" x2="20" y2="14"/>
           <line x1="23" y1="11" x2="17" y2="11"/>
         </svg>
-        Pedidos de Clientes (Carta Web)
+        Pedidos de Clientes
       </h2>
-      <p class="subtitle">Pedidos realizados desde la carta online con método de pago</p>
+      <p class="subtitle">Verifica comprobantes y confirma pagos</p>
     </div>
     <div class="header-actions">
       <button class="btn-dashboard" (click)="irDashboard()">
@@ -32,7 +34,7 @@
     </div>
   </div>
 
-  <!-- Estadísticas -->
+  <!-- ESTADÍSTICAS -->
   <div class="stats-grid">
     <div class="stat-card total">
       <span class="stat-value">{{ totalPedidos() }}</span>
@@ -44,7 +46,7 @@
     </div>
     <div class="stat-card pagados">
       <span class="stat-value">{{ totalPagados() }}</span>
-      <span class="stat-label">Pagados</span>
+      <span class="stat-label">Confirmados</span>
     </div>
     <div class="stat-card recaudado">
       <span class="stat-value">S/ {{ totalRecaudado() | number:'1.2-2' }}</span>
@@ -52,7 +54,7 @@
     </div>
   </div>
 
-  <!-- Filtros -->
+  <!-- FILTROS -->
   <div class="filtros-container">
     <div class="filtro-item">
       <label>Buscar</label>
@@ -80,105 +82,324 @@
     </div>
   </div>
 
-  <!-- Loading -->
-  <div class="loading-container" *ngIf="loading()">
-    <div class="spinner"></div>
-    <p>Cargando pedidos...</p>
-  </div>
-
-  <!-- Tabla -->
-  <div class="tabla-container" *ngIf="!loading()">
+  <!-- TABLA -->
+  <div class="tabla-container">
     <div class="tabla-header">
       <h3>Pedidos desde la Carta Web</h3>
       <span class="total-items">{{ pedidosFiltrados().length }} pedidos</span>
     </div>
-    <div class="tabla-scroll">
-      <table class="tabla-pedidos">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Teléfono</th>
-            <th>Dirección</th>
-            <th>Tipo</th>
-            <th>Método Pago</th>
-            <th>Items</th>
-            <th>Total</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Pagado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let pedido of pedidosFiltrados()">
-            <td><span class="id-badge">#{{ pedido.id }}</span></td>
-            <td>
-              <div class="cliente-cell">
-                <strong>{{ pedido.cliente_nombre }}</strong>
-                <small *ngIf="pedido.cliente_dni">DNI: {{ pedido.cliente_dni }}</small>
+
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando pedidos...</p>
+      </div>
+    } @else if (pedidosFiltrados().length === 0) {
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p>No hay pedidos</p>
+      </div>
+    } @else {
+      <div class="tabla-scroll">
+        <table class="tabla-pedidos">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Teléfono</th>
+              <th>Método</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Comprobante</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (pedido of pedidosFiltrados(); track pedido.id) {
+              <tr>
+                <td><span class="id-badge">#{{ pedido.id }}</span></td>
+                <td>
+                  <div class="cliente-cell">
+                    <strong>{{ pedido.cliente_nombre }}</strong>
+                    <small *ngIf="pedido.cliente_dni">DNI: {{ pedido.cliente_dni }}</small>
+                  </div>
+                </td>
+                <td>{{ pedido.cliente_telefono || '—' }}</td>
+                <td>
+                  <span class="metodo-badge {{ pedido.metodo_pago }}">
+                    {{ getMetodoPagoLabel(pedido.metodo_pago) }}
+                  </span>
+                  @if (pedido.tipo_transferencia) {
+                    <small class="tipo-transf">
+                      {{ pedido.tipo_transferencia === 'qr' ? 'QR' : 'POS' }}
+                    </small>
+                  }
+                </td>
+                <td class="total-col">S/ {{ pedido.total | number:'1.2-2' }}</td>
+                <td>{{ formatearFecha(pedido.created_at) }}</td>
+                <td>
+                  <span class="estado-badge {{ getEstadoClass(pedido.estado) }}">
+                    {{ pedido.estado | titlecase }}
+                  </span>
+                </td>
+                <td>
+                  @if (pedido.comprobante_pago) {
+                    <button class="btn-comprobante" (click)="verComprobante(pedido)" title="Ver comprobante">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      Ver
+                    </button>
+                  } @else {
+                    <span class="sin-comprobante">—</span>
+                  }
+                </td>
+                <td>
+                  <div class="acciones-cell">
+                    @if (!pedido.pagado && pedido.estado !== 'cancelado') {
+                      <button class="btn-verificar" (click)="abrirVerificacion(pedido)" title="Verificar pago">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                          <path d="M9 11l3 3L22 4"/>
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        Verificar
+                      </button>
+                    } @else if (pedido.pagado) {
+                      <span class="badge-confirmado">✅ Confirmado</span>
+                    } @else {
+                      <span class="badge-cancelado">❌ Cancelado</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL DE VERIFICACIÓN DE PAGO                 -->
+<!-- ============================================ -->
+@if (mostrarModalVerificacion() && pedidoSeleccionado()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal-verificacion" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Verificar Pago</h2>
+            <p class="modal-subtitle">Pedido #{{ pedidoSeleccionado()?.id }}</p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModal()" [disabled]="confirmando()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+
+        <!-- Info del cliente -->
+        <div class="info-section">
+          <h3>Información del Cliente</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Nombre</span>
+              <span class="info-value">{{ pedidoSeleccionado()?.cliente_nombre }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Teléfono</span>
+              <span class="info-value">{{ pedidoSeleccionado()?.cliente_telefono || '—' }}</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">Dirección</span>
+              <span class="info-value">{{ pedidoSeleccionado()?.cliente_direccion || '—' }}</span>
+            </div>
+            @if (pedidoSeleccionado()?.cliente_referencia) {
+              <div class="info-item full-width">
+                <span class="info-label">Referencia</span>
+                <span class="info-value">{{ pedidoSeleccionado()?.cliente_referencia }}</span>
               </div>
-            </td>
-            <td>{{ pedido.cliente_telefono || '—' }}</td>
-            <td class="direccion-cell">{{ pedido.cliente_direccion || '—' }}</td>
-            <td>
-              <span class="tipo-badge {{ pedido.tipo_entrega }}">
-                {{ getTipoEntregaLabel(pedido.tipo_entrega) }}
+            }
+          </div>
+        </div>
+
+        <!-- Info del pedido -->
+        <div class="info-section">
+          <h3>Información del Pedido</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Método de pago</span>
+              <span class="info-value">
+                <span class="metodo-badge {{ pedidoSeleccionado()?.metodo_pago }}">
+                  {{ getMetodoPagoLabel(pedidoSeleccionado()?.metodo_pago) }}
+                </span>
               </span>
-            </td>
-            <td>
-              <span class="metodo-badge {{ pedido.metodo_pago }}">
-                {{ getMetodoPagoLabel(pedido.metodo_pago) }}
+            </div>
+            <div class="info-item">
+              <span class="info-label">Total</span>
+              <span class="info-value total-monto">S/ {{ pedidoSeleccionado()?.total | number:'1.2-2' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Fecha</span>
+              <span class="info-value">{{ formatearFecha(pedidoSeleccionado()?.created_at) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Estado</span>
+              <span class="estado-badge {{ getEstadoClass(pedidoSeleccionado()?.estado) }}">
+                {{ pedidoSeleccionado()?.estado | titlecase }}
               </span>
-            </td>
-            <td class="items-col">{{ pedido.items?.length || 0 }} items</td>
-            <td class="total-col">S/ {{ pedido.total | number:'1.2-2' }}</td>
-            <td>{{ formatearFecha(pedido.created_at) }}</td>
-            <td>
-              <span class="estado-badge {{ getEstadoClass(pedido.estado) }}">
-                {{ pedido.estado | titlecase }}
-              </span>
-            </td>
-            <td>
-              <span class="pagado-badge" [class.pagado]="pedido.pagado" [class.no-pagado]="!pedido.pagado">
-                {{ pedido.pagado ? '✅ Sí' : '⏳ No' }}
-              </span>
-            </td>
-            <td>
-              <div class="acciones-cell">
-                <button class="btn-ver" (click)="verDetalle(pedido)" title="Ver detalle">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-                <button
-                  class="btn-pagar"
-                  *ngIf="!pedido.pagado && pedido.estado !== 'cancelado'"
-                  (click)="marcarPagado(pedido)"
-                  title="Marcar como pagado"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                  </svg>
-                </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Productos -->
+        <div class="info-section">
+          <h3>Productos</h3>
+          <div class="productos-lista">
+            @for (item of pedidoSeleccionado()?.items || []; track $index) {
+              <div class="producto-item">
+                <span class="prod-cantidad">{{ item.cantidad }}x</span>
+                <span class="prod-nombre">{{ item.nombre }}</span>
+                <span class="prod-precio">S/ {{ (item.subtotal || item.precio * item.cantidad) | number:'1.2-2' }}</span>
               </div>
-            </td>
-          </tr>
-          <tr *ngIf="pedidosFiltrados().length === 0">
-            <td colspan="12" class="text-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+            }
+          </div>
+        </div>
+
+        <!-- Comprobante -->
+        @if (pedidoSeleccionado()?.comprobante_pago) {
+          <div class="info-section comprobante-section">
+            <h3>Comprobante de Pago</h3>
+            <div class="comprobante-container">
+              <img
+                [src]="'http://localhost:3000' + pedidoSeleccionado()?.comprobante_pago"
+                alt="Comprobante de pago"
+                class="comprobante-img"
+                (error)="verComprobante(pedidoSeleccionado())"
+              >
+              <button class="btn-ver-completo" (click)="verComprobante(pedidoSeleccionado())">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Ver en pantalla completa
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="info-section sin-comprobante-section">
+            <div class="sin-comprobante-msg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              <p>No hay pedidos de clientes</p>
-              <span>Los pedidos aparecerán aquí cuando los clientes ordenen desde la carta</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <p>
+                @if (pedidoSeleccionado()?.metodo_pago === 'efectivo') {
+                  Este pedido se paga en caja. Confirma cuando el cliente haya pagado.
+                } @else {
+                  El cliente no adjuntó comprobante. Verifica con él antes de confirmar.
+                }
+              </p>
+            </div>
+          </div>
+        }
+
+        <!-- ✅ Selector de tipo de entrega -->
+        <div class="info-section tipo-entrega-section">
+          <h3>Tipo de Entrega</h3>
+          <p class="hint">Puedes cambiar el tipo de entrega antes de confirmar</p>
+          <div class="tipo-entrega-opciones">
+            <button
+              class="tipo-opcion"
+              [class.active]="tipoEntregaSeleccionado() === 'local'"
+              (click)="tipoEntregaSeleccionado.set('local')"
+              [disabled]="confirmando()"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              <span>Local</span>
+            </button>
+            <button
+              class="tipo-opcion"
+              [class.active]="tipoEntregaSeleccionado() === 'delivery'"
+              (click)="tipoEntregaSeleccionado.set('delivery')"
+              [disabled]="confirmando()"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <rect x="1" y="4" width="15" height="13" rx="2"/>
+                <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18" r="2.5"/>
+                <circle cx="18.5" cy="18" r="2.5"/>
+              </svg>
+              <span>Motorizado</span>
+            </button>
+            <button
+              class="tipo-opcion"
+              [class.active]="tipoEntregaSeleccionado() === 'paraLlevar'"
+              (click)="tipoEntregaSeleccionado.set('paraLlevar')"
+              [disabled]="confirmando()"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              <span>Para Llevar</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="confirmando()">
+          Cancelar
+        </button>
+        <button class="btn-rechazar" (click)="rechazarPago()" [disabled]="confirmando()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Rechazar pago
+        </button>
+        <button class="btn-confirmar" (click)="confirmarPago()" [disabled]="confirmando()">
+          @if (confirmando()) {
+            <div class="spinner-small"></div>
+            Confirmando...
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            Confirmar pago
+          }
+        </button>
+      </div>
+
     </div>
   </div>
-</div>
+}

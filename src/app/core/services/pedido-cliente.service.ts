@@ -38,21 +38,7 @@ export class PedidoClienteService {
   }
 
   // ============================================
-  // ✅ CONFIRMAR PAGO (solo admin)
-  // ============================================
-  confirmarPago(id: number): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}/confirmar-pago`, {});
-  }
-
-  // ============================================
-  // ✅ RECHAZAR PAGO (solo admin)
-  // ============================================
-  rechazarPago(id: number, motivo: string): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}/rechazar-pago`, { motivo });
-  }
-
-  // ============================================
-  // ✅ SUBIR COMPROBANTE (cliente)
+  // ✅ SUBIR COMPROBANTE
   // ============================================
   subirComprobante(id: number, archivo: File): Observable<any> {
     const formData = new FormData();
@@ -61,17 +47,20 @@ export class PedidoClienteService {
   }
 
   // ============================================
-  // MARCAR PAGADO (legacy)
+  // ✅ CONFIRMAR PAGO (ADMIN)
+  // - tipoEntrega opcional: permite al admin cambiar Local/Motorizado
   // ============================================
-  marcarPagado(
-    id: number,
-    metodoPago: string,
-    numeroOperacion?: string
-  ): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/${id}/pagar`, {
-      metodo_pago: metodoPago,
-      numero_operacion: numeroOperacion
+  confirmarPago(id: number, tipoEntrega?: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/confirmar-pago`, {
+      tipo_entrega: tipoEntrega || null
     });
+  }
+
+  // ============================================
+  // ✅ RECHAZAR PAGO (ADMIN)
+  // ============================================
+  rechazarPago(id: number, motivo: string): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}/rechazar-pago`, { motivo });
   }
 
   // ============================================

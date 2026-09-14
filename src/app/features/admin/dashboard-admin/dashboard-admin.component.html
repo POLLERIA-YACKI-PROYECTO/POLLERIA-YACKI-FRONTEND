@@ -1,7 +1,10 @@
 <!-- src/app/features/admin/dashboard-admin/dashboard-admin.component.html -->
 <div class="dashboard-admin-container">
   <div class="dashboard-content">
-    <!-- Header -->
+
+    <!-- ============================================ -->
+    <!-- HEADER                                       -->
+    <!-- ============================================ -->
     <div class="dashboard-header">
       <div class="header-left">
         <h1>
@@ -30,7 +33,9 @@
       </div>
     </div>
 
-    <!-- Mensaje de Error -->
+    <!-- ============================================ -->
+    <!-- ERROR                                        -->
+    <!-- ============================================ -->
     @if (errorMessage()) {
       <div class="error-message">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -43,7 +48,9 @@
       </div>
     }
 
-    <!-- Loading -->
+    <!-- ============================================ -->
+    <!-- LOADING                                      -->
+    <!-- ============================================ -->
     @if (loading()) {
       <div class="loading-container">
         <div class="spinner"></div>
@@ -51,7 +58,9 @@
       </div>
     }
 
-    <!-- Stats Grid -->
+    <!-- ============================================ -->
+    <!-- STATS GRID                                   -->
+    <!-- ============================================ -->
     @if (!loading()) {
       <div class="stats-grid">
         @for (stat of stats(); track stat.label) {
@@ -115,7 +124,9 @@
       </div>
     }
 
-    <!-- Resumen de Ventas -->
+    <!-- ============================================ -->
+    <!-- RESUMEN DE VENTAS                            -->
+    <!-- ============================================ -->
     @if (!loading()) {
       <div class="resumen-container">
         <div class="resumen-header">
@@ -129,9 +140,13 @@
             </svg>
             Resumen de Ventas
           </h3>
-          <span class="resumen-total">Total General: S/ {{ resumenVentas().totalRecaudado | number:'1.2-2' }}</span>
+          <span class="resumen-total">
+            Total General: S/ {{ resumenVentas().totalRecaudado | number:'1.2-2' }}
+          </span>
         </div>
+
         <div class="resumen-grid">
+          <!-- Total Ventas -->
           <div class="resumen-card total">
             <span class="resumen-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -144,6 +159,8 @@
               <span class="resumen-label">Total Ventas</span>
             </div>
           </div>
+
+          <!-- Ventas Local -->
           <div class="resumen-card local">
             <span class="resumen-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -157,6 +174,8 @@
               <span class="resumen-sub">S/ {{ resumenVentas().recaudadoLocal | number:'1.2-2' }}</span>
             </div>
           </div>
+
+          <!-- Ventas Motorizadas -->
           <div class="resumen-card delivery">
             <span class="resumen-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -172,6 +191,8 @@
               <span class="resumen-sub">S/ {{ resumenVentas().recaudadoDelivery | number:'1.2-2' }}</span>
             </div>
           </div>
+
+          <!-- Total Recaudado -->
           <div class="resumen-card recaudado">
             <span class="resumen-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -188,7 +209,9 @@
       </div>
     }
 
-    <!-- Ventas Recientes -->
+    <!-- ============================================ -->
+    <!-- VENTAS RECIENTES                             -->
+    <!-- ============================================ -->
     @if (!loading()) {
       <div class="tabla-container">
         <div class="tabla-header">
@@ -203,12 +226,14 @@
           </div>
           <span class="total-items">{{ ventasRecientes().length }} registros</span>
         </div>
+
         <div class="tabla-scroll">
           <table class="tabla-ventas">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Cliente</th>
+                <th>Origen</th>
                 <th>Tipo</th>
                 <th>Total</th>
                 <th>Fecha</th>
@@ -216,71 +241,44 @@
               </tr>
             </thead>
             <tbody>
-              @for (venta of ventasRecientes(); track venta.id) {
+              @for (venta of ventasRecientes(); track venta.id + '-' + venta.origen) {
                 <tr>
-                  <td><span class="id-badge">#{{ venta.id }}</span></td>
+                  <td>
+                    <span class="id-badge">#{{ venta.id }}</span>
+                  </td>
                   <td>
                     <span class="cliente-nombre">{{ venta.cliente }}</span>
                   </td>
                   <td>
-                    <span class="tipo-badge {{ venta.tipo }}">
-                      <span class="tipo-icon" aria-hidden="true">
-                        @if (venta.tipo === 'delivery' || venta.tipo === 'motorizada') {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 6h11v10H3z"/>
-                            <path d="M14 10h4l3 3v3h-7z"/>
-                            <circle cx="7" cy="18" r="2"/>
-                            <circle cx="18" cy="18" r="2"/>
-                          </svg>
-                        } @else {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l2-5h14l2 5"/>
-                            <path d="M5 13v7h14v-7"/>
-                            <path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/>
-                          </svg>
-                        }
-                      </span>
-                      {{ venta.tipo === 'delivery' ? 'Motorizado' :
-                         venta.tipo === 'paraLlevar' ? 'Para Llevar' : 'Local' }}
+                    <span class="origen-badge {{ getOrigenClass(venta.origen) }}">
+                      {{ getOrigenLabel(venta.origen) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="tipo-badge {{ getTipoClass(venta.tipo) }}">
+                      {{ getTipoLabel(venta.tipo) }}
                     </span>
                   </td>
                   <td class="total-col">S/ {{ venta.total | number:'1.2-2' }}</td>
                   <td>{{ venta.fecha }}</td>
                   <td>
                     <span class="estado-badge {{ getEstadoClass(venta.estado) }}">
-                      <span class="estado-icon" aria-hidden="true">
-                        @if (venta.estado === 'cancelada' || venta.estado === 'Cancelada') {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9"/>
-                            <path d="M9 9l6 6M15 9l-6 6"/>
-                          </svg>
-                        } @else if (venta.estado === 'pendiente' || venta.estado === 'Pendiente') {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9"/>
-                            <path d="M12 7v5l3 2"/>
-                          </svg>
-                        } @else {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9"/>
-                            <path d="M8 12l2.5 2.5L16 9"/>
-                          </svg>
-                        }
-                      </span>
                       {{ getEstadoTexto(venta.estado) }}
                     </span>
                   </td>
                 </tr>
               }
+
               @empty {
                 <tr>
-                  <td colspan="6" class="text-center">
+                  <td colspan="7" class="text-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10"/>
                       <line x1="12" y1="8" x2="12" y2="12"/>
                       <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    <p>No hay ventas registradas aún</p>
-                    <span class="empty-sub">Comienza a vender para ver los datos aquí</span>
+                    <p>No hay ventas registradas</p>
+                    <span class="empty-sub">Las ventas aparecerán aquí al confirmarse</span>
                   </td>
                 </tr>
               }
@@ -289,5 +287,6 @@
         </div>
       </div>
     }
+
   </div>
 </div>

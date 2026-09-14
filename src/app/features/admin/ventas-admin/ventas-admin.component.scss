@@ -1,4 +1,5 @@
-// src/app/features/admin/ventas-admin/ventas-admin.component.scss
+/* src/app/features/admin/ventas-admin/ventas-admin.component.scss */
+
 .ventas-admin-container {
   animation: fadeIn 0.3s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -91,21 +92,10 @@
   border: 2px solid #e4cbad;
 }
 
-.stat-card.pendientes .stat-value {
-  color: #c5302a;
-}
-
-.stat-card.pagados .stat-value {
-  color: #2e7d32;
-}
-
-.stat-card.local .stat-value {
-  color: #71492f;
-}
-
-.stat-card.delivery .stat-value {
-  color: #1565c0;
-}
+.stat-card.pendientes .stat-value { color: #c5302a; }
+.stat-card.pagados .stat-value { color: #2e7d32; }
+.stat-card.local .stat-value { color: #71492f; }
+.stat-card.delivery .stat-value { color: #1565c0; }
 
 .stat-value {
   font-size: 28px;
@@ -137,13 +127,8 @@
   border: 2px solid #e4cbad;
 }
 
-.resumen-item.local .resumen-valor {
-  color: #71492f;
-}
-
-.resumen-item.delivery .resumen-valor {
-  color: #1565c0;
-}
+.resumen-item.local .resumen-valor { color: #71492f; }
+.resumen-item.delivery .resumen-valor { color: #1565c0; }
 
 .resumen-label {
   font-size: 12px;
@@ -247,7 +232,27 @@
   border-top: 2px solid #e4cbad;
 }
 
-/* ESTADOS */
+/* ============================================
+   ORIGEN BADGE (NUEVO)
+   ============================================ */
+.origen-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.origen-badge.origen-web {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* ============================================
+   ESTADOS
+   ============================================ */
 .estado-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -256,28 +261,15 @@
   font-weight: 600;
 }
 
-.estado-pendiente {
-  background: #fef3c7;
-  color: #92400e;
-}
-.estado-preparando {
-  background: #dbeafe;
-  color: #1e40af;
-}
-.estado-listo {
-  background: #dcfce7;
-  color: #166534;
-}
-.estado-pagado {
-  background: #dcfce7;
-  color: #166534;
-}
-.estado-cancelado {
-  background: #fee2e2;
-  color: #991b1b;
-}
+.estado-pendiente { background: #fef3c7; color: #92400e; }
+.estado-preparando { background: #dbeafe; color: #1e40af; }
+.estado-listo { background: #dcfce7; color: #166534; }
+.estado-pagado { background: #dcfce7; color: #166534; }
+.estado-cancelado { background: #fee2e2; color: #991b1b; }
 
-/* TIPO ENTREGA */
+/* ============================================
+   TIPO ENTREGA
+   ============================================ */
 .tipo-badge {
   display: inline-flex;
   align-items: center;
@@ -288,20 +280,9 @@
   font-weight: 600;
 }
 
-.tipo-badge.local {
-  background: #e4cbad;
-  color: #5e412f;
-}
-
-.tipo-badge.delivery {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.tipo-badge.paraLlevar {
-  background: #dcfce7;
-  color: #166534;
-}
+.tipo-badge.local { background: #e4cbad; color: #5e412f; }
+.tipo-badge.delivery { background: #dbeafe; color: #1e40af; }
+.tipo-badge.paraLlevar { background: #dcfce7; color: #166534; }
 
 .tipo-icon {
   display: inline-flex;
@@ -312,7 +293,9 @@
   stroke: currentColor;
 }
 
-/* MÉTODO PAGO */
+/* ============================================
+   MÉTODO PAGO
+   ============================================ */
 .metodo-badge {
   display: inline-flex;
   align-items: center;
@@ -327,32 +310,15 @@
   stroke: currentColor;
 }
 
-.metodo-badge.efectivo {
-  background: #dcfce7;
-  color: #166534;
-}
+.metodo-badge.efectivo { background: #dcfce7; color: #166534; }
+.metodo-badge.tarjeta { background: #dbeafe; color: #1e40af; }
+.metodo-badge.yape { background: #fef3c7; color: #92400e; }
+.metodo-badge.plin { background: #f3e8ff; color: #6d28d9; }
+.metodo-badge.transferencia { background: #fce4ec; color: #c62828; }
 
-.metodo-badge.tarjeta {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.metodo-badge.yape {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.metodo-badge.plin {
-  background: #f3e8ff;
-  color: #6d28d9;
-}
-
-.metodo-badge.transferencia {
-  background: #fce4ec;
-  color: #c62828;
-}
-
-/* ACCIONES */
+/* ============================================
+   ACCIONES
+   ============================================ */
 .btn-pagar {
   display: flex;
   align-items: center;
@@ -390,7 +356,9 @@
   color: #888;
 }
 
-/* LOADING */
+/* ============================================
+   LOADING
+   ============================================ */
 .loading-container {
   text-align: center;
   padding: 40px 20px;
@@ -406,7 +374,6 @@
   animation: spin 0.8s linear infinite;
 }
 
-/* TEXT CENTER */
 .text-center {
   text-align: center;
   padding: 30px !important;
@@ -422,7 +389,7 @@
 }
 
 /* ============================================
-   MODAL DE PAGO - DISEÑO BONITO
+   MODAL DE PAGO
    ============================================ */
 .modal-overlay {
   position: fixed;
@@ -454,6 +421,8 @@
   overflow: hidden;
   animation: slideUpModal 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideUpModal {
@@ -491,12 +460,46 @@
   border-radius: 12px;
   background: rgba(197, 48, 42, 0.08);
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .modal-icon svg {
   width: 24px;
   height: 24px;
   stroke: #c5302a;
+}
+
+.modal-icon.procesando {
+  background: rgba(52, 152, 219, 0.12);
+}
+
+.modal-icon.procesando svg {
+  stroke: #3498db;
+}
+
+.modal-icon.exito {
+  background: rgba(46, 204, 113, 0.12);
+}
+
+.modal-icon.exito svg {
+  stroke: #2ecc71;
+}
+
+.modal-icon.error {
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.modal-icon.error svg {
+  stroke: #e74c3c;
+}
+
+.spinner-modal {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(52, 152, 219, 0.2);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .modal-header h2 {
@@ -549,7 +552,58 @@
   max-height: 60vh;
 }
 
-/* Detalle del pedido */
+/* ============================================
+   MENSAJE DE ESTADO
+   ============================================ */
+.mensaje-estado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mensaje-estado.procesando {
+  background: rgba(52, 152, 219, 0.08);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.15);
+}
+
+.mensaje-estado.exito {
+  background: rgba(46, 204, 113, 0.08);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.15);
+}
+
+.mensaje-estado.error {
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.15);
+}
+
+.mensaje-estado svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.mensaje-estado .spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(52, 152, 219, 0.2);
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   DETALLE DEL PEDIDO
+   ============================================ */
 .detalle-pedido {
   background: #faf8f5;
   border-radius: 10px;
@@ -560,7 +614,8 @@
 .detalle-row {
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
+  align-items: center;
+  padding: 6px 0;
   font-size: 13px;
 }
 
@@ -572,6 +627,7 @@
 .detalle-valor {
   color: #5e412f;
   font-weight: 600;
+  text-align: right;
 }
 
 .detalle-valor.total-monto {
@@ -579,7 +635,9 @@
   color: #c5302a;
 }
 
-/* Items del pedido */
+/* ============================================
+   ITEMS DEL PEDIDO
+   ============================================ */
 .items-pedido {
   margin-bottom: 16px;
 }
@@ -622,7 +680,9 @@
   color: #2e7d32;
 }
 
-/* Método de pago */
+/* ============================================
+   MÉTODO DE PAGO
+   ============================================ */
 .metodo-pago-section h4 {
   font-size: 14px;
   font-weight: 600;
@@ -632,7 +692,7 @@
 
 .metodos-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
 
@@ -641,7 +701,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 10px 8px;
+  padding: 10px 4px;
   background: #faf8f5;
   border: 2px solid #e4cbad;
   border-radius: 10px;
@@ -668,8 +728,8 @@
 }
 
 .metodo-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   stroke: #888;
 }
 
@@ -678,16 +738,19 @@
 }
 
 .metodo-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: #888;
+  text-align: center;
 }
 
 .metodo-btn.active .metodo-label {
   color: #5e412f;
 }
 
-/* Modal Footer */
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
 .modal-footer {
   display: flex;
   gap: 10px;
@@ -752,182 +815,42 @@
   height: 18px;
 }
 
-/* Spinner pequeño */
-.spinner-small {
-  display: inline-block;
+/* ============================================
+   BOTÓN CERRAR ÉXITO
+   ============================================ */
+.btn-cerrar-exito {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  flex: 1;
+  background: #32CD32;
+  color: #ffffff;
+}
+
+.btn-cerrar-exito:hover {
+  background: #28a428;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.btn-cerrar-exito svg {
+  stroke: #ffffff;
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 /* ============================================
-   RESPONSIVE
+   RESUMEN DE ÉXITO
    ============================================ */
-@media (max-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .resumen-recaudacion {
-    grid-template-columns: 1fr;
-  }
-
-  .tabla-scroll {
-    padding: 0 12px 12px 12px;
-  }
-
-  .tabla-ventas {
-    font-size: 12px;
-  }
-
-  .tabla-ventas th,
-  .tabla-ventas td {
-    padding: 8px 10px;
-  }
-
-  .modal-pago {
-    max-width: 98%;
-    border-radius: 12px;
-  }
-
-  .modal-header {
-    padding: 16px 18px;
-  }
-
-  .modal-body {
-    padding: 18px;
-  }
-
-  .modal-footer {
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px 18px 18px;
-  }
-
-  .btn-cancelar,
-  .btn-confirmar-pago {
-    flex: none;
-    width: 100%;
-  }
-
-  .metodos-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .page-header h2 {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .stat-value {
-    font-size: 20px;
-  }
-
-  .stat-card {
-    padding: 12px;
-  }
-
-  .page-header h2 {
-    font-size: 16px;
-  }
-
-  .header-icon {
-    width: 20px;
-    height: 20px;
-  }
-
-  .tabla-ventas {
-    font-size: 11px;
-  }
-
-  .tabla-ventas th,
-  .tabla-ventas td {
-    padding: 6px 8px;
-  }
-
-  .id-badge {
-    font-size: 10px;
-    padding: 1px 6px;
-  }
-
-  .estado-badge {
-    font-size: 10px;
-    padding: 2px 8px;
-  }
-
-  .btn-dashboard span,
-  .btn-refresh span {
-    display: none;
-  }
-
-  .modal-header h2 {
-    font-size: 17px;
-  }
-
-  .modal-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .modal-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .metodos-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-
-  .metodo-btn {
-    padding: 8px 4px;
-  }
-
-  .metodo-label {
-    font-size: 10px;
-  }
-
-  .detalle-row {
-    font-size: 12px;
-  }
-
-  .item-row {
-    font-size: 12px;
-  }
-}
-// src/app/features/admin/ventas-admin/ventas-admin.component.scss
-
-// AGREGAR AL FINAL DEL ARCHIVO EXISTENTE
-
-/* ============================================
-   MODAL DE PAGO - ESTILOS MEJORADOS
-   ============================================ */
-
-// Resumen de éxito mejorado
 .resumen-pago-exito {
   background: linear-gradient(135deg, #f0faf0 0%, #e8f5e8 100%);
   border: 2px solid #32CD32;
@@ -1019,7 +942,9 @@
   height: 14px;
 }
 
-// Error detalle mejorado
+/* ============================================
+   ERROR DETALLE
+   ============================================ */
 .error-detalle {
   display: flex;
   flex-direction: column;
@@ -1042,188 +967,187 @@
   margin: 0;
 }
 
-// Mensaje de estado mejorado
-.mensaje-estado {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  border-radius: 10px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.mensaje-estado.procesando {
-  background: rgba(52, 152, 219, 0.08);
-  color: #3498db;
-  border: 1px solid rgba(52, 152, 219, 0.15);
-}
-
-.mensaje-estado.exito {
-  background: rgba(46, 204, 113, 0.08);
-  color: #2ecc71;
-  border: 1px solid rgba(46, 204, 113, 0.15);
-}
-
-.mensaje-estado.error {
-  background: rgba(231, 76, 60, 0.08);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.15);
-}
-
-.mensaje-estado svg {
-  width: 20px;
-  height: 20px;
-  stroke: currentColor;
-  flex-shrink: 0;
-}
-
-.mensaje-estado .spinner-small {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(52, 152, 219, 0.2);
-  border-top-color: #3498db;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  flex-shrink: 0;
-}
-
-// Modal icon estados
-.modal-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(197, 48, 42, 0.08);
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.modal-icon svg {
-  width: 24px;
-  height: 24px;
-  stroke: #c5302a;
-}
-
-.modal-icon.procesando {
-  background: rgba(52, 152, 219, 0.12);
-}
-
-.modal-icon.procesando svg {
-  stroke: #3498db;
-}
-
-.modal-icon.exito {
-  background: rgba(46, 204, 113, 0.12);
-}
-
-.modal-icon.exito svg {
-  stroke: #2ecc71;
-}
-
-.modal-icon.error {
-  background: rgba(231, 76, 60, 0.12);
-}
-
-.modal-icon.error svg {
-  stroke: #e74c3c;
-}
-
-.spinner-modal {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(52, 152, 219, 0.2);
-  border-top-color: #3498db;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-// Botón cerrar éxito
-.btn-cerrar-exito {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: inherit;
-  flex: 1;
-  background: #32CD32;
-  color: #ffffff;
-}
-
-.btn-cerrar-exito:hover {
-  background: #28a428;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
-}
-
-.btn-cerrar-exito svg {
-  stroke: #ffffff;
+/* ============================================
+   SPINNER PEQUEÑO
+   ============================================ */
+.spinner-small {
+  display: inline-block;
   width: 18px;
   height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-// TEMA OSCURO - MODAL
-.pedidos-mesero-container.tema-oscuro .resumen-pago-exito,
-.carta-admin-container.tema-oscuro .resumen-pago-exito,
-.ventas-admin-container.tema-oscuro .resumen-pago-exito {
-  background: linear-gradient(135deg, #1a2a1a 0%, #152015 100%);
-  border-color: #32CD32;
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.pedidos-mesero-container.tema-oscuro .exito-header span,
-.carta-admin-container.tema-oscuro .exito-header span,
-.ventas-admin-container.tema-oscuro .exito-header span {
-  color: #32CD32;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.pedidos-mesero-container.tema-oscuro .exito-item,
-.carta-admin-container.tema-oscuro .exito-item,
-.ventas-admin-container.tema-oscuro .exito-item {
-  background: rgba(255, 255, 255, 0.05);
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.pedidos-mesero-container.tema-oscuro .exito-item .exito-valor,
-.carta-admin-container.tema-oscuro .exito-item .exito-valor,
-.ventas-admin-container.tema-oscuro .exito-item .exito-valor {
-  color: #ffffda;
-}
-
-.pedidos-mesero-container.tema-oscuro .exito-item .exito-valor.total-monto,
-.carta-admin-container.tema-oscuro .exito-item .exito-valor.total-monto,
-.ventas-admin-container.tema-oscuro .exito-item .exito-valor.total-monto {
-  color: #32CD32;
-}
-
-// RESPONSIVE
 @media (max-width: 768px) {
-  .exito-detalles {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resumen-recaudacion {
     grid-template-columns: 1fr;
   }
 
-  .exito-header span {
-    font-size: 16px;
+  .tabla-scroll {
+    padding: 0 12px 12px 12px;
   }
 
-  .exito-item .exito-valor {
-    font-size: 14px;
+  .tabla-ventas {
+    font-size: 12px;
   }
 
-  .resumen-pago-exito {
-    padding: 16px;
+  .tabla-ventas th,
+  .tabla-ventas td {
+    padding: 8px 10px;
+  }
+
+  .modal-pago {
+    max-width: 98%;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 16px 18px;
+  }
+
+  .modal-body {
+    padding: 18px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 18px 18px;
+  }
+
+  .btn-cancelar,
+  .btn-confirmar-pago {
+    flex: none;
+    width: 100%;
+  }
+
+  .metodos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .page-header h2 {
+    font-size: 18px;
+  }
+
+  .exito-detalles {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .page-header h2 {
+    font-size: 16px;
+  }
+
+  .header-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tabla-ventas {
+    font-size: 11px;
+  }
+
+  .tabla-ventas th,
+  .tabla-ventas td {
+    padding: 6px 8px;
+  }
+
+  .id-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .estado-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .origen-badge {
+    font-size: 9px;
+    padding: 2px 8px;
+  }
+
+  .btn-dashboard span,
+  .btn-refresh span {
+    display: none;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .metodos-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .metodo-btn {
+    padding: 8px 4px;
+  }
+
+  .metodo-label {
+    font-size: 9px;
+  }
+
+  .detalle-row {
+    font-size: 12px;
+  }
+
+  .item-row {
+    font-size: 12px;
+  }
+
   .exito-header {
     flex-direction: column;
     text-align: center;

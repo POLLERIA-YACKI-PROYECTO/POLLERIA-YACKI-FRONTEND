@@ -3,10 +3,11 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { VentaService } from '../../../core/services/venta.service';
+import { DashboardService } from '../../../core/services/dashboard.service';
 import { ProductoService } from '../../../core/services/producto.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
 import { PedidoService } from '../../../core/services/pedido.service';
+import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 
 @Component({
   selector: 'app-dashboard-admin',
@@ -17,10 +18,11 @@ import { PedidoService } from '../../../core/services/pedido.service';
 })
 export class DashboardAdminComponent implements OnInit {
   private authService = inject(AuthService);
-  private ventaService = inject(VentaService);
+  private dashboardService = inject(DashboardService);
   private productoService = inject(ProductoService);
   private usuarioService = inject(UsuarioService);
   private pedidoService = inject(PedidoService);
+  private pedidoClienteService = inject(PedidoClienteService);
   private router = inject(Router);
 
   usuario = signal<any>(null);
@@ -91,6 +93,8 @@ export class DashboardAdminComponent implements OnInit {
     totalRecaudado: 0,
     recaudadoLocal: 0,
     recaudadoDelivery: 0,
+    ventasHoy: 0,
+    recaudadoHoy: 0,
   });
 
   ventasRecientes = signal<any[]>([]);
@@ -105,12 +109,16 @@ export class DashboardAdminComponent implements OnInit {
     this.cargarDatos();
   }
 
+  // ============================================
+  // CARGAR DATOS
+  // ============================================
   cargarDatos(): void {
     this.loading.set(true);
     this.errorMessage.set('');
 
     let solicitudesCompletadas = 0;
-    const totalSolicitudes = 4;
+    const totalSolicitudes = 5;
+
     const verificarFinalizado = () => {
       solicitudesCompletadas++;
       if (solicitudesCompletadas >= totalSolicitudes) {
@@ -118,6 +126,7 @@ export class DashboardAdminComponent implements OnInit {
       }
     };
 
+    // 1. Productos
     this.productoService.obtenerProductos().subscribe({
       next: (productos) => {
         this.actualizarStat('productos', productos?.length || 0);
@@ -125,14 +134,15 @@ export class DashboardAdminComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error al cargar productos:', err);
-        this.errorMessage.set('Error al cargar productos');
         verificarFinalizado();
       },
     });
 
+    // 2. Usuarios
     this.usuarioService.obtenerUsuarios().subscribe({
       next: (usuarios) => {
-        this.actualizarStat('usuarios', usuarios?.length || 0);
+        const activos = (usuarios || []).filter((u: any) => u.activo !== false);
+        this.actualizarStat('usuarios', activos.length);
         verificarFinalizado();
       },
       error: (err) => {
@@ -141,10 +151,11 @@ export class DashboardAdminComponent implements OnInit {
       },
     });
 
+    // 3. Pedidos pendientes (mesero/admin)
     this.pedidoService.obtenerPedidosPendientes().subscribe({
       next: (pedidos) => {
-        this.pedidosPendientes.set(pedidos || []);
-        this.actualizarStat('pendientes', pedidos?.length || 0);
+        const pendientes = pedidos || [];
+        this.pedidosPendientes.set(pendientes);
         verificarFinalizado();
       },
       error: (err) => {
@@ -153,108 +164,72 @@ export class DashboardAdminComponent implements OnInit {
       },
     });
 
-    this.ventaService.obtenerVentas().subscribe({
-      next: (ventas) => {
-        const ventasArray = ventas || [];
-        const hoy = this.obtenerFechaLocal(new Date());
-
-        const ventasHoy = ventasArray.filter((venta: any) => {
-          const fechaVenta = this.obtenerFechaVentaLocal(venta.fecha_venta);
-
-          return fechaVenta === hoy;
-        });
-
-        this.actualizarStat('ventas', ventasHoy.length);
-
-        const total = ventasArray.reduce((sum: number, v: any) => {
-          const totalVenta = parseFloat(v.total) || 0;
-          return sum + totalVenta;
-        }, 0);
-
-        this.actualizarStat('ingresos', `S/ ${total.toFixed(2)}`);
-
-        const local = ventasArray.filter(
-          (v: any) => v.tipo_entrega === 'local' || v.tipo_entrega === 'paraLlevar',
-        );
-        const delivery = ventasArray.filter(
-          (v: any) => v.tipo_entrega === 'delivery' || v.tipo_entrega === 'motorizada',
-        );
-
-        const totalLocal = local.reduce((sum: number, v: any) => {
-          const totalVenta = parseFloat(v.total) || 0;
-          return sum + totalVenta;
-        }, 0);
-
-        const totalDelivery = delivery.reduce((sum: number, v: any) => {
-          const totalVenta = parseFloat(v.total) || 0;
-          return sum + totalVenta;
-        }, 0);
-
-        this.actualizarStat('local', local.length);
-
-        this.resumenVentas.set({
-          totalVentas: ventasArray.length,
-          ventasLocal: local.length,
-          ventasDelivery: delivery.length,
-          totalRecaudado: total,
-          recaudadoLocal: totalLocal,
-          recaudadoDelivery: totalDelivery,
-        });
-
-        const recientes = ventasArray
-          .slice(-10)
-          .reverse()
-          .map((v: any) => ({
-            id: v.id,
-            cliente: v.cliente_nombre || v.cliente || 'Consumidor Final',
-            total: parseFloat(v.total) || 0,
-            fecha: v.fecha_venta ? this.formatearFecha(v.fecha_venta) : '--',
-            estado: v.estado || 'completada',
-            tipo: v.tipo_entrega || 'local',
-          }));
-        this.ventasRecientes.set(recientes);
+    // 4. Pedidos web pendientes (por confirmar)
+    this.pedidoClienteService.obtenerPendientes().subscribe({
+      next: (pedidosWeb) => {
+        const pendientesWeb = pedidosWeb || [];
+        const totalPendientes = this.pedidosPendientes().length + pendientesWeb.length;
+        this.actualizarStat('pendientes', totalPendientes);
         verificarFinalizado();
       },
       error: (err) => {
-        console.error('Error al cargar ventas:', err);
-        this.errorMessage.set('Error al cargar ventas');
+        console.error('Error al cargar pedidos web pendientes:', err);
         verificarFinalizado();
       },
     });
+
+    // 5. ✅ RESUMEN UNIFICADO (ventas + pedidos web confirmados)
+    this.dashboardService.obtenerResumenUnificado().subscribe({
+      next: (response) => {
+        if (response?.success) {
+          const { resumen, ventasRecientes: recientes } = response;
+
+          // Actualizar stats
+          this.actualizarStat('ventas', resumen.ventasHoy || 0);
+          this.actualizarStat('ingresos', `S/ ${(resumen.totalRecaudado || 0).toFixed(2)}`);
+          this.actualizarStat('local', resumen.ventasLocal || 0);
+
+          // Actualizar resumen
+          this.resumenVentas.set({
+            totalVentas: resumen.totalVentas || 0,
+            ventasLocal: resumen.ventasLocal || 0,
+            ventasDelivery: resumen.ventasDelivery || 0,
+            totalRecaudado: resumen.totalRecaudado || 0,
+            recaudadoLocal: resumen.recaudadoLocal || 0,
+            recaudadoDelivery: resumen.recaudadoDelivery || 0,
+            ventasHoy: resumen.ventasHoy || 0,
+            recaudadoHoy: resumen.recaudadoHoy || 0
+          });
+
+          // Actualizar ventas recientes
+          const recientesFormateados = (recientes || []).map((v: any) => ({
+            id: v.id,
+            cliente: v.cliente_nombre || 'Consumidor Final',
+            total: parseFloat(v.total) || 0,
+            fecha: v.fecha ? this.formatearFecha(v.fecha) : '--',
+            estado: v.estado || 'completada',
+            tipo: v.tipo_entrega || 'local',
+            origen: v.origen || 'venta'
+          }));
+          this.ventasRecientes.set(recientesFormateados);
+
+          verificarFinalizado();
+        } else {
+          this.errorMessage.set('Error al cargar resumen');
+          verificarFinalizado();
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar resumen unificado:', err);
+        this.errorMessage.set('Error al cargar resumen de ventas');
+        verificarFinalizado();
+      }
+    });
   }
 
-  private obtenerFechaLocal(fecha: Date): string {
-    const anio = fecha.getFullYear();
-
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-
-    const dia = String(fecha.getDate()).padStart(2, '0');
-
-    return `${anio}-${mes}-${dia}`;
-  }
-
-  private obtenerFechaVentaLocal(valor: unknown): string | null {
-    if (!valor) {
-      return null;
-    }
-
-    const texto = String(valor).trim();
-
-    const coincidencia = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-
-    if (coincidencia) {
-      return `${coincidencia[1]}-` + `${coincidencia[2]}-` + `${coincidencia[3]}`;
-    }
-
-    const fecha = new Date(texto);
-
-    if (Number.isNaN(fecha.getTime())) {
-      return null;
-    }
-
-    return this.obtenerFechaLocal(fecha);
-  }
-
+  // ============================================
+  // UTILIDADES
+  // ============================================
   formatearFecha(fecha: string): string {
     try {
       const d = new Date(fecha);
@@ -271,7 +246,9 @@ export class DashboardAdminComponent implements OnInit {
   }
 
   actualizarStat(icono: string, valor: any): void {
-    this.stats.update((stats) => stats.map((s) => (s.icon === icono ? { ...s, value: valor } : s)));
+    this.stats.update((stats) =>
+      stats.map((s) => (s.icon === icono ? { ...s, value: valor } : s))
+    );
   }
 
   getEstadoClass(estado: string): string {
@@ -298,6 +275,36 @@ export class DashboardAdminComponent implements OnInit {
       entregado: 'Completada',
     };
     return textos[estado] || estado;
+  }
+
+  // ✅ Origen de la venta
+  getOrigenLabel(origen: string): string {
+    const labels: any = {
+      venta: 'Mesero',
+      pedido_web: 'Carta Web'
+    };
+    return labels[origen] || 'Mesero';
+  }
+
+  getOrigenClass(origen: string): string {
+    return origen === 'pedido_web' ? 'origen-web' : 'origen-venta';
+  }
+
+  // ✅ Tipo de entrega
+  getTipoLabel(tipo: string): string {
+    const labels: any = {
+      local: 'Local',
+      delivery: 'Motorizado',
+      motorizada: 'Motorizado',
+      paraLlevar: 'Para Llevar'
+    };
+    return labels[tipo] || 'Local';
+  }
+
+  getTipoClass(tipo: string): string {
+    if (tipo === 'delivery' || tipo === 'motorizada') return 'delivery';
+    if (tipo === 'paraLlevar') return 'paraLlevar';
+    return 'local';
   }
 
   refrescar(): void {

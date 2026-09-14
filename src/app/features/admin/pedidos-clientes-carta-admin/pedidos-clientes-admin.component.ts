@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-pedidos-clientes-admin',
@@ -35,6 +36,17 @@ export class PedidosClientesAdminComponent implements OnInit {
 
   metodosPago = ['efectivo', 'tarjeta', 'yape', 'plin', 'transferencia'];
   estados = ['pendiente', 'preparando', 'listo', 'entregado', 'cancelado'];
+  tiposEntrega = [
+    { id: 'local', label: 'Local' },
+    { id: 'delivery', label: 'Motorizado' },
+    { id: 'paraLlevar', label: 'Para Llevar' }
+  ];
+
+  // ✅ Modal de verificación
+  mostrarModalVerificacion = signal<boolean>(false);
+  pedidoSeleccionado = signal<any>(null);
+  tipoEntregaSeleccionado = signal<string>('local');
+  confirmando = signal<boolean>(false);
 
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
@@ -44,6 +56,9 @@ export class PedidosClientesAdminComponent implements OnInit {
     this.cargarPedidos();
   }
 
+  // ============================================
+  // CARGAR PEDIDOS
+  // ============================================
   cargarPedidos(): void {
     this.loading.set(true);
     this.pedidoClienteService.obtenerTodos().subscribe({
@@ -108,6 +123,118 @@ export class PedidosClientesAdminComponent implements OnInit {
     this.aplicarFiltros();
   }
 
+  // ============================================
+  // ✅ ABRIR MODAL DE VERIFICACIÓN
+  // ============================================
+  abrirVerificacion(pedido: any): void {
+    if (pedido.pagado) {
+      alert('Este pedido ya está confirmado');
+      return;
+    }
+    if (pedido.estado === 'cancelado') {
+      alert('Este pedido está cancelado');
+      return;
+    }
+
+    this.pedidoSeleccionado.set(pedido);
+    this.tipoEntregaSeleccionado.set(pedido.tipo_entrega || 'local');
+    this.mostrarModalVerificacion.set(true);
+  }
+
+  cerrarModal(): void {
+    if (this.confirmando()) return;
+    this.mostrarModalVerificacion.set(false);
+    this.pedidoSeleccionado.set(null);
+  }
+
+  // ============================================
+  // ✅ VER COMPROBANTE EN NUEVA PESTAÑA
+  // ============================================
+  verComprobante(pedido: any): void {
+    if (!pedido.comprobante_pago) {
+      alert('Este pedido no tiene comprobante adjunto');
+      return;
+    }
+
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    const url = `${baseUrl}${pedido.comprobante_pago}`;
+    window.open(url, '_blank');
+  }
+
+  // ============================================
+  // ✅ CONFIRMAR PAGO Y CREAR VENTA
+  // ============================================
+  confirmarPago(): void {
+    const pedido = this.pedidoSeleccionado();
+    if (!pedido) return;
+
+    const tipoEntrega = this.tipoEntregaSeleccionado();
+    const tipoLabel = tipoEntrega === 'delivery' ? 'Motorizado' : 'Local';
+
+    if (!confirm(
+      `¿Confirmar pago del pedido #${pedido.id}?\n\n` +
+      `Cliente: ${pedido.cliente_nombre}\n` +
+      `Método: ${this.getMetodoPagoLabel(pedido.metodo_pago)}\n` +
+      `Total: S/ ${Number(pedido.total).toFixed(2)}\n` +
+      `Tipo de entrega: ${tipoLabel}\n\n` +
+      `✅ Se creará una VENTA automáticamente.`
+    )) return;
+
+    this.confirmando.set(true);
+
+    this.pedidoClienteService.confirmarPago(pedido.id, tipoEntrega).subscribe({
+      next: (response) => {
+        this.confirmando.set(false);
+        alert(
+          `✅ Pago confirmado\n\n` +
+          `Pedido #${pedido.id} confirmado como ${tipoLabel}.\n` +
+          `Venta #${response.venta_id} creada automáticamente.`
+        );
+        this.cerrarModal();
+        this.cargarPedidos();
+      },
+      error: (err) => {
+        console.error('Error al confirmar pago:', err);
+        this.confirmando.set(false);
+        alert(err?.error?.error || 'Error al confirmar el pago');
+      }
+    });
+  }
+
+  // ============================================
+  // ✅ RECHAZAR PAGO
+  // ============================================
+  rechazarPago(): void {
+    const pedido = this.pedidoSeleccionado();
+    if (!pedido) return;
+
+    const motivo = prompt(
+      `Motivo del rechazo del pedido #${pedido.id}:`,
+      'No se recibió el pago'
+    );
+
+    if (motivo === null) return;
+
+    this.confirmando.set(true);
+
+    this.pedidoClienteService.rechazarPago(pedido.id, motivo || 'No especificado').subscribe({
+      next: () => {
+        this.confirmando.set(false);
+        alert('❌ Pedido rechazado');
+        this.cerrarModal();
+        this.cargarPedidos();
+      },
+      error: (err) => {
+        console.error('Error al rechazar:', err);
+        this.confirmando.set(false);
+        alert(err?.error?.error || 'Error al rechazar el pedido');
+      }
+    });
+  }
+
+  // ============================================
+  // UTILIDADES
+  // ============================================
   formatearFecha(fecha: string): string {
     try {
       const d = new Date(fecha);
@@ -148,55 +275,11 @@ export class PedidosClientesAdminComponent implements OnInit {
   getTipoEntregaLabel(tipo: string): string {
     const labels: any = {
       'local': 'Local',
-      'delivery': 'Delivery',
+      'delivery': 'Motorizado',
       'paraLlevar': 'Para Llevar',
       'motorizada': 'Motorizado'
     };
     return labels[tipo] || 'Local';
-  }
-
-  verDetalle(pedido: any): void {
-    const items = pedido.items || [];
-    const itemsTexto = items
-      .map((i: any) => `  • ${i.cantidad}x ${i.nombre} - S/ ${Number(i.subtotal || i.precio * i.cantidad).toFixed(2)}`)
-      .join('\n');
-
-    alert(
-      `📋 PEDIDO #${pedido.id}\n\n` +
-      `👤 Cliente: ${pedido.cliente_nombre}\n` +
-      `📞 Teléfono: ${pedido.cliente_telefono || 'N/A'}\n` +
-      `📍 Dirección: ${pedido.cliente_direccion || 'N/A'}\n` +
-      `📝 Referencia: ${pedido.cliente_referencia || 'N/A'}\n` +
-      `🚚 Tipo: ${this.getTipoEntregaLabel(pedido.tipo_entrega)}\n` +
-      `💳 Método: ${this.getMetodoPagoLabel(pedido.metodo_pago)}\n` +
-      `✅ Pagado: ${pedido.pagado ? 'SÍ' : 'NO'}\n` +
-      `📅 Fecha: ${this.formatearFecha(pedido.created_at)}\n\n` +
-      `🛒 PRODUCTOS:\n${itemsTexto}\n\n` +
-      `💰 Subtotal: S/ ${Number(pedido.subtotal).toFixed(2)}\n` +
-      `🧾 IGV: S/ ${Number(pedido.igv).toFixed(2)}\n` +
-      `💵 TOTAL: S/ ${Number(pedido.total).toFixed(2)}`
-    );
-  }
-
-  marcarPagado(pedido: any): void {
-    if (pedido.pagado) {
-      alert('Este pedido ya está pagado');
-      return;
-    }
-    if (confirm(`¿Confirmar pago del pedido #${pedido.id}?`)) {
-      this.pedidoClienteService
-        .marcarPagado(pedido.id, pedido.metodo_pago)
-        .subscribe({
-          next: () => {
-            alert('Pago confirmado');
-            this.cargarPedidos();
-          },
-          error: (err) => {
-            console.error(err);
-            alert('Error al confirmar pago');
-          }
-        });
-    }
   }
 
   irDashboard(): void {
