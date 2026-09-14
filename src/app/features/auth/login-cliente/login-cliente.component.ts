@@ -129,7 +129,9 @@ export class LoginClienteComponent implements OnInit {
         this.isLoading.set(false);
         this.errorMessage.set(
           error?.error?.message ||
-            'No se pudo completar el registro. Intenta nuevamente.'
+            (error?.status >= 500
+              ? 'El servidor no puede registrar clientes en este momento. Revisa que la API y la base de datos estén activas.'
+              : 'No se pudo completar el registro. Intenta nuevamente.')
         );
       }
     });

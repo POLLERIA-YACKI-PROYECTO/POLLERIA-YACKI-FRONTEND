@@ -283,14 +283,23 @@ export class CartaClienteComponent implements OnInit {
           this.cargandoPedido.set(false);
           alert(
             'Error al crear el pedido: ' +
-              (response?.error || 'Error desconocido')
+              (response?.detalle || response?.error || 'Error desconocido')
           );
         }
       },
       error: (err: any) => {
         console.error('Error al crear pedido:', err);
         this.cargandoPedido.set(false);
-        alert('Error al procesar el pedido. Por favor, intenta nuevamente.');
+        const mensaje =
+          err?.error?.detalle ||
+          err?.error?.error ||
+          err?.error?.message ||
+          (err?.status === 401
+            ? 'Tu sesión expiró. Inicia sesión nuevamente.'
+            : err?.status === 403
+              ? 'No tienes permisos para crear pedidos.'
+              : `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`);
+        alert(mensaje);
       }
     });
   }

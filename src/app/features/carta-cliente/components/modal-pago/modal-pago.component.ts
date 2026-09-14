@@ -1,7 +1,8 @@
 // src/app/features/carta-cliente/components/modal-pago/modal-pago.component.ts
-import { Component, Input, Output, EventEmitter, signal, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, OnChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-modal-pago',
@@ -11,6 +12,8 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./modal-pago.component.scss']
 })
 export class ModalPagoComponent implements OnChanges {
+  private authService = inject(AuthService);
+
   @Input() visible = false;
   @Input() total = 0;
   @Input() cargando = false;
@@ -58,8 +61,15 @@ export class ModalPagoComponent implements OnChanges {
   }
 
   resetEstado(): void {
+    const cliente = this.authService.getUsuarioActual() || {};
+
     this.estadoPago.set('formulario');
     this.mensajeError.set('');
+    this.clienteNombre.set(cliente.nombre || '');
+    this.telefono.set(cliente.telefono || '');
+    this.direccion.set(cliente.direccion || '');
+    this.referencia.set('');
+    this.observaciones.set('');
   }
 
   formatearPrecio(precio: number | string): string {
