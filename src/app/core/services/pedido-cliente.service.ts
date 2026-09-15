@@ -4,107 +4,101 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { BaseApiService } from './base-api.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class PedidoClienteService {
-  private http = inject(HttpClient);
+@Injectable({ providedIn: 'root' })
+export class PedidoClienteService extends BaseApiService {
   private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/pedidos-cliente`;
 
-  // Headers con token
+  constructor(http: HttpClient) {
+    super(http);
+  }
+
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     });
   }
 
-  // Headers para archivos (sin Content-Type, el navegador lo pone)
   private getMultipartHeaders(): HttpHeaders {
     return new HttpHeaders({
-      'Authorization': `Bearer ${this.authService.getToken()}`
+      Authorization: `Bearer ${this.authService.getToken()}`,
     });
   }
 
-  // ============================================
-  // OBTENER
-  // ============================================
-  obtenerTodos(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
+  // GET
+  obtenerTodos(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(this.apiUrl, {
+      ttl: 60 * 1000,
+      forceRefresh,
+      headers: this.getHeaders(),
+    });
   }
 
-  obtenerPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/pendientes`, { headers: this.getHeaders() });
+  obtenerPendientes(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(`${this.apiUrl}/pendientes`, {
+      ttl: 30 * 1000,
+      forceRefresh,
+      headers: this.getHeaders(),
+    });
   }
 
   obtenerPorCliente(clienteId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/cliente/${clienteId}`, { headers: this.getHeaders() });
+    return this.getCached<any[]>(`${this.apiUrl}/cliente/${clienteId}`, {
+      ttl: 60 * 1000,
+      headers: this.getHeaders(),
+    });
   }
 
   obtenerPorId(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    return this.getCached<any>(`${this.apiUrl}/${id}`, {
+      ttl: 60 * 1000,
+      headers: this.getHeaders(),
+    });
   }
 
-  // ============================================
-  // CREAR PEDIDO
-  // ============================================
+  // MUTACIONES
   crearPedido(pedido: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl, pedido, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', this.apiUrl, pedido, this.getHeaders());
   }
 
-  // ============================================
-  // SUBIR COMPROBANTE
-  // ============================================
   subirComprobante(id: number, archivo: File): Observable<any> {
     const formData = new FormData();
     formData.append('comprobante', archivo);
-    return this.http.post<any>(
-      `${this.apiUrl}/${id}/comprobante`,
-      formData,
-      { headers: this.getMultipartHeaders() }
-    );
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', `${this.apiUrl}/${id}/comprobante`, formData, this.getMultipartHeaders());
   }
 
-  // ============================================
-  // CONFIRMAR PAGO (ADMIN)
-  // ============================================
   confirmarPago(id: number, tipoEntrega?: string): Observable<any> {
-    return this.http.put<any>(
+    this.limpiarCache(this.apiUrl);
+    return this.mutate(
+      'PUT',
       `${this.apiUrl}/${id}/confirmar-pago`,
       { tipo_entrega: tipoEntrega || null },
-      { headers: this.getHeaders() }
+      this.getHeaders()
     );
   }
 
-  // ============================================
-  // RECHAZAR PAGO (ADMIN)
-  // ============================================
   rechazarPago(id: number, motivo: string): Observable<any> {
-    return this.http.put<any>(
-      `${this.apiUrl}/${id}/rechazar-pago`,
-      { motivo },
-      { headers: this.getHeaders() }
-    );
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}/rechazar-pago`, { motivo }, this.getHeaders());
   }
 
-  // ============================================
-  // ACTUALIZAR ESTADO
-  // ============================================
   actualizarEstado(id: number, estado: string): Observable<any> {
-    return this.http.put<any>(
-      `${this.apiUrl}/${id}/estado`,
-      { estado },
-      { headers: this.getHeaders() }
-    );
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}/estado`, { estado }, this.getHeaders());
   }
 
-  // ============================================
-  // ELIMINAR
-  // ============================================
   eliminar(id: number): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
+  }
+
+  limpiarCachePedidos(): void {
+    this.limpiarCache(this.apiUrl);
   }
 }

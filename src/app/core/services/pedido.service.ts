@@ -4,91 +4,111 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { BaseApiService } from './base-api.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class PedidoService {
-  private http = inject(HttpClient);
+@Injectable({ providedIn: 'root' })
+export class PedidoService extends BaseApiService {
   private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/pedidos`;
+
+  constructor(http: HttpClient) {
+    super(http);
+  }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     });
   }
 
   // ============================================
-  // OBTENER PEDIDOS
+  // GET
   // ============================================
-  obtenerPedidos(): Observable<any[]> {
-    console.log('Solicitando todos los pedidos');
-    return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
+  obtenerPedidos(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(this.apiUrl, {
+      ttl: 30 * 1000,
+      forceRefresh,
+      headers: this.getHeaders(),
+    });
   }
 
-  obtenerPedidosPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/pendientes`, { headers: this.getHeaders() });
-  }
-
-  obtenerPedidosPagados(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/pagados`, { headers: this.getHeaders() });
-  }
-
-  obtenerPedidosPagadosMesero(): Observable<any[]> {
-    console.log('Solicitando pedidos entregados del mesero');
-    return this.http.get<any[]>(
-      `${this.apiUrl}/entregados/mesero`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  obtenerPedidosPorTipo(tipo: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/tipo/${tipo}`, { headers: this.getHeaders() });
+  obtenerPedidosPendientes(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(`${this.apiUrl}/pendientes`, {
+      ttl: 30 * 1000,
+      forceRefresh,
+      headers: this.getHeaders(),
+    });
   }
 
   obtenerPedido(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    return this.getCached<any>(`${this.apiUrl}/${id}`, {
+      ttl: 30 * 1000,
+      headers: this.getHeaders(),
+    });
   }
 
-  obtenerHistorialCliente(): Observable<any> {
-    return this.http.get(this.apiUrl, { headers: this.getHeaders() });
+  obtenerPorMesa(mesaId: number): Observable<any[]> {
+    return this.getCached<any[]>(`${this.apiUrl}/mesa/${mesaId}`, {
+      ttl: 30 * 1000,
+      headers: this.getHeaders(),
+    });
+  }
+
+  // ✅ NUEVO: Pedidos pagados del mesero actual
+  obtenerPedidosPagadosMesero(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(`${this.apiUrl}/pagados-mesero`, {
+      ttl: 30 * 1000,
+      forceRefresh,
+      headers: this.getHeaders(),
+    });
   }
 
   // ============================================
-  // CREAR PEDIDO
+  // MUTACIONES
   // ============================================
   crearPedido(pedido: any): Observable<any> {
-    return this.http.post(this.apiUrl, pedido, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', this.apiUrl, pedido, this.getHeaders());
   }
 
-  crearPedidoCliente(pedido: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/cliente`, pedido, { headers: this.getHeaders() });
+  actualizarPedido(id: number, pedido: any): Observable<any> {
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}`, pedido, this.getHeaders());
   }
 
-  // ============================================
-  // ACTUALIZAR
-  // ============================================
+  // ✅ NUEVO: Cambiar estado (usado por pedidos-mesero)
   cambiarEstado(id: number, estado: string): Observable<any> {
-    return this.http.put(
-      `${this.apiUrl}/${id}/estado`,
-      { estado },
-      { headers: this.getHeaders() }
-    );
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}/estado`, { estado }, this.getHeaders());
   }
 
-  marcarPagado(id: number, metodo_pago: string): Observable<any> {
-    console.log('Enviando pago - Pedido ID:', id, 'Método:', metodo_pago);
-    return this.http.patch(
-      `${this.apiUrl}/${id}/pagar`,
-      { metodo_pago },
-      { headers: this.getHeaders() }
+  // Alias por compatibilidad
+  actualizarEstado(id: number, estado: string): Observable<any> {
+    return this.cambiarEstado(id, estado);
+  }
+
+  // ✅ NUEVO: Marcar pagado (usado por ventas-admin)
+  marcarPagado(id: number, metodoPago: string): Observable<any> {
+    this.limpiarCache(this.apiUrl);
+    return this.mutate(
+      'PUT',
+      `${this.apiUrl}/${id}/marcar-pagado`,
+      { metodo_pago: metodoPago },
+      this.getHeaders()
     );
   }
 
   eliminarPedido(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
+  }
+
+  // ============================================
+  // CACHÉ
+  // ============================================
+  limpiarCachePedidos(): void {
+    this.limpiarCache(this.apiUrl);
   }
 }

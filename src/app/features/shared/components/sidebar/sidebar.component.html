@@ -5,11 +5,12 @@
       <a
         [routerLink]="item.route"
         routerLinkActive="active"
-        class="sidebar-item"
         [routerLinkActiveOptions]="{ exact: false }"
+        class="sidebar-item"
         [title]="item.label"
       >
-        <span class="sidebar-icon" [innerHTML]="getIconSvg(item.icon)"></span>
+        <!-- ✅ Usa iconSvg pre-computado, NO llama a un método -->
+        <span class="sidebar-icon" [innerHTML]="item.iconSvg"></span>
         <span class="sidebar-label">{{ item.label }}</span>
       </a>
     }

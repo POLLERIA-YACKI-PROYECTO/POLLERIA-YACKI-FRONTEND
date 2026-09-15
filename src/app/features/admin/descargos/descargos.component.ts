@@ -1,9 +1,9 @@
 // src/app/features/admin/descargos/descargos.component.ts
-
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { DescargoService } from '../../../core/services/descargo.service';
 
@@ -14,10 +14,14 @@ import { DescargoService } from '../../../core/services/descargo.service';
   templateUrl: './descargos.component.html',
   styleUrls: ['./descargos.component.scss']
 })
-export class DescargosComponent implements OnInit {
+export class DescargosComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private descargoService = inject(DescargoService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
@@ -51,22 +55,41 @@ export class DescargosComponent implements OnInit {
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
 
   cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
-    this.descargoService.obtenerDescargos().subscribe({
-      next: (descargos) => {
-        this.descargos.set(descargos);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error al cargar descargos:', err);
-        this.loading.set(false);
-      }
-    });
+
+    this.descargoService.obtenerDescargos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (descargos) => {
+          this.descargos.set(descargos || []);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+        },
+        error: (err) => {
+          console.error('Error al cargar descargos:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+        }
+      });
+  }
+
+  recargar(): void {
+    this.yaCargado.set(false);
+    this.cargarDatos();
   }
 
   toggleFormulario(): void {
@@ -97,44 +120,50 @@ export class DescargosComponent implements OnInit {
     }
 
     if (this.editando()) {
-      this.descargoService.actualizarDescargo(this.descargoEdit().id, this.nuevoDescargo()).subscribe({
-        next: () => {
-          alert('Descargo actualizado correctamente');
-          this.cargarDatos();
-          this.toggleFormulario();
-        },
-        error: (err) => {
-          console.error('Error al actualizar descargo:', err);
-          alert('Error al actualizar descargo');
-        }
-      });
+      this.descargoService.actualizarDescargo(this.descargoEdit().id, this.nuevoDescargo())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Descargo actualizado correctamente');
+            this.recargar();
+            this.toggleFormulario();
+          },
+          error: (err) => {
+            console.error('Error al actualizar descargo:', err);
+            alert('Error al actualizar descargo');
+          }
+        });
     } else {
-      this.descargoService.crearDescargo(this.nuevoDescargo()).subscribe({
-        next: () => {
-          alert('Descargo registrado correctamente');
-          this.cargarDatos();
-          this.toggleFormulario();
-        },
-        error: (err) => {
-          console.error('Error al crear descargo:', err);
-          alert('Error al crear descargo');
-        }
-      });
+      this.descargoService.crearDescargo(this.nuevoDescargo())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Descargo registrado correctamente');
+            this.recargar();
+            this.toggleFormulario();
+          },
+          error: (err) => {
+            console.error('Error al crear descargo:', err);
+            alert('Error al crear descargo');
+          }
+        });
     }
   }
 
   eliminarDescargo(id: number): void {
     if (confirm('¿Está seguro de eliminar este descargo?')) {
-      this.descargoService.eliminarDescargo(id).subscribe({
-        next: () => {
-          alert('Descargo eliminado correctamente');
-          this.cargarDatos();
-        },
-        error: (err) => {
-          console.error('Error al eliminar descargo:', err);
-          alert('Error al eliminar descargo');
-        }
-      });
+      this.descargoService.eliminarDescargo(id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Descargo eliminado correctamente');
+            this.recargar();
+          },
+          error: (err) => {
+            console.error('Error al eliminar descargo:', err);
+            alert('Error al eliminar descargo');
+          }
+        });
     }
   }
 

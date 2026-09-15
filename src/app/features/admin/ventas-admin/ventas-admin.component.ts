@@ -8,7 +8,7 @@ import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
 import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-ventas-admin',
@@ -26,6 +26,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   private router = inject(Router);
 
   private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
@@ -74,58 +76,44 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR DATOS
+  // CARGAR DATOS (forkJoin + caché)
   // ============================================
   cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
     this.errorMessage.set('');
 
-    // 1. Pedidos pendientes (tabla pedidos) + pedidos web pendientes
-    this.pedidoService.obtenerPedidosPendientes()
+    forkJoin({
+      pedidosPendientes: this.pedidoService.obtenerPedidosPendientes()
+        .pipe(catchError(() => of([]))),
+      pedidosWeb: this.pedidoClienteService.obtenerPendientes()
+        .pipe(catchError(() => of([]))),
+      ventas: this.ventaService.obtenerVentas()
+        .pipe(catchError(() => of([])))
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (pedidos: any[]) => {
-          const pendientes = (Array.isArray(pedidos) ? pedidos : []).filter(
-            pedido =>
-              pedido.pagado !== 1 &&
-              pedido.pagado !== true &&
-              pedido.estado !== 'cancelado'
-          );
-
-          const pendientesConNombre = pendientes.map(p => ({
+        next: ({ pedidosPendientes, pedidosWeb, ventas }) => {
+          // 1. Combinar pedidos pendientes (mesero + web)
+          const pendientesMesero = (pedidosPendientes || []).filter(
+            (p: any) => p.pagado !== 1 && p.pagado !== true && p.estado !== 'cancelado'
+          ).map((p: any) => ({
             ...p,
             usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido',
             origen: 'pedido',
             id_unico: `P-${p.id}`
           }));
 
-          this.pedidosPendientes.set(pendientesConNombre);
-          this.totalPendientes.set(pendientesConNombre.length);
-          this.checkLoading();
-        },
-        error: (error: any) => {
-          console.error('Error pedidos pendientes:', error);
-          this.pedidosPendientes.set([]);
-          this.totalPendientes.set(0);
-          this.checkLoading();
-        }
-      });
-
-    // 2. ✅ Pedidos web pendientes (por confirmar)
-    this.pedidoClienteService.obtenerPendientes()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (pedidosWeb: any[]) => {
-          const webPendientes = (Array.isArray(pedidosWeb) ? pedidosWeb : []).map(p => ({
+          const pendientesWeb = (pedidosWeb || []).map((p: any) => ({
             ...p,
             usuario_nombre: 'Cliente Web',
             origen: 'pedido_web',
             id_unico: `PC-${p.id}`
           }));
 
-          // Combinar con pendientes normales
-          const todosPendientes = [...this.pedidosPendientes(), ...webPendientes];
-          todosPendientes.sort((a, b) => {
+          const todosPendientes = [...pendientesMesero, ...pendientesWeb].sort((a, b) => {
             const fA = new Date(a.created_at).getTime();
             const fB = new Date(b.created_at).getTime();
             return fB - fA;
@@ -133,28 +121,15 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
           this.pedidosPendientes.set(todosPendientes);
           this.totalPendientes.set(todosPendientes.length);
-          this.checkLoading();
-        },
-        error: (error: any) => {
-          console.error('Error pedidos web pendientes:', error);
-          this.checkLoading();
-        }
-      });
 
-    // 3. ✅ Ventas completadas (SOLO las que NO son de pedido_web duplicadas)
-    this.ventaService.obtenerVentas()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (ventas: any[]) => {
+          // 2. Procesar ventas
           const ventasCompletadas = Array.isArray(ventas) ? ventas : [];
 
-          const ventasConNombre = ventasCompletadas.map(v => {
-            // ✅ Detectar origen correctamente
-            const esPedidoWeb = 
-              v.origen === 'pedido_web' || 
+          const ventasConNombre = ventasCompletadas.map((v: any) => {
+            const esPedidoWeb =
+              v.origen === 'pedido_web' ||
               (v.pedido_cliente_id !== null && v.pedido_cliente_id !== undefined);
 
-            // ✅ Determinar el nombre a mostrar
             let nombreMostrar = 'Desconocido';
             if (esPedidoWeb) {
               nombreMostrar = 'Cliente Web';
@@ -172,18 +147,13 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
               ...v,
               usuario_nombre: nombreMostrar,
               origen: esPedidoWeb ? 'pedido_web' : 'venta',
-              // ✅ ID único para evitar duplicados
-              id_unico: esPedidoWeb 
-                ? `PC-${v.pedido_cliente_id || v.id}` 
-                : `V-${v.id}`,
-              // ✅ ID visible
-              id_visible: esPedidoWeb 
-                ? `PC-${v.pedido_cliente_id || v.id}` 
+              id_unico: esPedidoWeb
+                ? `PC-${v.pedido_cliente_id || v.id}`
                 : `V-${v.id}`
             };
           });
 
-          // ✅ Eliminar duplicados por id_unico
+          // Eliminar duplicados
           const ventasUnicas = ventasConNombre.filter(
             (venta, index, self) =>
               index === self.findIndex(v => v.id_unico === venta.id_unico)
@@ -193,50 +163,41 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.totalPagados.set(ventasUnicas.length);
           this.organizarVentas(ventasUnicas);
           this.totalRecaudado.set(this.calcularTotalRegistros(ventasUnicas));
-          this.checkLoading();
+
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Ventas admin cargado');
         },
         error: (error: any) => {
           console.error('Error ventas:', error);
-          this.pedidosPagados.set([]);
-          this.ventasLocal.set([]);
-          this.ventasDelivery.set([]);
-          this.totalPagados.set(0);
-          this.totalVentasLocal.set(0);
-          this.totalVentasDelivery.set(0);
-          this.totalRecaudado.set(0);
           this.errorMessage.set('Error al cargar las ventas');
-          this.checkLoading();
+          this.loading.set(false);
+          this.cargando.set(false);
         }
       });
   }
 
-  private checkLoading(): void {
-    setTimeout(() => {
-      this.loading.set(false);
-    }, 500);
+  recargar(): void {
+    this.yaCargado.set(false);
+    this.cargarDatos();
   }
 
+  // ============================================
+  // ORGANIZAR VENTAS
+  // ============================================
   private normalizarTipoEntrega(valor: unknown): string {
     return String(valor || 'local').trim().toLowerCase();
   }
 
   private esVentaLocal(valor: unknown): boolean {
     const tipo = this.normalizarTipoEntrega(valor);
-    return (
-      tipo === 'local' ||
-      tipo === 'parallevar' ||
-      tipo === 'para_llevar' ||
-      tipo === 'para llevar'
-    );
+    return tipo === 'local' || tipo === 'parallevar' || tipo === 'para_llevar';
   }
 
   private esVentaMotorizada(valor: unknown): boolean {
     const tipo = this.normalizarTipoEntrega(valor);
-    return (
-      tipo === 'delivery' ||
-      tipo === 'motorizada' ||
-      tipo === 'motorizado'
-    );
+    return tipo === 'delivery' || tipo === 'motorizada' || tipo === 'motorizado';
   }
 
   private numeroSeguro(valor: unknown): number {
@@ -253,11 +214,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
   organizarVentas(ventas: any[]): void {
     const registros = Array.isArray(ventas) ? ventas : [];
-
     const local = registros.filter(venta =>
       this.esVentaLocal(venta.tipo_entrega || venta.tipo)
     );
-
     const delivery = registros.filter(venta =>
       this.esVentaMotorizada(venta.tipo_entrega || venta.tipo)
     );
@@ -268,6 +227,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.totalVentasDelivery.set(delivery.length);
   }
 
+  // ============================================
+  // MODAL DE PAGO
+  // ============================================
   abrirModalPago(pedido: any): void {
     if (!pedido || !pedido.id) {
       alert('Error: Pedido inválido');
@@ -276,7 +238,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
     if (this.estaPagado(pedido)) {
       alert('ℹ️ Este pedido ya está pagado');
-      this.cargarDatos();
+      this.recargar();
       return;
     }
 
@@ -306,7 +268,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CONFIRMAR PAGO
+  // CONFIRMAR PAGO
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoEnPago();
@@ -332,8 +294,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          console.log('✅ Respuesta:', response);
-
           if (response && (response.success === true || response.pedido)) {
             this.procesandoPago.set(false);
             this.pagoCompletado.set(true);
@@ -351,7 +311,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
             setTimeout(() => {
               this.cerrarModalPago();
-              this.cargarDatos();
+              this.recargar();
             }, 3000);
           } else {
             this.procesandoPago.set(false);
@@ -374,7 +334,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             this.tipoPago.set('info');
             setTimeout(() => {
               this.cerrarModalPago();
-              this.cargarDatos();
+              this.recargar();
             }, 2000);
           } else {
             this.mensajePago.set(mensaje);
@@ -383,6 +343,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       });
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   estaPagado(pedido: any): boolean {
     return pedido.pagado === 1 || pedido.pagado === true;
   }
@@ -504,8 +467,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.authService.logout();
     this.router.navigate(['/login-admin']);
   }
-
-  recargarDatos(): void {
+    recargarDatos(): void {
+    console.log('🔄 Recargando datos de ventas...');
+    this.yaCargado.set(false);
     this.cargarDatos();
   }
 }

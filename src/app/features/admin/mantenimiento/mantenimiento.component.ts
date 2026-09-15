@@ -1,7 +1,8 @@
 // src/app/features/admin/mantenimiento/mantenimiento.component.ts
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ProductoService } from '../../../core/services/producto.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -14,11 +15,15 @@ import { Router } from '@angular/router';
   templateUrl: './mantenimiento.component.html',
   styleUrls: ['./mantenimiento.component.scss']
 })
-export class MantenimientoComponent implements OnInit {
+export class MantenimientoComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private categoriaService = inject(CategoriaService);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   productos = signal<any[]>([]);
   productosFiltrados = signal<any[]>([]);
@@ -48,34 +53,57 @@ export class MantenimientoComponent implements OnInit {
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
 
+  // ============================================
+  // CARGAR DATOS (forkJoin + caché)
+  // ============================================
   cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
 
-    this.categoriaService.obtenerCategorias().subscribe({
-      next: (categorias) => {
-        this.categorias.set(categorias);
-        if (categorias.length > 0) {
-          this.nuevoProducto.update(p => ({ ...p, categoria_id: categorias[0].id }));
-        }
-      },
-      error: (err) => console.error('Error al cargar categorías:', err)
-    });
+    forkJoin({
+      categorias: this.categoriaService.obtenerCategorias().pipe(catchError(() => of([]))),
+      productos: this.productoService.obtenerProductos().pipe(catchError(() => of([])))
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ categorias, productos }) => {
+          this.categorias.set(categorias || []);
+          this.productos.set(productos || []);
+          this.productosFiltrados.set(productos || []);
 
-    this.productoService.obtenerProductos().subscribe({
-      next: (productos) => {
-        this.productos.set(productos);
-        this.productosFiltrados.set(productos);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error al cargar productos:', err);
-        this.loading.set(false);
-      }
-    });
+          if (categorias?.length > 0) {
+            this.nuevoProducto.update(p => ({ ...p, categoria_id: categorias[0].id }));
+          }
+
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Mantenimiento cargado');
+        },
+        error: (err) => {
+          console.error('Error al cargar datos:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+        }
+      });
+  }
+
+  recargar(): void {
+    this.productoService.limpiarCache();
+    this.categoriaService.limpiarCache();
+    this.yaCargado.set(false);
+    this.cargarDatos();
   }
 
   // ============================================
@@ -90,14 +118,10 @@ export class MantenimientoComponent implements OnInit {
     }
 
     const filtrados = this.productos().filter(producto => {
-      // Buscar por nombre
-      const nombreMatch = producto.nombre.toLowerCase().includes(termino);
-
-      // Buscar por categoría
+      const nombreMatch = producto.nombre?.toLowerCase().includes(termino) || false;
       const categoria = this.categorias().find(c => c.id === producto.categoria_id);
-      const categoriaMatch = categoria?.nombre.toLowerCase().includes(termino) || false;
+      const categoriaMatch = categoria?.nombre?.toLowerCase().includes(termino) || false;
 
-      // Buscar por precio (si el término es numérico)
       let precioMatch = false;
       const precioNum = parseFloat(termino.replace('s/', '').replace('s', '').trim());
       if (!isNaN(precioNum)) {
@@ -105,10 +129,8 @@ export class MantenimientoComponent implements OnInit {
                       producto.precio.toString().includes(termino.replace('s/', '').trim());
       }
 
-      // Buscar por ID
       const idMatch = producto.id.toString().includes(termino);
 
-      // Buscar por stock
       const stockNum = parseInt(termino);
       const stockMatch = !isNaN(stockNum) ? producto.stock === stockNum : false;
 
@@ -161,44 +183,50 @@ export class MantenimientoComponent implements OnInit {
     }
 
     if (this.editando()) {
-      this.productoService.actualizarProducto(this.productoEdit().id, this.nuevoProducto()).subscribe({
-        next: () => {
-          alert('Producto actualizado correctamente');
-          this.cargarDatos();
-          this.toggleFormulario();
-        },
-        error: (err) => {
-          console.error('Error al actualizar producto:', err);
-          alert('Error al actualizar producto');
-        }
-      });
+      this.productoService.actualizarProducto(this.productoEdit().id, this.nuevoProducto())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Producto actualizado correctamente');
+            this.recargar();
+            this.toggleFormulario();
+          },
+          error: (err) => {
+            console.error('Error al actualizar producto:', err);
+            alert('Error al actualizar producto');
+          }
+        });
     } else {
-      this.productoService.crearProducto(this.nuevoProducto()).subscribe({
-        next: () => {
-          alert('Producto creado correctamente');
-          this.cargarDatos();
-          this.toggleFormulario();
-        },
-        error: (err) => {
-          console.error('Error al crear producto:', err);
-          alert('Error al crear producto');
-        }
-      });
+      this.productoService.crearProducto(this.nuevoProducto())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Producto creado correctamente');
+            this.recargar();
+            this.toggleFormulario();
+          },
+          error: (err) => {
+            console.error('Error al crear producto:', err);
+            alert('Error al crear producto');
+          }
+        });
     }
   }
 
   eliminarProducto(id: number): void {
     if (confirm('¿Está seguro de eliminar este producto?')) {
-      this.productoService.eliminarProducto(id).subscribe({
-        next: () => {
-          alert('Producto eliminado correctamente');
-          this.cargarDatos();
-        },
-        error: (err) => {
-          console.error('Error al eliminar producto:', err);
-          alert('Error al eliminar producto');
-        }
-      });
+      this.productoService.eliminarProducto(id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Producto eliminado correctamente');
+            this.recargar();
+          },
+          error: (err) => {
+            console.error('Error al eliminar producto:', err);
+            alert('Error al eliminar producto');
+          }
+        });
     }
   }
 

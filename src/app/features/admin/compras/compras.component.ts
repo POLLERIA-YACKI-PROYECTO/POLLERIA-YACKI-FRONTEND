@@ -1,8 +1,9 @@
 // src/app/features/admin/compras/compras.component.ts
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { CompraService } from '../../../core/services/compra.service';
 
@@ -13,10 +14,14 @@ import { CompraService } from '../../../core/services/compra.service';
   templateUrl: './compras.component.html',
   styleUrls: ['./compras.component.scss']
 })
-export class ComprasComponent implements OnInit {
+export class ComprasComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private compraService = inject(CompraService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
@@ -42,22 +47,41 @@ export class ComprasComponent implements OnInit {
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
 
   cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
-    this.compraService.obtenerCompras().subscribe({
-      next: (compras) => {
-        this.compras.set(compras);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error al cargar compras:', err);
-        this.loading.set(false);
-      }
-    });
+
+    this.compraService.obtenerCompras()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (compras) => {
+          this.compras.set(compras || []);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+        },
+        error: (err) => {
+          console.error('Error al cargar compras:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+        }
+      });
+  }
+
+  recargar(): void {
+    this.yaCargado.set(false);
+    this.cargarDatos();
   }
 
   toggleFormulario(): void {
@@ -88,44 +112,50 @@ export class ComprasComponent implements OnInit {
     }
 
     if (this.editando()) {
-      this.compraService.actualizarCompra(this.compraEdit().id, this.nuevaCompra()).subscribe({
-        next: () => {
-          alert('Compra actualizada correctamente');
-          this.cargarDatos();
-          this.toggleFormulario();
-        },
-        error: (err) => {
-          console.error('Error al actualizar compra:', err);
-          alert('Error al actualizar compra');
-        }
-      });
+      this.compraService.actualizarCompra(this.compraEdit().id, this.nuevaCompra())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Compra actualizada correctamente');
+            this.recargar();
+            this.toggleFormulario();
+          },
+          error: (err) => {
+            console.error('Error al actualizar compra:', err);
+            alert('Error al actualizar compra');
+          }
+        });
     } else {
-      this.compraService.crearCompra(this.nuevaCompra()).subscribe({
-        next: () => {
-          alert('Compra registrada correctamente');
-          this.cargarDatos();
-          this.toggleFormulario();
-        },
-        error: (err) => {
-          console.error('Error al crear compra:', err);
-          alert('Error al crear compra');
-        }
-      });
+      this.compraService.crearCompra(this.nuevaCompra())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Compra registrada correctamente');
+            this.recargar();
+            this.toggleFormulario();
+          },
+          error: (err) => {
+            console.error('Error al crear compra:', err);
+            alert('Error al crear compra');
+          }
+        });
     }
   }
 
   eliminarCompra(id: number): void {
     if (confirm('¿Está seguro de eliminar esta compra?')) {
-      this.compraService.eliminarCompra(id).subscribe({
-        next: () => {
-          alert('Compra eliminada correctamente');
-          this.cargarDatos();
-        },
-        error: (err) => {
-          console.error('Error al eliminar compra:', err);
-          alert('Error al eliminar compra');
-        }
-      });
+      this.compraService.eliminarCompra(id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            alert('Compra eliminada correctamente');
+            this.recargar();
+          },
+          error: (err) => {
+            console.error('Error al eliminar compra:', err);
+            alert('Error al eliminar compra');
+          }
+        });
     }
   }
 

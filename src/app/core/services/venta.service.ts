@@ -4,79 +4,63 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { BaseApiService } from './base-api.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class VentaService {
-  private http = inject(HttpClient);
+@Injectable({ providedIn: 'root' })
+export class VentaService extends BaseApiService {
   private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/ventas`;
+
+  constructor(http: HttpClient) {
+    super(http);
+  }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     });
   }
 
-  // ============================================
-  // OBTENER VENTAS
-  // ============================================
-  obtenerVentas(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl, { headers: this.getHeaders() });
+  obtenerVentas(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(this.apiUrl, {
+      ttl: 30 * 1000,
+      forceRefresh,
+      headers: this.getHeaders(),
+    });
   }
 
-  obtenerVentasPorUsuario(usuarioId: number): Observable<any[]> {
-    return this.http.get<any[]>(
-      `${this.apiUrl}/usuario/${usuarioId}`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  obtenerVentasPorTipo(tipo: string): Observable<any[]> {
-    return this.http.get<any[]>(
-      `${this.apiUrl}/tipo/${tipo}`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  // ============================================
-  // PEDIDOS WEB PENDIENTES (CORREGIDO)
-  // ============================================
-  obtenerPedidosWebPendientes(): Observable<any[]> {
-    return this.http.get<any[]>(
-      `${this.apiUrl}/pedidos-web/pendientes`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  // ============================================
-  // RESUMEN
-  // ============================================
-  obtenerResumenPorUsuario(usuarioId: number): Observable<any> {
-    return this.http.get<any>(
-      `${this.apiUrl}/resumen/usuario/${usuarioId}`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  obtenerResumenGeneral(): Observable<any> {
-    return this.http.get<any>(
-      `${this.apiUrl}/resumen/general`,
-      { headers: this.getHeaders() }
-    );
-  }
-
-  // ============================================
-  // OBTENER VENTA POR ID
-  // ============================================
   obtenerVenta(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    return this.getCached<any>(`${this.apiUrl}/${id}`, {
+      ttl: 30 * 1000,
+      headers: this.getHeaders(),
+    });
+  }
+
+  obtenerVentasHoy(): Observable<any[]> {
+    return this.getCached<any[]>(`${this.apiUrl}/hoy`, {
+      ttl: 30 * 1000,
+      headers: this.getHeaders(),
+    });
+  }
+
+  crearVenta(venta: any): Observable<any> {
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', this.apiUrl, venta, this.getHeaders());
+  }
+
+  actualizarVenta(id: number, venta: any): Observable<any> {
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}`, venta, this.getHeaders());
   }
 
   eliminarVenta(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
+  }
+
+  limpiarCacheVentas(): void {
+    this.limpiarCache(this.apiUrl);
   }
 }

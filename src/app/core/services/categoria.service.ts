@@ -4,55 +4,57 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { BaseApiService } from './base-api.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class CategoriaService {
-  private http = inject(HttpClient);
+@Injectable({ providedIn: 'root' })
+export class CategoriaService extends BaseApiService {
   private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/categorias`;
+
+  constructor(http: HttpClient) {
+    super(http);
+  }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     });
   }
 
-  // PÚBLICO - Sin autenticación
-  obtenerCategorias(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl);
+  obtenerCategorias(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(this.apiUrl, { ttl: 10 * 60 * 1000, forceRefresh });
   }
 
-  // PÚBLICO - Sin autenticación
   obtenerCategoriasActivas(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/activas`);
+    return this.getCached<any[]>(`${this.apiUrl}/activas`, { ttl: 10 * 60 * 1000 });
   }
 
-  // PÚBLICO - Sin autenticación
   obtenerCategoria(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`);
+    return this.getCached<any>(`${this.apiUrl}/${id}`, { ttl: 10 * 60 * 1000 });
   }
 
-  // PÚBLICO - Sin autenticación
   obtenerProductosPorCategoria(id: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/${id}/productos`);
+    return this.getCached<any[]>(`${this.apiUrl}/${id}/productos`, { ttl: 5 * 60 * 1000 });
   }
 
-  // REQUIERE AUTENTICACIÓN
   crearCategoria(categoria: any): Observable<any> {
-    return this.http.post(this.apiUrl, categoria, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', this.apiUrl, categoria, this.getHeaders());
   }
 
-  // REQUIERE AUTENTICACIÓN
   actualizarCategoria(id: number, categoria: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, categoria, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}`, categoria, this.getHeaders());
   }
 
-  // REQUIERE AUTENTICACIÓN
   eliminarCategoria(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
+  }
+
+  limpiarCacheCategorias(): void {
+    this.limpiarCache(this.apiUrl);
   }
 }

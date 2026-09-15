@@ -1,7 +1,8 @@
 // src/app/features/admin/dashboard-admin/dashboard-admin.component.ts
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subject, takeUntil, forkJoin, of, catchError } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { ProductoService } from '../../../core/services/producto.service';
@@ -16,7 +17,7 @@ import { PedidoClienteService } from '../../../core/services/pedido-cliente.serv
   templateUrl: './dashboard-admin.component.html',
   styleUrls: ['./dashboard-admin.component.scss'],
 })
-export class DashboardAdminComponent implements OnInit {
+export class DashboardAdminComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private dashboardService = inject(DashboardService);
   private productoService = inject(ProductoService);
@@ -24,6 +25,13 @@ export class DashboardAdminComponent implements OnInit {
   private pedidoService = inject(PedidoService);
   private pedidoClienteService = inject(PedidoClienteService);
   private router = inject(Router);
+
+  // ✅ Subject para cancelar suscripciones
+  private destroy$ = new Subject<void>();
+
+  // ✅ Flags para evitar duplicados
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   loading = signal<boolean>(true);
@@ -42,48 +50,12 @@ export class DashboardAdminComponent implements OnInit {
   });
 
   stats = signal([
-    {
-      icon: 'productos',
-      label: 'Productos Registrados',
-      value: 0,
-      color: '#c43129',
-      bgColor: '#c4312920',
-    },
-    {
-      icon: 'ventas',
-      label: 'Ventas Hoy',
-      value: 0,
-      color: '#d6ad31',
-      bgColor: '#d6ad3120',
-    },
-    {
-      icon: 'pendientes',
-      label: 'Pedidos Pendientes',
-      value: 0,
-      color: '#71492f',
-      bgColor: '#71492f20',
-    },
-    {
-      icon: 'ingresos',
-      label: 'Ingresos Totales',
-      value: 'S/ 0.00',
-      color: '#432c1c',
-      bgColor: '#432c1c20',
-    },
-    {
-      icon: 'usuarios',
-      label: 'Usuarios Activos',
-      value: 0,
-      color: '#c43129',
-      bgColor: '#c4312920',
-    },
-    {
-      icon: 'local',
-      label: 'Ventas en Local',
-      value: 0,
-      color: '#71492f',
-      bgColor: '#71492f20',
-    },
+    { icon: 'productos', label: 'Productos Registrados', value: 0, color: '#c43129', bgColor: '#c4312920' },
+    { icon: 'ventas', label: 'Ventas Hoy', value: 0, color: '#d6ad31', bgColor: '#d6ad3120' },
+    { icon: 'pendientes', label: 'Pedidos Pendientes', value: 0, color: '#71492f', bgColor: '#71492f20' },
+    { icon: 'ingresos', label: 'Ingresos Totales', value: 'S/ 0.00', color: '#432c1c', bgColor: '#432c1c20' },
+    { icon: 'usuarios', label: 'Usuarios Activos', value: 0, color: '#c43129', bgColor: '#c4312920' },
+    { icon: 'local', label: 'Ventas en Local', value: 0, color: '#71492f', bgColor: '#71492f20' },
   ]);
 
   resumenVentas = signal({
@@ -109,122 +81,102 @@ export class DashboardAdminComponent implements OnInit {
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   // ============================================
-  // CARGAR DATOS
+  // ✅ CARGAR DATOS (UNA SOLA VEZ)
   // ============================================
   cargarDatos(): void {
+    // ✅ Evitar cargas duplicadas
+    if (this.cargando() || this.yaCargado()) {
+      console.log('⚠️ Ya se está cargando o ya se cargó, evitando duplicado');
+      return;
+    }
+
+    this.cargando.set(true);
     this.loading.set(true);
     this.errorMessage.set('');
 
-    let solicitudesCompletadas = 0;
-    const totalSolicitudes = 5;
+    // ✅ Cargar todo en paralelo con manejo de errores individual
+    forkJoin({
+      productos: this.productoService.obtenerProductos().pipe(catchError(() => of([]))),
+      usuarios: this.usuarioService.obtenerUsuarios().pipe(catchError(() => of([]))),
+      pedidosPendientes: this.pedidoService.obtenerPedidosPendientes().pipe(catchError(() => of([]))),
+      pedidosWeb: this.pedidoClienteService.obtenerPendientes().pipe(catchError(() => of([]))),
+      resumen: this.dashboardService.obtenerResumenUnificado().pipe(catchError(() => of(null)))
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ productos, usuarios, pedidosPendientes, pedidosWeb, resumen }) => {
+          // 1. Productos
+          const totalProductos = Array.isArray(productos) ? productos.length : 0;
+          this.actualizarStat('productos', totalProductos);
 
-    const verificarFinalizado = () => {
-      solicitudesCompletadas++;
-      if (solicitudesCompletadas >= totalSolicitudes) {
-        this.loading.set(false);
-      }
-    };
+          // 2. Usuarios
+          const activos = (usuarios || []).filter((u: any) => u.activo !== false);
+          this.actualizarStat('usuarios', activos.length);
 
-    // 1. Productos
-    this.productoService.obtenerProductos().subscribe({
-      next: (productos) => {
-        this.actualizarStat('productos', productos?.length || 0);
-        verificarFinalizado();
-      },
-      error: (err) => {
-        console.error('Error al cargar productos:', err);
-        verificarFinalizado();
-      },
-    });
+          // 3. Pedidos pendientes
+          const pendientesMesero = pedidosPendientes || [];
+          this.pedidosPendientes.set(pendientesMesero);
 
-    // 2. Usuarios
-    this.usuarioService.obtenerUsuarios().subscribe({
-      next: (usuarios) => {
-        const activos = (usuarios || []).filter((u: any) => u.activo !== false);
-        this.actualizarStat('usuarios', activos.length);
-        verificarFinalizado();
-      },
-      error: (err) => {
-        console.error('Error al cargar usuarios:', err);
-        verificarFinalizado();
-      },
-    });
+          const pendientesWeb = pedidosWeb || [];
+          const totalPendientes = pendientesMesero.length + pendientesWeb.length;
+          this.actualizarStat('pendientes', totalPendientes);
 
-    // 3. Pedidos pendientes (mesero/admin)
-    this.pedidoService.obtenerPedidosPendientes().subscribe({
-      next: (pedidos) => {
-        const pendientes = pedidos || [];
-        this.pedidosPendientes.set(pendientes);
-        verificarFinalizado();
-      },
-      error: (err) => {
-        console.error('Error al cargar pedidos pendientes:', err);
-        verificarFinalizado();
-      },
-    });
+          // 4. Resumen unificado
+          if (resumen?.success) {
+            const { resumen: r, ventasRecientes: recientes } = resumen;
 
-    // 4. Pedidos web pendientes (por confirmar)
-    this.pedidoClienteService.obtenerPendientes().subscribe({
-      next: (pedidosWeb) => {
-        const pendientesWeb = pedidosWeb || [];
-        const totalPendientes = this.pedidosPendientes().length + pendientesWeb.length;
-        this.actualizarStat('pendientes', totalPendientes);
-        verificarFinalizado();
-      },
-      error: (err) => {
-        console.error('Error al cargar pedidos web pendientes:', err);
-        verificarFinalizado();
-      },
-    });
+            this.actualizarStat('ventas', r.ventasHoy || 0);
+            this.actualizarStat('ingresos', `S/ ${(r.totalRecaudado || 0).toFixed(2)}`);
+            this.actualizarStat('local', r.ventasLocal || 0);
 
-    // 5. RESUMEN UNIFICADO (ventas + pedidos web confirmados)
-    this.dashboardService.obtenerResumenUnificado().subscribe({
-      next: (response) => {
-        if (response?.success) {
-          const { resumen, ventasRecientes: recientes } = response;
+            this.resumenVentas.set({
+              totalVentas: r.totalVentas || 0,
+              ventasLocal: r.ventasLocal || 0,
+              ventasDelivery: r.ventasDelivery || 0,
+              totalRecaudado: r.totalRecaudado || 0,
+              recaudadoLocal: r.recaudadoLocal || 0,
+              recaudadoDelivery: r.recaudadoDelivery || 0,
+              ventasHoy: r.ventasHoy || 0,
+              recaudadoHoy: r.recaudadoHoy || 0
+            });
 
-          // Actualizar stats
-          this.actualizarStat('ventas', resumen.ventasHoy || 0);
-          this.actualizarStat('ingresos', `S/ ${(resumen.totalRecaudado || 0).toFixed(2)}`);
-          this.actualizarStat('local', resumen.ventasLocal || 0);
+            const recientesFormateados = (recientes || []).map((v: any) => ({
+              id: v.id,
+              cliente: v.cliente_nombre || 'Consumidor Final',
+              total: parseFloat(v.total) || 0,
+              fecha: v.fecha ? this.formatearFecha(v.fecha) : '--',
+              estado: v.estado || 'completada',
+              tipo: v.tipo_entrega || 'local',
+              origen: v.origen || 'venta'
+            }));
+            this.ventasRecientes.set(recientesFormateados);
+          }
 
-          // Actualizar resumen
-          this.resumenVentas.set({
-            totalVentas: resumen.totalVentas || 0,
-            ventasLocal: resumen.ventasLocal || 0,
-            ventasDelivery: resumen.ventasDelivery || 0,
-            totalRecaudado: resumen.totalRecaudado || 0,
-            recaudadoLocal: resumen.recaudadoLocal || 0,
-            recaudadoDelivery: resumen.recaudadoDelivery || 0,
-            ventasHoy: resumen.ventasHoy || 0,
-            recaudadoHoy: resumen.recaudadoHoy || 0
-          });
-
-          // Actualizar ventas recientes
-          const recientesFormateados = (recientes || []).map((v: any) => ({
-            id: v.id,
-            cliente: v.cliente_nombre || 'Consumidor Final',
-            total: parseFloat(v.total) || 0,
-            fecha: v.fecha ? this.formatearFecha(v.fecha) : '--',
-            estado: v.estado || 'completada',
-            tipo: v.tipo_entrega || 'local',
-            origen: v.origen || 'venta'
-          }));
-          this.ventasRecientes.set(recientesFormateados);
-
-          verificarFinalizado();
-        } else {
-          this.errorMessage.set('Error al cargar resumen');
-          verificarFinalizado();
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Dashboard cargado correctamente');
+        },
+        error: (err) => {
+          console.error('Error al cargar dashboard:', err);
+          this.errorMessage.set('Error al cargar datos del dashboard');
+          this.loading.set(false);
+          this.cargando.set(false);
         }
-      },
-      error: (err) => {
-        console.error('Error al cargar resumen unificado:', err);
-        this.errorMessage.set('Error al cargar resumen de ventas');
-        verificarFinalizado();
-      }
-    });
+      });
+  }
+
+  // ✅ RECARGAR (manual)
+  recargar(): void {
+    this.productoService.limpiarCache();
+    this.yaCargado.set(false);
+    this.cargarDatos();
   }
 
   // ============================================
@@ -277,7 +229,6 @@ export class DashboardAdminComponent implements OnInit {
     return textos[estado] || estado;
   }
 
-  // Origen de la venta
   getOrigenLabel(origen: string): string {
     const labels: any = {
       venta: 'Mesero',
@@ -290,7 +241,6 @@ export class DashboardAdminComponent implements OnInit {
     return origen === 'pedido_web' ? 'origen-web' : 'origen-venta';
   }
 
-  // Tipo de entrega
   getTipoLabel(tipo: string): string {
     const labels: any = {
       local: 'Local',
@@ -308,6 +258,6 @@ export class DashboardAdminComponent implements OnInit {
   }
 
   refrescar(): void {
-    this.cargarDatos();
+    this.recargar();
   }
 }

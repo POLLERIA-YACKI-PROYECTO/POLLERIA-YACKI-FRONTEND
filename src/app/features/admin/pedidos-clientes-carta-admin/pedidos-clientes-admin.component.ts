@@ -1,8 +1,9 @@
 // src/app/features/admin/pedidos-clientes-admin/pedidos-clientes-admin.component.ts
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { environment } from '../../../../environments/environment';
@@ -14,21 +15,23 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './pedidos-clientes-admin.component.html',
   styleUrls: ['./pedidos-clientes-admin.component.scss']
 })
-export class PedidosClientesAdminComponent implements OnInit {
+export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   loading = signal<boolean>(true);
   pedidos = signal<any[]>([]);
   pedidosFiltrados = signal<any[]>([]);
 
-  // Filtros
   filtroEstado = signal<string>('todos');
   filtroMetodoPago = signal<string>('todos');
   busqueda = signal<string>('');
 
-  // Estadísticas
   totalPedidos = signal<number>(0);
   totalPendientes = signal<number>(0);
   totalPagados = signal<number>(0);
@@ -42,11 +45,14 @@ export class PedidosClientesAdminComponent implements OnInit {
     { id: 'paraLlevar', label: 'Para Llevar' }
   ];
 
-  // ✅ Modal de verificación
   mostrarModalVerificacion = signal<boolean>(false);
   pedidoSeleccionado = signal<any>(null);
   tipoEntregaSeleccionado = signal<string>('local');
   confirmando = signal<boolean>(false);
+
+  // ✅ Visor de imagen (sin abrir nueva pestaña)
+  mostrarVisorImagen = signal<boolean>(false);
+  imagenVisorUrl = signal<string>('');
 
   ngOnInit(): void {
     if (!this.authService.isAdmin()) {
@@ -56,26 +62,46 @@ export class PedidosClientesAdminComponent implements OnInit {
     this.cargarPedidos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   // ============================================
   // CARGAR PEDIDOS
   // ============================================
   cargarPedidos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
-    this.pedidoClienteService.obtenerTodos().subscribe({
-      next: (pedidos) => {
-        const lista = Array.isArray(pedidos) ? pedidos : [];
-        this.pedidos.set(lista);
-        this.pedidosFiltrados.set(lista);
-        this.calcularEstadisticas(lista);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error al cargar pedidos:', err);
-        this.pedidos.set([]);
-        this.pedidosFiltrados.set([]);
-        this.loading.set(false);
-      }
-    });
+
+    this.pedidoClienteService.obtenerTodos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (pedidos) => {
+          const lista = Array.isArray(pedidos) ? pedidos : [];
+          this.pedidos.set(lista);
+          this.pedidosFiltrados.set(lista);
+          this.calcularEstadisticas(lista);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Pedidos clientes cargados');
+        },
+        error: (err) => {
+          console.error('Error al cargar pedidos:', err);
+          this.pedidos.set([]);
+          this.pedidosFiltrados.set([]);
+          this.loading.set(false);
+          this.cargando.set(false);
+        }
+      });
+  }
+
+  recargar(): void {
+    this.yaCargado.set(false);
+    this.cargarPedidos();
   }
 
   calcularEstadisticas(pedidos: any[]): void {
@@ -124,7 +150,7 @@ export class PedidosClientesAdminComponent implements OnInit {
   }
 
   // ============================================
-  // ✅ ABRIR MODAL DE VERIFICACIÓN
+  // ABRIR MODAL DE VERIFICACIÓN
   // ============================================
   abrirVerificacion(pedido: any): void {
     if (pedido.pagado) {
@@ -148,7 +174,7 @@ export class PedidosClientesAdminComponent implements OnInit {
   }
 
   // ============================================
-  // ✅ VER COMPROBANTE EN NUEVA PESTAÑA
+  // VER COMPROBANTE EN MARCO (SIN ABRIR PESTAÑA)
   // ============================================
   verComprobante(pedido: any): void {
     if (!pedido.comprobante_pago) {
@@ -158,11 +184,24 @@ export class PedidosClientesAdminComponent implements OnInit {
 
     const baseUrl = environment.apiUrl.replace('/api', '');
     const url = `${baseUrl}${pedido.comprobante_pago}`;
-    window.open(url, '_blank');
+
+    this.imagenVisorUrl.set(url);
+    this.mostrarVisorImagen.set(true);
+  }
+
+  cerrarVisor(): void {
+    this.mostrarVisorImagen.set(false);
+    this.imagenVisorUrl.set('');
+  }
+
+  obtenerUrlComprobante(pedido: any): string {
+    if (!pedido.comprobante_pago) return '';
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    return `${baseUrl}${pedido.comprobante_pago}`;
   }
 
   // ============================================
-  // ✅ CONFIRMAR PAGO Y CREAR VENTA
+  // CONFIRMAR PAGO
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoSeleccionado();
@@ -182,27 +221,29 @@ export class PedidosClientesAdminComponent implements OnInit {
 
     this.confirmando.set(true);
 
-    this.pedidoClienteService.confirmarPago(pedido.id, tipoEntrega).subscribe({
-      next: (response) => {
-        this.confirmando.set(false);
-        alert(
-          `✅ Pago confirmado\n\n` +
-          `Pedido #${pedido.id} confirmado como ${tipoLabel}.\n` +
-          `Venta #${response.venta_id} creada automáticamente.`
-        );
-        this.cerrarModal();
-        this.cargarPedidos();
-      },
-      error: (err) => {
-        console.error('Error al confirmar pago:', err);
-        this.confirmando.set(false);
-        alert(err?.error?.error || 'Error al confirmar el pago');
-      }
-    });
+    this.pedidoClienteService.confirmarPago(pedido.id, tipoEntrega)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.confirmando.set(false);
+          alert(
+            `✅ Pago confirmado\n\n` +
+            `Pedido #${pedido.id} confirmado como ${tipoLabel}.\n` +
+            `Venta #${response.venta_id} creada automáticamente.`
+          );
+          this.cerrarModal();
+          this.recargar();
+        },
+        error: (err) => {
+          console.error('Error al confirmar pago:', err);
+          this.confirmando.set(false);
+          alert(err?.error?.error || 'Error al confirmar el pago');
+        }
+      });
   }
 
   // ============================================
-  // ✅ RECHAZAR PAGO
+  // RECHAZAR PAGO
   // ============================================
   rechazarPago(): void {
     const pedido = this.pedidoSeleccionado();
@@ -217,19 +258,21 @@ export class PedidosClientesAdminComponent implements OnInit {
 
     this.confirmando.set(true);
 
-    this.pedidoClienteService.rechazarPago(pedido.id, motivo || 'No especificado').subscribe({
-      next: () => {
-        this.confirmando.set(false);
-        alert('❌ Pedido rechazado');
-        this.cerrarModal();
-        this.cargarPedidos();
-      },
-      error: (err) => {
-        console.error('Error al rechazar:', err);
-        this.confirmando.set(false);
-        alert(err?.error?.error || 'Error al rechazar el pedido');
-      }
-    });
+    this.pedidoClienteService.rechazarPago(pedido.id, motivo || 'No especificado')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.confirmando.set(false);
+          alert('❌ Pedido rechazado');
+          this.cerrarModal();
+          this.recargar();
+        },
+        error: (err) => {
+          console.error('Error al rechazar:', err);
+          this.confirmando.set(false);
+          alert(err?.error?.error || 'Error al rechazar el pedido');
+        }
+      });
   }
 
   // ============================================

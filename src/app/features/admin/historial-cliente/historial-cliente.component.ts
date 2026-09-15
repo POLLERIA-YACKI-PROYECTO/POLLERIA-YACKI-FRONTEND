@@ -1,9 +1,17 @@
 // src/app/features/admin/historial-cliente/historial-cliente.component.ts
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  signal,
+  computed,
+  inject,
+  OnInit,
+  OnDestroy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -60,11 +68,16 @@ type Tab = 'todos' | 'con-compras' | 'sin-compras';
   styleUrls: ['./historial-cliente.component.scss'],
   host: { 'class': 'admin-mode' }
 })
-export class HistorialClienteComponent implements OnInit {
+export class HistorialClienteComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private router = inject(Router);
   private apiUrl = 'http://localhost:3000/api/historial';
+
+  // ✅ Protección anti-saturación
+  private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
@@ -79,7 +92,7 @@ export class HistorialClienteComponent implements OnInit {
   clientesSinCompras = signal<ClienteHistorial[]>([]);
   estadisticas = signal<Estadisticas | null>(null);
 
-  // Modal de detalle de compras
+  // Modal de detalle
   mostrarModalDetalle = signal<boolean>(false);
   clienteSeleccionado = signal<ClienteHistorial | null>(null);
   comprasDetalle = signal<CompraDetalle[]>([]);
@@ -111,6 +124,11 @@ export class HistorialClienteComponent implements OnInit {
     this.cargarTodo();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   cerrarSesion(): void {
     this.authService.logout();
     this.router.navigate(['/login-admin']);
@@ -121,7 +139,7 @@ export class HistorialClienteComponent implements OnInit {
   }
 
   private getHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token') || '';
+    const token = this.authService.getToken() || '';
     return new HttpHeaders({ 'Authorization': `Bearer ${token}` });
   }
 
@@ -129,10 +147,14 @@ export class HistorialClienteComponent implements OnInit {
   // CARGAR DATOS
   // ============================================
   cargarTodo(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
     this.error.set(null);
 
     this.http.get<any>(`${this.apiUrl}/resumen-completo`, { headers: this.getHeaders() })
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
           this.estadisticas.set(data.estadisticas);
@@ -140,23 +162,27 @@ export class HistorialClienteComponent implements OnInit {
           this.clientesConCompras.set(data.clientesConCompras || []);
           this.clientesSinCompras.set(data.clientesSinCompras || []);
           this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
         },
         error: (err) => {
           console.error('Error historial:', err);
 
           let mensaje = 'No se pudo cargar el historial de clientes';
-          if (err?.status === 429) {
-            mensaje = 'Demasiadas peticiones. Espera un momento y reintenta.';
-          } else if (err?.status === 401) {
-            mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
-          } else if (err?.status === 0) {
-            mensaje = 'No se pudo conectar con el servidor.';
-          }
+          if (err?.status === 429) mensaje = 'Demasiadas peticiones. Espera un momento.';
+          else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+          else if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
 
           this.error.set(mensaje);
           this.loading.set(false);
+          this.cargando.set(false);
         }
       });
+  }
+
+  recargar(): void {
+    this.yaCargado.set(false);
+    this.cargarTodo();
   }
 
   // ============================================
@@ -171,17 +197,19 @@ export class HistorialClienteComponent implements OnInit {
     this.http.get<CompraDetalle[]>(
       `${this.apiUrl}/cliente/${cliente.id}/compras`,
       { headers: this.getHeaders() }
-    ).subscribe({
-      next: (compras) => {
-        this.comprasDetalle.set(compras || []);
-        this.cargandoCompras.set(false);
-      },
-      error: (err) => {
-        console.error('Error al cargar compras:', err);
-        this.comprasDetalle.set([]);
-        this.cargandoCompras.set(false);
-      }
-    });
+    )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (compras) => {
+          this.comprasDetalle.set(compras || []);
+          this.cargandoCompras.set(false);
+        },
+        error: (err) => {
+          console.error('Error al cargar compras:', err);
+          this.comprasDetalle.set([]);
+          this.cargandoCompras.set(false);
+        }
+      });
   }
 
   cerrarModalDetalle(): void {

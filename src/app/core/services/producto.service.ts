@@ -4,19 +4,20 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { BaseApiService } from './base-api.service';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class ProductoService {
-  private http = inject(HttpClient);
+@Injectable({ providedIn: 'root' })
+export class ProductoService extends BaseApiService {
   private authService = inject(AuthService);
   private apiUrl = `${environment.apiUrl}/productos`;
   private backendUrl = environment.apiUrl.replace(/\/api\/?$/, '');
 
+  constructor(http: HttpClient) {
+    super(http);
+  }
+
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
-
     return new HttpHeaders({
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -29,45 +30,44 @@ export class ProductoService {
     });
   }
 
-  obtenerProductos(): Observable<any[]> {
-    return this.http.get<any[]>(this.apiUrl);
+  // GET
+  obtenerProductos(forceRefresh = false): Observable<any[]> {
+    return this.getCached<any[]>(this.apiUrl, { ttl: 5 * 60 * 1000, forceRefresh });
   }
 
   obtenerProductosDisponibles(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/disponibles`);
+    return this.getCached<any[]>(`${this.apiUrl}/disponibles`, { ttl: 5 * 60 * 1000 });
   }
 
   obtenerPorCategoria(categoriaId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/categoria/${categoriaId}`);
+    return this.getCached<any[]>(`${this.apiUrl}/categoria/${categoriaId}`, { ttl: 5 * 60 * 1000 });
   }
 
   obtenerProducto(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`);
+    return this.getCached<any>(`${this.apiUrl}/${id}`, { ttl: 5 * 60 * 1000 });
   }
 
+  // MUTACIONES
   crearProductoConImagen(formData: FormData): Observable<any> {
-    return this.http.post(this.apiUrl, formData, { headers: this.getMultipartHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', this.apiUrl, formData, this.getMultipartHeaders());
   }
 
   actualizarProductoConImagen(id: number, formData: FormData): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, formData, { headers: this.getMultipartHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}`, formData, this.getMultipartHeaders());
   }
 
   actualizarImagen(id: number, file: File): Observable<any> {
+    this.limpiarCache(this.apiUrl);
     const formData = new FormData();
     formData.append('imagen', file);
-
-    return this.http.patch(`${this.apiUrl}/${id}/imagen`, formData, {
-      headers: this.getMultipartHeaders(),
-    });
+    return this.mutate('PATCH', `${this.apiUrl}/${id}/imagen`, formData, this.getMultipartHeaders());
   }
 
   restaurarImagenDefault(id: number): Observable<any> {
-    return this.http.patch(
-      `${this.apiUrl}/${id}/restore-image`,
-      {},
-      { headers: this.getHeaders() },
-    );
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PATCH', `${this.apiUrl}/${id}/restore-image`, {}, this.getHeaders());
   }
 
   eliminarImagen(id: number): Observable<any> {
@@ -75,50 +75,46 @@ export class ProductoService {
   }
 
   actualizarProducto(id: number, producto: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, producto, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PUT', `${this.apiUrl}/${id}`, producto, this.getHeaders());
   }
 
   crearProducto(producto: any): Observable<any> {
-    return this.http.post(this.apiUrl, producto, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('POST', this.apiUrl, producto, this.getHeaders());
   }
 
   toggleDisponible(id: number): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${id}/toggle`, {}, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('PATCH', `${this.apiUrl}/${id}/toggle`, {}, this.getHeaders());
   }
 
   eliminarProducto(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+    this.limpiarCache(this.apiUrl);
+    return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
   }
 
+  // CACHÉ
+  limpiarCacheProductos(): void {
+    this.limpiarCache(this.apiUrl);
+  }
+
+  // IMÁGENES
   getImagenUrl(imagen: string | null | undefined): string {
     const valor = String(imagen || '').trim();
-
     if (!valor || valor === 'imagen.jpg') {
-      return `${this.backendUrl}` + '/uploads/productos/imagen.jpg';
+      return `${this.backendUrl}/uploads/productos/imagen.jpg`;
     }
-
     if (
       valor.startsWith('http://') ||
       valor.startsWith('https://') ||
       valor.startsWith('data:') ||
       valor.startsWith('blob:')
-    ) {
-      return valor;
-    }
-
-    if (valor.startsWith('/uploads/')) {
-      return `${this.backendUrl}${valor}`;
-    }
-
-    if (valor.startsWith('uploads/')) {
-      return `${this.backendUrl}/${valor}`;
-    }
-
-    if (valor.startsWith('/assets/') || valor.startsWith('assets/')) {
-      return valor;
-    }
-
-    return `${this.backendUrl}` + '/uploads/productos/' + encodeURIComponent(valor);
+    ) return valor;
+    if (valor.startsWith('/uploads/')) return `${this.backendUrl}${valor}`;
+    if (valor.startsWith('uploads/')) return `${this.backendUrl}/${valor}`;
+    if (valor.startsWith('/assets/') || valor.startsWith('assets/')) return valor;
+    return `${this.backendUrl}/uploads/productos/${encodeURIComponent(valor)}`;
   }
 
   esImagenDefault(imagen: string | null | undefined): boolean {
@@ -126,21 +122,16 @@ export class ProductoService {
   }
 
   buscarProductos(termino: string, productos: any[]): any[] {
-    if (!termino || termino.trim() === '') {
-      return productos;
-    }
-
-    const terminoLower = termino.toLowerCase().trim();
-
-    return productos.filter((producto) => {
-      const nombreMatch = producto.nombre?.toLowerCase().includes(terminoLower) || false;
-      const categoriaMatch =
-        producto.categoria_nombre?.toLowerCase().includes(terminoLower) || false;
-      const precioMatch = producto.precio?.toString().includes(terminoLower) || false;
-      const idMatch = producto.id?.toString().includes(terminoLower) || false;
-      const descripcionMatch = producto.descripcion?.toLowerCase().includes(terminoLower) || false;
-
-      return nombreMatch || categoriaMatch || precioMatch || idMatch || descripcionMatch;
+    if (!termino || termino.trim() === '') return productos;
+    const t = termino.toLowerCase().trim();
+    return productos.filter((p) => {
+      return (
+        p.nombre?.toLowerCase().includes(t) ||
+        p.categoria_nombre?.toLowerCase().includes(t) ||
+        p.precio?.toString().includes(t) ||
+        p.id?.toString().includes(t) ||
+        p.descripcion?.toLowerCase().includes(t)
+      );
     });
   }
 }

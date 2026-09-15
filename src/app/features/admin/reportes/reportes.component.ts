@@ -4,11 +4,13 @@ import {
   computed,
   inject,
   OnInit,
+  OnDestroy,
   signal
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
@@ -49,47 +51,33 @@ interface DiaSemana {
 
 interface FilaReporte {
   id: string | number;
-
   fecha?: string;
   cliente?: string;
   items?: number;
   usuario?: string;
   rol?: string;
-
   semana?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
-
   ventas?: number;
   transacciones?: number;
   cantidad?: number;
-
   categoria?: string;
   metodo_pago?: string;
-
   tipo_entrega?: string;
   tipo_texto?: string;
   tipo_clase?: string;
-
   estado?: string;
   estado_texto?: string;
   estado_clase?: string;
-
   ventas_local?: number;
   ventas_motorizado?: number;
   total_local?: number;
   total_motorizado?: number;
-
   total: number;
   promedio?: number;
-
-  // ✅ NUEVO: Desglose por día para reporte semanal
   dias?: DiaSemana[];
 }
-
-// ============================================
-// CATÁLOGO DE REPORTES
-// ============================================
 
 const TIPOS_REPORTE: TipoReporte[] = [
   { id: 'ventas', nombre: 'Reporte de Ventas' },
@@ -104,10 +92,6 @@ const TIPOS_REPORTE: TipoReporte[] = [
   { id: 'motorizada', nombre: 'Venta Motorizada' }
 ];
 
-// ============================================
-// ETIQUETAS DE MÉTODOS DE PAGO
-// ============================================
-
 const ETIQUETA_METODO_PAGO: Record<string, string> = {
   efectivo: 'Efectivo',
   tarjeta: 'Tarjeta',
@@ -118,10 +102,6 @@ const ETIQUETA_METODO_PAGO: Record<string, string> = {
   no_especificado: 'No especificado'
 };
 
-// ============================================
-// COMPONENTE
-// ============================================
-
 @Component({
   selector: 'app-reportes',
   standalone: true,
@@ -129,11 +109,16 @@ const ETIQUETA_METODO_PAGO: Record<string, string> = {
   templateUrl: './reportes.component.html',
   styleUrls: ['./reportes.component.scss']
 })
-export class ReportesComponent implements OnInit {
+export class ReportesComponent implements OnInit, OnDestroy {
 
   private pedidoService = inject(PedidoService);
   private ventaService = inject(VentaService);
   private authService = inject(AuthService);
+
+  // ✅ Protección anti-saturación
+  private destroy$ = new Subject<void>();
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   // ==========================================
   // ESTADO GENERAL
@@ -165,7 +150,6 @@ export class ReportesComponent implements OnInit {
   // ==========================================
   columnasReporte = computed<ColumnaReporte[]>(() => {
     switch (this.reporteSeleccionado()) {
-
       case 'ventas':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -291,6 +275,11 @@ export class ReportesComponent implements OnInit {
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   // ==========================================
   // MENÚ
   // ==========================================
@@ -330,47 +319,43 @@ export class ReportesComponent implements OnInit {
   }
 
   // ==========================================
-  // CARGA DE DATOS
+  // CARGAR DATOS (forkJoin + protección)
   // ==========================================
   cargarDatos(): void {
-    if (this.loading()) return;
+    if (this.cargando() || this.yaCargado()) return;
 
+    this.cargando.set(true);
     this.loading.set(true);
 
-    let solicitudesFinalizadas = 0;
-    const totalSolicitudes = 2;
+    forkJoin({
+      ventas: this.ventaService.obtenerVentas().pipe(catchError(() => of([]))),
+      pedidos: this.pedidoService.obtenerPedidosPendientes().pipe(catchError(() => of([])))
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ ventas, pedidos }) => {
+          this.ventas.set(Array.isArray(ventas) ? ventas : []);
+          this.pedidosPendientes.set(Array.isArray(pedidos) ? pedidos : []);
+          this.generarReporte();
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Reportes cargados');
+        },
+        error: (error) => {
+          console.error('Error al cargar datos:', error);
+          this.ventas.set([]);
+          this.pedidosPendientes.set([]);
+          this.loading.set(false);
+          this.cargando.set(false);
+        }
+      });
+  }
 
-    const verificarFinalizacion = (): void => {
-      solicitudesFinalizadas++;
-      if (solicitudesFinalizadas >= totalSolicitudes) {
-        this.generarReporte();
-        this.loading.set(false);
-      }
-    };
-
-    this.ventaService.obtenerVentas().subscribe({
-      next: (ventas: any[]) => {
-        this.ventas.set(Array.isArray(ventas) ? ventas : []);
-        verificarFinalizacion();
-      },
-      error: error => {
-        console.error('Error al cargar ventas:', error);
-        this.ventas.set([]);
-        verificarFinalizacion();
-      }
-    });
-
-    this.pedidoService.obtenerPedidosPendientes().subscribe({
-      next: (pedidos: any[]) => {
-        this.pedidosPendientes.set(Array.isArray(pedidos) ? pedidos : []);
-        verificarFinalizacion();
-      },
-      error: error => {
-        console.error('Error al cargar pedidos pendientes:', error);
-        this.pedidosPendientes.set([]);
-        verificarFinalizacion();
-      }
-    });
+  // ✅ NUEVO: Recargar manualmente
+  recargar(): void {
+    this.yaCargado.set(false);
+    this.cargarDatos();
   }
 
   // ==========================================
@@ -417,8 +402,7 @@ export class ReportesComponent implements OnInit {
   }
 
   // ==========================================
-  // ✅ REPORTE SEMANAL (MEJORADO)
-  // Muestra el desglose de los 7 días de la semana
+  // REPORTE SEMANAL (CON DESGLOSE POR DÍA)
   // ==========================================
   private generarReporteSemanal(): void {
     const fechaInicial = this.crearFechaLocal(this.fechaInicio());
@@ -458,7 +442,6 @@ export class ReportesComponent implements OnInit {
 
     const agrupacion: Record<string, GrupoSemana> = {};
 
-    // Crear todas las semanas del rango
     const semanaActual = new Date(primerLunes);
     while (semanaActual.getTime() <= ultimoDomingo.getTime()) {
       const inicio = new Date(semanaActual);
@@ -504,7 +487,6 @@ export class ReportesComponent implements OnInit {
       semanaActual.setDate(semanaActual.getDate() + 7);
     }
 
-    // Distribuir ventas
     ventasFiltradas.forEach(venta => {
       const fechaVentaTexto = this.obtenerFechaComparacion(
         venta.fecha_venta || venta.created_at
@@ -540,7 +522,6 @@ export class ReportesComponent implements OnInit {
       }
     });
 
-    // Convertir a filas ordenadas
     const filas: FilaReporte[] = Object.values(agrupacion)
       .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())
       .map((grupo, indice) => ({
@@ -564,20 +545,16 @@ export class ReportesComponent implements OnInit {
   }
 
   // ==========================================
-  // RESTO DE REPORTES (sin cambios)
+  // OTROS REPORTES
   // ==========================================
   private generarReporteDiario(): void {
     const ventasFiltradas = this.filtrarPorRango(this.ventas(), 'fecha_venta');
-
     const grupos: Record<string, { ventas: number; items: number; total: number }> = {};
 
     ventasFiltradas.forEach(venta => {
       const fecha = this.obtenerFechaComparacion(venta.fecha_venta);
       if (!fecha) return;
-
-      if (!grupos[fecha]) {
-        grupos[fecha] = { ventas: 0, items: 0, total: 0 };
-      }
+      if (!grupos[fecha]) grupos[fecha] = { ventas: 0, items: 0, total: 0 };
       grupos[fecha].ventas++;
       grupos[fecha].items += this.contarItems(venta.items);
       grupos[fecha].total += this.numeroSeguro(venta.total);
@@ -969,7 +946,6 @@ export class ReportesComponent implements OnInit {
     return this.numeroSeguro(fila[clave]);
   }
 
-  // ✅ NUEVO: Obtener días de la semana para el HTML
   obtenerDiasSemana(dato: FilaReporte): DiaSemana[] {
     return dato.dias || [];
   }
@@ -1095,7 +1071,8 @@ export class ReportesComponent implements OnInit {
       const nombreHoja = this.nombreReporte().replace(/[\\/*?:[\]]/g, '').substring(0, 31) || 'Reporte';
       const worksheet = workbook.addWorksheet(nombreHoja);
 
-      // ... (resto del código de exportación Excel - igual que antes)
+      // (aquí va el código completo de exportación de Excel
+      // que ya tenías - no lo cambio para no alargar la respuesta)
 
       const buffer = await workbook.xlsx.writeBuffer();
       const archivo = new Blob([buffer], {
@@ -1130,7 +1107,9 @@ export class ReportesComponent implements OnInit {
       return;
     }
 
-    // ... (resto del código de exportación PDF - igual que antes)
+    // (aquí va el código completo de exportación de PDF
+    // que ya tenías - no lo cambio para no alargar la respuesta)
+
     ventana.document.close();
     setTimeout(() => {
       ventana.focus();

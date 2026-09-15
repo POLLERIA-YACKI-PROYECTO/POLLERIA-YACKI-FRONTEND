@@ -16,9 +16,7 @@ export interface Mesa {
   hora_ocupacion?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class MesaService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
@@ -30,9 +28,7 @@ export class MesaService {
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
   cargarMesas(): void {
@@ -46,11 +42,11 @@ export class MesaService {
           capacidad: m.capacidad || 4,
           ubicacion: m.ubicacion || 'Sala Principal',
           cantidad_personas: m.cantidad_personas || 0,
-          hora_ocupacion: m.hora_ocupacion || undefined
+          hora_ocupacion: m.hora_ocupacion || undefined,
         })));
         this.ultimaActualizacion.set(new Date());
       },
-      error: (err) => console.error('Error al cargar mesas del servidor:', err)
+      error: (err) => console.error('Error al cargar mesas del servidor:', err),
     });
   }
 
@@ -76,10 +72,8 @@ export class MesaService {
 
   ocuparMesa(numero: number, cliente?: string, cantidad_personas?: number): void {
     const payload: any = { cliente: cliente || 'Cliente' };
-    if (cantidad_personas) {
-      payload.cantidad_personas = cantidad_personas;
-    }
-    
+    if (cantidad_personas) payload.cantidad_personas = cantidad_personas;
+
     this.http.put(`${this.apiUrl}/ocupar/${numero}`, payload, { headers: this.getHeaders() }).subscribe({
       next: () => {
         this.cargarMesas();
@@ -88,7 +82,7 @@ export class MesaService {
       error: (err) => {
         console.error('Error al ocupar mesa:', err);
         alert(err.error?.error || `No se pudo ocupar la mesa ${numero}`);
-      }
+      },
     });
   }
 
@@ -101,26 +95,21 @@ export class MesaService {
       error: (err) => {
         console.error('Error al liberar mesa:', err);
         alert(err.error?.error || `No se pudo liberar la mesa ${numero}`);
-      }
+      },
     });
   }
 
   estaOcupada(numero: number): boolean {
-    const mesa = this.mesas().find(m => m.numero === numero);
+    const mesa = this.mesas().find((m) => m.numero === numero);
     return mesa ? mesa.ocupada : false;
   }
 
   getClienteMesa(numero: number): string | undefined {
-    const mesa = this.mesas().find(m => m.numero === numero);
-    return mesa?.cliente;
+    return this.mesas().find((m) => m.numero === numero)?.cliente;
   }
 
   actualizarMesa(mesa: Mesa): void {
-    this.mesas.update(list =>
-      list.map(m =>
-        m.numero === mesa.numero ? mesa : m
-      )
-    );
+    this.mesas.update((list) => list.map((m) => (m.numero === mesa.numero ? mesa : m)));
     this.ultimaActualizacion.set(new Date());
   }
 

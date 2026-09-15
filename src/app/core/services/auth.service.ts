@@ -23,135 +23,78 @@ export interface ClienteResponse {
   token: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/auth`;
-
   private readonly tokenKey = 'auth_token';
   private readonly usuarioKey = 'usuario_actual';
 
-  // ============================================
-  // GUARDAR SESIÓN
-  // ============================================
   private guardarSesion(usuario: any, token: string, tipo: 'cliente' | 'admin' | 'mesero' = 'cliente'): void {
-    // Normalizar: siempre agregamos tipo y rol para compatibilidad con guards
     const usuarioNormalizado = {
       ...usuario,
       tipo: usuario.tipo || tipo,
-      rol: usuario.rol || tipo
+      rol: usuario.rol || tipo,
     };
-
     localStorage.setItem(this.tokenKey, token);
     localStorage.setItem(this.usuarioKey, JSON.stringify(usuarioNormalizado));
-
-    console.log('Sesión guardada:', {
-      tipo: usuarioNormalizado.tipo,
-      rol: usuarioNormalizado.rol,
-      nombre: usuarioNormalizado.nombre
-    });
   }
 
-  // ============================================
-  // LOGIN ADMIN (por DNI)
-  // ============================================
   loginAdmin(dni: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/login-admin`, { dni }).pipe(
       tap((response: any) => {
-        if (response?.token) {
-          this.guardarSesion(response, response.token, 'admin');
-        }
+        if (response?.token) this.guardarSesion(response, response.token, 'admin');
       })
     );
   }
 
-  // ============================================
-  // LOGIN MESERO (por DNI)
-  // ============================================
   loginMesero(dni: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/login-mesero`, { dni }).pipe(
       tap((response: any) => {
-        if (response?.token) {
-          this.guardarSesion(response, response.token, 'mesero');
+        if (response?.token) this.guardarSesion(response, response.token, 'mesero');
+      })
+    );
+  }
+
+  loginCliente(payload: LoginClienteRequest): Observable<ClienteResponse> {
+    return this.http.post<ClienteResponse>(`${this.apiUrl}/cliente/login`, payload).pipe(
+      tap((response) => {
+        if (response?.token && response?.cliente) {
+          this.guardarSesion(response.cliente, response.token, 'cliente');
         }
       })
     );
   }
 
-  // ============================================
-  // LOGIN CLIENTE (email + password)
-  // ============================================
-  loginCliente(payload: LoginClienteRequest): Observable<ClienteResponse> {
-    return this.http
-      .post<ClienteResponse>(`${this.apiUrl}/cliente/login`, payload)
-      .pipe(
-        tap((response) => {
-          if (response?.token && response?.cliente) {
-            this.guardarSesion(response.cliente, response.token, 'cliente');
-          }
-        })
-      );
-  }
-
-  // ============================================
-  // REGISTRO CLIENTE
-  // ============================================
   registerCliente(payload: RegisterClienteRequest): Observable<ClienteResponse> {
-    return this.http
-      .post<ClienteResponse>(`${this.apiUrl}/cliente/register`, payload)
-      .pipe(
-        tap((response) => {
-          if (response?.token && response?.cliente) {
-            this.guardarSesion(
-              {
-                ...response.cliente,
-                nombre: payload.nombre,
-                telefono: payload.telefono,
-                direccion: payload.direccion
-              },
-              response.token,
-              'cliente'
-            );
-          }
-        })
-      );
+    return this.http.post<ClienteResponse>(`${this.apiUrl}/cliente/register`, payload).pipe(
+      tap((response) => {
+        if (response?.token && response?.cliente) {
+          this.guardarSesion(
+            { ...response.cliente, nombre: payload.nombre, telefono: payload.telefono, direccion: payload.direccion },
+            response.token,
+            'cliente'
+          );
+        }
+      })
+    );
   }
 
-  // ============================================
-  // TOKEN
-  // ============================================
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
 
-  // ============================================
-  // USUARIO ACTUAL
-  // ============================================
   getUsuarioActual(): any {
     const raw = localStorage.getItem(this.usuarioKey);
     if (!raw) return null;
-
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
-  // ============================================
-  // LOGOUT
-  // ============================================
   logout(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.usuarioKey);
-    console.log('Sesión cerrada');
   }
 
-  // ============================================
-  // VERIFICACIONES
-  // ============================================
   isAuthenticated(): boolean {
     return !!this.getToken() && !!this.getUsuarioActual();
   }
@@ -173,9 +116,6 @@ export class AuthService {
     return !!u && u.rol === 'mesero';
   }
 
-  // ============================================
-  // HELPERS
-  // ============================================
   getClienteId(): number | null {
     return this.getUsuarioActual()?.id ?? null;
   }
