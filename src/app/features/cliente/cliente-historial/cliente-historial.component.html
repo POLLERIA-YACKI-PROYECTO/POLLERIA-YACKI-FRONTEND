@@ -1,0 +1,36 @@
+<div class="historial-page">
+  <header class="historial-header">
+    <div>
+      <p class="eyebrow">Mi cuenta</p>
+      <h1>Historial de pedidos</h1>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-secundario" (click)="volverCarta()">Volver a la carta</button>
+      <button type="button" class="btn-salir" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="historial-content">
+    <div class="empty-state" *ngIf="pedidos().length === 0">
+      <h2>Aún no tienes pedidos</h2>
+      <p>Cuando realices un pedido, aparecerá aquí.</p>
+      <button type="button" class="btn-principal" (click)="volverCarta()">Ver la carta</button>
+    </div>
+
+    <section class="pedidos-lista" *ngIf="pedidos().length > 0" aria-label="Pedidos realizados">
+      <article class="pedido-card" *ngFor="let pedido of pedidos()">
+        <div class="pedido-topline">
+          <h2>Pedido #{{ pedido.id }}</h2>
+          <span class="estado">{{ pedido.estado || 'pendiente' }}</span>
+        </div>
+        <div class="pedido-info">
+          <span>{{ pedido.tipo_entrega || 'local' }}</span>
+          <strong>S/ {{ (pedido.total || 0) | number:'1.2-2' }}</strong>
+        </div>
+        <p class="pedido-fecha" *ngIf="pedido.fecha || pedido.created_at">
+          {{ (pedido.fecha || pedido.created_at) | date:'dd/MM/yyyy HH:mm' }}
+        </p>
+      </article>
+    </section>
+  </main>
+</div>

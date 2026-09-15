@@ -48,6 +48,11 @@ export class CartaClienteComponent implements OnInit {
   carrito = signal<ItemCarrito[]>([]);
   mostrarCarrito = signal(false);
   mostrarModalPago = signal(false);
+  pedidoCreado = signal<any | null>(null);
+  qrPago = signal<string | null>(null);
+  montoQr = signal<number | null>(null);
+  cargandoQr = signal(false);
+  errorQr = signal<string | null>(null);
   cargandoPedido = signal(false);
   busqueda = signal('');
 
@@ -278,7 +283,7 @@ export class CartaClienteComponent implements OnInit {
     this.pedidoService.crearPedidoCliente(pedido).subscribe({
       next: (response: any) => {
         if (response?.success !== false) {
-          this.finalizarPedido();
+          this.finalizarPedido(response?.pedido || response);
         } else {
           this.cargandoPedido.set(false);
           alert(
@@ -304,14 +309,46 @@ export class CartaClienteComponent implements OnInit {
     });
   }
 
-  finalizarPedido(): void {
+  finalizarPedido(pedido: any): void {
     this.cargandoPedido.set(false);
     this.mostrarModalPago.set(false);
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
-    alert('¡Pedido realizado con éxito! Tu pedido está siendo preparado.');
-    // Se queda en la carta (no hay ruta de historial activa)
-    this.router.navigate(['/cliente/carta']);
+    this.pedidoCreado.set(pedido);
+    this.qrPago.set(null);
+    this.montoQr.set(null);
+    this.errorQr.set(null);
+  }
+
+  cerrarBoleta(): void {
+    this.pedidoCreado.set(null);
+    this.qrPago.set(null);
+    this.montoQr.set(null);
+  }
+
+  pagarAhora(): void {
+    const pedido = this.pedidoCreado();
+    if (!pedido?.id || pedido.tipo_entrega !== 'delivery') return;
+
+    this.cargandoQr.set(true);
+    this.errorQr.set(null);
+    this.pedidoService.obtenerQrPago(pedido.id).subscribe({
+      next: (respuesta: any) => {
+        const qr = respuesta?.qr || respuesta?.qr_base64 || respuesta?.base64;
+        if (!qr) {
+          this.errorQr.set('El servidor no devolvió el código QR.');
+        } else {
+          this.qrPago.set(qr.startsWith('data:') ? qr : `data:image/png;base64,${qr}`);
+          this.montoQr.set(Number(respuesta?.monto ?? respuesta?.amount ?? pedido.total));
+        }
+        this.cargandoQr.set(false);
+      },
+      error: (err: any) => {
+        console.error('Error al generar QR de pago:', err);
+        this.errorQr.set(err?.error?.error || 'No se pudo generar el QR de pago.');
+        this.cargandoQr.set(false);
+      }
+    });
   }
 
   // ============================================

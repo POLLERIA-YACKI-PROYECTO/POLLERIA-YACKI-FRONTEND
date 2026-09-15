@@ -51,6 +51,10 @@ export class PedidoService {
     return this.http.get<any>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
+  obtenerQrPago(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/pago/qr`, { headers: this.getHeaders() });
+  }
+
   crearPedido(pedido: any): Observable<any> {
     return this.http.post(this.apiUrl, pedido, { headers: this.getHeaders() });
   }

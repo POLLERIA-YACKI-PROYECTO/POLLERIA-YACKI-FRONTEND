@@ -133,6 +133,36 @@
     (confirmar)="procesarPedido($event)"
   ></app-modal-pago>
 
+  <div class="boleta-overlay" *ngIf="pedidoCreado()" (click)="cerrarBoleta()">
+    <section class="boleta-pago" (click)="$event.stopPropagation()" aria-labelledby="boleta-titulo">
+      <button class="boleta-cerrar" type="button" (click)="cerrarBoleta()" aria-label="Cerrar boleta">&times;</button>
+      <p class="boleta-etiqueta">Pedido recibido</p>
+      <h2 id="boleta-titulo">Boleta #{{ pedidoCreado()?.id }}</h2>
+      <p class="boleta-mensaje">Tu pedido fue registrado correctamente.</p>
+      <div class="boleta-resumen">
+        <span>Total</span>
+        <strong>S/ {{ (pedidoCreado()?.total || 0) | number:'1.2-2' }}</strong>
+      </div>
+
+      <ng-container *ngIf="pedidoCreado()?.tipo_entrega === 'delivery'; else pedidoLocal">
+        <button class="btn-pagar-ahora" type="button" (click)="pagarAhora()" [disabled]="cargandoQr() || !!qrPago()">
+          {{ cargandoQr() ? 'Generando QR...' : qrPago() ? 'QR generado' : 'Pagar ahora' }}
+        </button>
+        <p class="boleta-error" *ngIf="errorQr()">{{ errorQr() }}</p>
+        <div class="qr-pago" *ngIf="qrPago()">
+          <img [src]="qrPago()" alt="Código QR para pagar el pedido">
+          <strong>Escanea para pagar S/ {{ (montoQr() || pedidoCreado()?.total || 0) | number:'1.2-2' }}</strong>
+          <span>Cuando completes el pago, conserva este comprobante.</span>
+        </div>
+      </ng-container>
+      <ng-template #pedidoLocal>
+        <p class="boleta-mensaje">Pagarás tu pedido en el local.</p>
+      </ng-template>
+
+      <button class="btn-cerrar-boleta" type="button" (click)="cerrarBoleta()">Continuar</button>
+    </section>
+  </div>
+
   <!-- FLOATING CARRITO -->
   <button
     class="floating-carrito"
