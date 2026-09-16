@@ -14,6 +14,7 @@ import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
+import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 import * as ExcelJS from 'exceljs';
@@ -77,6 +78,7 @@ interface FilaReporte {
   total: number;
   promedio?: number;
   dias?: DiaSemana[];
+  origen?: string; // ✅ NUEVO: para distinguir web/mesero
 }
 
 const TIPOS_REPORTE: TipoReporte[] = [
@@ -113,6 +115,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   private pedidoService = inject(PedidoService);
   private ventaService = inject(VentaService);
+  private pedidoClienteService = inject(PedidoClienteService); // ✅ NUEVO
   private authService = inject(AuthService);
 
   // ✅ Protección anti-saturación
@@ -130,7 +133,8 @@ export class ReportesComponent implements OnInit, OnDestroy {
   fechaFin = signal<string>('');
   usuario = signal<any>(null);
   ventas = signal<any[]>([]);
-  pedidosPendientes = signal<any[]>([]);
+  pedidosPendientes = signal<any[]>([]);          // mesero
+  pedidosWebPendientes = signal<any[]>([]);       // ✅ NUEVO: web
   datosReporte = signal<FilaReporte[]>([]);
   resumenReporte = signal<any>({});
   reportes = TIPOS_REPORTE;
@@ -191,7 +195,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'fecha', titulo: 'Fecha', tipo: 'texto' },
           { clave: 'cliente', titulo: 'Cliente', tipo: 'texto' },
           { clave: 'items', titulo: 'Items', tipo: 'numero' },
-          { clave: 'usuario', titulo: 'Usuario', tipo: 'texto' },
+          { clave: 'usuario', titulo: 'Atendido por', tipo: 'texto' },
           { clave: 'tipo_entrega', titulo: 'Tipo', tipo: 'tipo' },
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'estado', titulo: 'Estado', tipo: 'estado' }
@@ -324,7 +328,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   // ==========================================
-  // CARGAR DATOS
+  // CARGAR DATOS (con pedidos web incluidos)
   // ==========================================
   cargarDatos(): void {
     if (this.cargando() || this.yaCargado()) return;
@@ -334,23 +338,30 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
     forkJoin({
       ventas: this.ventaService.obtenerVentas().pipe(catchError(() => of([]))),
-      pedidos: this.pedidoService.obtenerPedidosPendientes().pipe(catchError(() => of([])))
+      pedidosMesero: this.pedidoService.obtenerPedidosPendientes().pipe(catchError(() => of([]))),
+      pedidosWeb: this.pedidoClienteService.obtenerPendientes().pipe(catchError(() => of([]))) // ✅ NUEVO
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ ventas, pedidos }) => {
+        next: ({ ventas, pedidosMesero, pedidosWeb }) => {
           this.ventas.set(Array.isArray(ventas) ? ventas : []);
-          this.pedidosPendientes.set(Array.isArray(pedidos) ? pedidos : []);
+          this.pedidosPendientes.set(Array.isArray(pedidosMesero) ? pedidosMesero : []);
+          this.pedidosWebPendientes.set(Array.isArray(pedidosWeb) ? pedidosWeb : []); // ✅ NUEVO
           this.generarReporte();
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Reportes cargados:', this.ventas().length, 'ventas');
+          console.log('✅ Reportes cargados:', {
+            ventas: this.ventas().length,
+            pedidosMesero: this.pedidosPendientes().length,
+            pedidosWeb: this.pedidosWebPendientes().length
+          });
         },
         error: (error) => {
           console.error('Error al cargar datos:', error);
           this.ventas.set([]);
           this.pedidosPendientes.set([]);
+          this.pedidosWebPendientes.set([]);
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(false);
@@ -359,8 +370,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   recargar(): void {
-    this.ventaService.limpiarCache?.();
-    this.pedidoService.limpiarCache?.();
+    this.ventaService.limpiarCacheVentas?.();
+    this.pedidoService.limpiarCachePedidos?.();
+    this.pedidoClienteService.limpiarCachePedidos?.(); // ✅ NUEVO
     this.yaCargado.set(false);
     this.cargarDatos();
   }
@@ -581,16 +593,40 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.publicarReporte(filas, ventasFiltradas.length);
   }
 
+  // ✅ CORREGIDO: combina pedidos mesero + pedidos web
   private generarReportePendientes(): void {
-    const pedidos = this.filtrarPorRango(this.pedidosPendientes(), 'created_at');
-    const filas = pedidos.map(pedido =>
+    // Pedidos del mesero (tabla `pedidos`)
+    const pedidosMesero = this.filtrarPorRango(this.pedidosPendientes(), 'created_at').map(p => ({
+      ...p,
+      origen: 'pedido',
+      id_unico: `P-${p.id}`,
+      usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido'
+    }));
+
+    // Pedidos web (tabla `pedidos_cliente`)
+    const pedidosWeb = this.filtrarPorRango(this.pedidosWebPendientes(), 'created_at').map(p => ({
+      ...p,
+      origen: 'pedido_web',
+      id_unico: `PC-${p.id}`,
+      usuario_nombre: 'Cliente Web'
+    }));
+
+    // Combinar y ordenar por fecha descendente
+    const todos = [...pedidosMesero, ...pedidosWeb].sort((a, b) => {
+      const fA = new Date(a.created_at).getTime();
+      const fB = new Date(b.created_at).getTime();
+      return fB - fA;
+    });
+
+    const filas = todos.map(pedido =>
       this.armarFilaVenta({
         ...pedido,
         fecha_venta: pedido.created_at,
         estado: pedido.estado || 'pendiente'
       })
     );
-    this.publicarReporte(filas, pedidos.length, this.desglosePorTipo(pedidos));
+
+    this.publicarReporte(filas, todos.length, this.desglosePorTipo(todos));
   }
 
   private generarReporteCajero(): void {
@@ -752,23 +788,26 @@ export class ReportesComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ✅ MEJORADO: distingue pedidos web con prefijo PC- en el ID
   private armarFilaVenta(venta: any): FilaReporte {
     const tipo = this.normalizarTipo(venta.tipo_entrega || venta.tipo);
     const estado = this.normalizarEstado(venta.estado || 'completada');
+    const esWeb = venta.origen === 'pedido_web';
 
     return {
-      id: venta.id,
+      id: esWeb ? `PC-${venta.id}` : venta.id,
       fecha: this.formatearFechaHora(venta.fecha_venta || venta.created_at),
       cliente: venta.cliente_nombre_real || venta.cliente_nombre || venta.cliente || 'Consumidor Final',
       items: this.contarItems(venta.items),
-      usuario: venta.usuario_nombre || venta.mesero_nombre || 'Desconocido',
+      usuario: esWeb ? 'Cliente Web' : (venta.usuario_nombre || venta.mesero_nombre || 'Desconocido'),
       tipo_entrega: tipo,
       tipo_texto: tipo === 'delivery' ? 'Motorizado' : 'Local',
       tipo_clase: tipo === 'delivery' ? 'tipo-delivery' : 'tipo-local',
       estado,
       estado_texto: this.obtenerTextoEstado(estado),
       estado_clase: this.obtenerClaseEstado(estado),
-      total: this.numeroSeguro(venta.total)
+      total: this.numeroSeguro(venta.total),
+      origen: venta.origen || 'venta'
     };
   }
 
@@ -957,7 +996,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return dato.dias || [];
   }
 
-  // ✅ NUEVOS HELPERS PARA EL REPORTE SEMANAL (solucionan TS2532)
+  // ✅ HELPERS PARA EL REPORTE SEMANAL (solucionan TS2532)
   porcentajeLocal(dato: FilaReporte): number {
     const total = this.numeroSeguro(dato.total);
     if (total <= 0) return 0;
