@@ -1,0 +1,51 @@
+<!-- src/app/features/shared/components/confirm-dialog/confirm-dialog.component.html -->
+@if (visible) {
+  <div class="confirm-overlay" (click)="onCancelar()">
+    <div class="confirm-dialog" [class]="'tipo-' + tipo" (click)="$event.stopPropagation()">
+
+      <!-- Icono -->
+      <div class="confirm-icono">
+        <span [innerHTML]="getIcono()"></span>
+      </div>
+
+      <!-- Contenido -->
+      <div class="confirm-contenido">
+        <h3 class="confirm-titulo">{{ titulo }}</h3>
+
+        @if (mensaje) {
+          <p class="confirm-mensaje">{{ mensaje }}</p>
+        }
+
+        @if (subMensaje) {
+          <p class="confirm-submensaje">{{ subMensaje }}</p>
+        }
+      </div>
+
+      <!-- Acciones -->
+      <div class="confirm-acciones">
+        <button
+          class="btn-cancelar"
+          type="button"
+          (click)="onCancelar()"
+          [disabled]="cargando"
+        >
+          {{ textoCancelar }}
+        </button>
+
+        <button
+          class="btn-confirmar"
+          type="button"
+          (click)="onConfirmar()"
+          [disabled]="cargando"
+        >
+          @if (cargando) {
+            <span class="spinner-small"></span>
+            Procesando...
+          } @else {
+            {{ textoConfirmar }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

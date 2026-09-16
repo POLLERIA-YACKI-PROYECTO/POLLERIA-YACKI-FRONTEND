@@ -61,11 +61,16 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   mostrarResumen = signal<boolean>(false);
   resultadoPago = signal<any>(null);
 
+  // ✅ Modal de aviso (reemplaza alert)
+  mostrarModalAviso = signal<boolean>(false);
+  mensajeAviso = signal<string>('');
+  tituloAviso = signal<string>('Atención');
+  tipoAviso = signal<'warning' | 'error' | 'info'>('warning');
+
   // ============================================
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
       console.warn('🛡️ VentasAdmin: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
@@ -89,21 +94,41 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CARGAR DATOS (forkJoin + caché)
+  // MODAL DE AVISO (reemplaza alert)
   // ============================================
-  cargarDatos(): void {
-    if (this.cargando() || this.yaCargado()) return;
+  mostrarAviso(
+    mensaje: string,
+    titulo: string = 'Atención',
+    tipo: 'warning' | 'error' | 'info' = 'warning'
+  ): void {
+    this.mensajeAviso.set(mensaje);
+    this.tituloAviso.set(titulo);
+    this.tipoAviso.set(tipo);
+    this.mostrarModalAviso.set(true);
+  }
+
+  cerrarModalAviso(): void {
+    this.mostrarModalAviso.set(false);
+    this.mensajeAviso.set('');
+  }
+
+  // ============================================
+  // CARGAR DATOS (con forceRefresh opcional)
+  // ============================================
+  cargarDatos(forceRefresh: boolean = false): void {
+    // ✅ Si NO es forceRefresh y ya está cargado, no hacer nada
+    if (!forceRefresh && (this.cargando() || this.yaCargado())) return;
 
     this.cargando.set(true);
     this.loading.set(true);
     this.errorMessage.set('');
 
     forkJoin({
-      pedidosPendientes: this.pedidoService.obtenerPedidosPendientes()
+      pedidosPendientes: this.pedidoService.obtenerPedidosPendientes(forceRefresh)
         .pipe(catchError(() => of([]))),
-      pedidosWeb: this.pedidoClienteService.obtenerPendientes()
+      pedidosWeb: this.pedidoClienteService.obtenerPendientes(forceRefresh)
         .pipe(catchError(() => of([]))),
-      ventas: this.ventaService.obtenerVentas()
+      ventas: this.ventaService.obtenerVentas(forceRefresh)
         .pipe(catchError(() => of([])))
     })
       .pipe(takeUntil(this.destroy$))
@@ -187,20 +212,33 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.errorMessage.set('Error al cargar las ventas');
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
   }
 
+  // ============================================
+  // ✅ RECARGAR FORZANDO (limpia caché y vuelve a pedir al backend)
+  // ============================================
   recargar(): void {
+    console.log('🔄 Recargando datos (forzando caché)...');
+
+    // ✅ Limpiar cachés de todos los servicios
+    this.pedidoService.limpiarCachePedidos?.();
+    this.pedidoClienteService.limpiarCachePedidos?.();
+    this.ventaService.limpiarCacheVentas?.();
+
+    // ✅ Resetear flags y forzar recarga
     this.yaCargado.set(false);
-    this.cargarDatos();
+    this.cargando.set(false);
+
+    // ✅ Llamar con forceRefresh = true
+    this.cargarDatos(true);
   }
 
-  // ✅ Alias para compatibilidad con el HTML
+  // ✅ Alias para el botón "Actualizar" del HTML
   recargarDatos(): void {
-    console.log('🔄 Recargando datos de ventas...');
+    console.log('🔄 Botón Actualizar presionado');
     this.recargar();
   }
 
@@ -253,12 +291,12 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   // ============================================
   abrirModalPago(pedido: any): void {
     if (!pedido || !pedido.id) {
-      alert('Error: Pedido inválido');
+      this.mostrarAviso('Pedido inválido. Intente nuevamente.', 'Error', 'error');
       return;
     }
 
     if (this.estaPagado(pedido)) {
-      alert('ℹ️ Este pedido ya está pagado');
+      this.mostrarAviso('Este pedido ya está pagado.', 'Pedido ya pagado', 'info');
       this.recargar();
       return;
     }
@@ -277,7 +315,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   cerrarModalPago(): void {
-    // ✅ No cerrar si está procesando
     if (this.procesandoPago()) return;
 
     this.mostrarModalPago.set(false);
@@ -292,18 +329,17 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CONFIRMAR PAGO (con reset SIEMPRE)
+  // CONFIRMAR PAGO (con recarga inmediata)
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoEnPago();
     if (!pedido) return;
 
-    // ✅ Guarda contra doble submit
     if (this.procesandoPago()) return;
 
     const metodo = this.metodoSeleccionado();
     if (!metodo) {
-      alert('Seleccione un método de pago');
+      this.mostrarAviso('Seleccione un método de pago.', 'Método requerido', 'warning');
       return;
     }
 
@@ -311,7 +347,19 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.mensajePago.set('Procesando pago...');
     this.tipoPago.set('procesando');
 
-    const esPedidoWeb = pedido.origen === 'pedido_web';
+    // ✅ Detección de origen más robusta
+    const esPedidoWeb =
+      pedido.origen === 'pedido_web' ||
+      String(pedido.id_unico || '').startsWith('PC-') ||
+      (pedido.pedido_cliente_id !== null && pedido.pedido_cliente_id !== undefined);
+
+    console.log('💳 Procesando pago:', {
+      id: pedido.id,
+      origen: pedido.origen,
+      id_unico: pedido.id_unico,
+      esPedidoWeb,
+      tipo_entrega: pedido.tipo_entrega
+    });
 
     const request$ = esPedidoWeb
       ? this.pedidoClienteService.confirmarPago(pedido.id, pedido.tipo_entrega)
@@ -336,43 +384,104 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
               cliente: pedido.cliente_nombre || pedido.cliente_nombre_real || 'Cliente'
             });
 
+            // ✅ RECARGA INMEDIATA (mueve el pedido de "Pendientes" a "Ventas")
+            console.log('🔄 Recargando después del pago exitoso...');
+            this.recargar();
+
+            // ✅ Cerrar el modal después de 3 segundos
             setTimeout(() => {
               this.cerrarModalPago();
-              this.recargar();
             }, 3000);
           } else {
             this.procesandoPago.set(false);
-            this.mensajePago.set('Error: Respuesta inesperada del servidor');
+            this.mensajePago.set('Respuesta inesperada del servidor.');
             this.tipoPago.set('error');
           }
         },
         error: (err: any) => {
-          console.error('❌ Error:', err);
-          // ✅ SIEMPRE resetear procesandoPago
+          console.error('❌ Error completo:', err);
+          console.error('❌ Status:', err?.status);
+          console.error('❌ URL:', err?.url);
+          console.error('❌ Body:', err?.error);
+
           this.procesandoPago.set(false);
           this.tipoPago.set('error');
 
-          let mensaje = 'Error al procesar el pago';
+          let mensaje = 'Error al procesar el pago.';
+          let titulo = 'Error';
+
           if (err?.status === 0) {
-            mensaje = 'No se pudo conectar con el servidor.';
+            mensaje = 'No se pudo conectar con el servidor. Verifique que el backend esté activo.';
           } else if (err?.status === 401) {
-            mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            mensaje = 'Sesión expirada. Vuelva a iniciar sesión.';
           } else if (err?.status === 403) {
-            mensaje = 'No tienes permisos para procesar pagos.';
+            mensaje = 'No tiene permisos para procesar pagos.';
+          } else if (err?.status === 404) {
+            mensaje = `El endpoint no existe: ${err?.url || 'desconocido'}. Contacte al administrador del sistema.`;
+            titulo = 'Endpoint no encontrado';
+          } else if (err?.status === 500) {
+            mensaje = err?.error?.detalle || err?.error?.sqlMessage || err?.error?.error || 'Error interno del servidor.';
+            titulo = 'Error del servidor';
           } else if (err?.error) {
             mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
           }
 
-          if (err.status === 400 && mensaje.includes('ya')) {
-            this.mensajePago.set('Este pedido ya estaba pagado');
+          // Caso especial: pedido ya pagado
+          if (err.status === 400 && String(mensaje).toLowerCase().includes('ya')) {
+            this.mensajePago.set('Este pedido ya estaba pagado.');
             this.tipoPago.set('info');
             setTimeout(() => {
               this.cerrarModalPago();
               this.recargar();
             }, 2000);
-          } else {
-            this.mensajePago.set(mensaje);
+            return;
           }
+
+          this.mensajePago.set(mensaje);
+          this.mostrarAviso(mensaje, titulo, 'error');
+        }
+      });
+  }
+
+  // ============================================
+  // ✅ RECHAZAR PAGO (opcional)
+  // ============================================
+  rechazarPago(): void {
+    const pedido = this.pedidoEnPago();
+    if (!pedido) return;
+
+    if (this.procesandoPago()) return;
+
+    this.procesandoPago.set(true);
+    this.mensajePago.set('Rechazando pago...');
+    this.tipoPago.set('procesando');
+
+    const esPedidoWeb = pedido.origen === 'pedido_web';
+
+    const request$ = esPedidoWeb
+      ? this.pedidoClienteService.rechazarPago(pedido.id, 'Pago no verificado')
+      : this.pedidoService.cambiarEstado(pedido.id, 'cancelado');
+
+    request$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.procesandoPago.set(false);
+          this.mensajePago.set('Pago rechazado');
+          this.tipoPago.set('info');
+
+          // ✅ RECARGA INMEDIATA
+          this.recargar();
+
+          setTimeout(() => {
+            this.cerrarModalPago();
+          }, 2000);
+        },
+        error: (err: any) => {
+          console.error('❌ Error al rechazar:', err);
+          this.procesandoPago.set(false);
+          this.tipoPago.set('error');
+          this.mensajePago.set(err?.error?.error || 'Error al rechazar el pago');
         }
       });
   }

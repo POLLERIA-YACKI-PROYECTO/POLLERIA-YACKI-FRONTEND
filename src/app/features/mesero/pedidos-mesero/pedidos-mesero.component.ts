@@ -49,6 +49,12 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   mensajeExito = signal<string>('');
   pedidoCreado = signal<any>(null);
 
+  // ✅ Modal de aviso (reemplaza alert)
+  mostrarModalAviso = signal<boolean>(false);
+  mensajeAviso = signal<string>('');
+  tituloAviso = signal<string>('Atención');
+  tipoAviso = signal<'warning' | 'error' | 'info'>('warning');
+
   // Datos
   pedidos = signal<any[]>([]);
   pedidosFiltrados = signal<any[]>([]);
@@ -95,7 +101,6 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
       console.warn('🛡️ PedidosMesero: sin sesión → /login-mesero');
       this.router.navigate(['/login-mesero']);
@@ -116,6 +121,70 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ============================================
+  // MODAL DE AVISO (reemplaza alert)
+  // ============================================
+  mostrarAviso(
+    mensaje: string,
+    titulo: string = 'Atención',
+    tipo: 'warning' | 'error' | 'info' = 'warning'
+  ): void {
+    this.mensajeAviso.set(mensaje);
+    this.tituloAviso.set(titulo);
+    this.tipoAviso.set(tipo);
+    this.mostrarModalAviso.set(true);
+  }
+
+  cerrarModalAviso(): void {
+    this.mostrarModalAviso.set(false);
+    this.mensajeAviso.set('');
+  }
+
+  // ============================================
+  // VALIDACIÓN DE CAMPOS NUMÉRICOS
+  // ============================================
+  private soloDigitos(valor: any, maxLength: number): string {
+    const soloNumeros = String(valor ?? '').replace(/\D/g, '');
+    return soloNumeros.slice(0, maxLength);
+  }
+
+  private soloLetras(valor: any, maxLength: number): string {
+    const soloLetras = String(valor ?? '')
+      .replace(/[0-9]/g, '')
+      .slice(0, maxLength);
+    return soloLetras;
+  }
+
+  onNombreInput(event: any): void {
+    const valor = this.soloLetras(event.target.value, 50);
+    this.nuevoCliente.nombre = valor;
+    event.target.value = valor;
+  }
+
+  onApellidoInput(event: any): void {
+    const valor = this.soloLetras(event.target.value, 50);
+    this.nuevoCliente.apellido = valor;
+    event.target.value = valor;
+  }
+
+  onDniInput(event: any): void {
+    const valor = this.soloDigitos(event.target.value, 8);
+    this.nuevoCliente.dni = valor;
+    event.target.value = valor;
+  }
+
+  onTelefonoInput(event: any): void {
+    const valor = this.soloDigitos(event.target.value, 9);
+    this.nuevoCliente.telefono = valor;
+    event.target.value = valor;
+  }
+
+  onEmailInput(event: any): void {
+    const valor = String(event.target.value ?? '').trim().slice(0, 80);
+    this.nuevoCliente.email = valor;
+    event.target.value = valor;
   }
 
   // ============================================
@@ -160,13 +229,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
           console.error('Error al cargar datos:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear para permitir reintento
           this.yaCargado.set(false);
         }
       });
   }
 
-  // ✅ Parsear items de pedidos (JSON string → array)
   private parsearPedidos(pedidos: any[]): any[] {
     return pedidos.map((p: any) => {
       if (p.items && typeof p.items === 'string') {
@@ -182,7 +249,6 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ Recargar manualmente
   recargarDatos(): void {
     this.pedidoService.limpiarCachePedidos();
     this.yaCargado.set(false);
@@ -339,13 +405,21 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          alert(`✅ Pedido #${event.id} actualizado a "${this.getEstadoTexto(event.estado)}"`);
+          this.mostrarAviso(
+            `Pedido #${event.id} actualizado a "${this.getEstadoTexto(event.estado)}"`,
+            'Estado actualizado',
+            'info'
+          );
           this.cerrarDetalle();
           this.recargarDatos();
         },
         error: (err) => {
           console.error('Error al actualizar estado:', err);
-          alert('❌ Error al actualizar el estado del pedido');
+          this.mostrarAviso(
+            'Error al actualizar el estado del pedido',
+            'Error',
+            'error'
+          );
         }
       });
   }
@@ -432,7 +506,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   // ============================================
   abrirModalProductos(): void {
     if (!this.clienteSeleccionado() && !this.nuevoCliente.nombre) {
-      alert('Primero seleccione o agregue un cliente');
+      this.mostrarAviso(
+        'Primero seleccione o agregue un cliente',
+        'Cliente requerido',
+        'warning'
+      );
       return;
     }
     this.productoSeleccionado.set(null);
@@ -492,17 +570,58 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   // GUARDAR PEDIDO
   // ============================================
   guardarPedido(): void {
-    // ✅ Guarda contra doble submit
     if (this.guardandoPedido()) return;
 
     if (this.itemsPedido().length === 0) {
-      alert('Agregue al menos un producto al pedido');
+      this.mostrarAviso(
+        'Agregue al menos un producto al pedido',
+        'Pedido vacío',
+        'warning'
+      );
       return;
+    }
+
+    // ✅ Validar nuevo cliente si se está creando uno
+    if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
+      const nombre = (this.nuevoCliente.nombre || '').trim();
+      const dni = (this.nuevoCliente.dni || '').trim();
+      const telefono = (this.nuevoCliente.telefono || '').trim();
+      const email = (this.nuevoCliente.email || '').trim();
+
+      if (nombre.length < 2) {
+        this.mostrarAviso('El nombre debe tener al menos 2 caracteres', 'Nombre inválido', 'warning');
+        return;
+      }
+
+      if (dni && dni.length !== 8) {
+        this.mostrarAviso('El DNI debe tener exactamente 8 dígitos', 'DNI inválido', 'warning');
+        return;
+      }
+
+      if (telefono && (telefono.length < 7 || telefono.length > 9)) {
+        this.mostrarAviso('El teléfono debe tener entre 7 y 9 dígitos', 'Teléfono inválido', 'warning');
+        return;
+      }
+
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        this.mostrarAviso('El correo electrónico no es válido', 'Email inválido', 'warning');
+        return;
+      }
+
+      // Asignar valores limpios
+      this.nuevoCliente.nombre = nombre;
+      this.nuevoCliente.dni = dni;
+      this.nuevoCliente.telefono = telefono;
+      this.nuevoCliente.email = email;
     }
 
     const nombreCliente = this.clienteSeleccionado()?.nombre || this.nuevoCliente.nombre;
     if (!nombreCliente) {
-      alert('Por favor seleccione o agregue un cliente');
+      this.mostrarAviso(
+        'Por favor seleccione o agregue un cliente',
+        'Cliente requerido',
+        'warning'
+      );
       return;
     }
 
@@ -563,7 +682,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
             console.error('Error al crear cliente:', err);
             this.loading.set(false);
             this.guardandoPedido.set(false);
-            alert('Error al crear cliente');
+            this.mostrarAviso(
+              'Error al crear el cliente. Intente nuevamente.',
+              'Error',
+              'error'
+            );
           }
         });
     } else {
@@ -593,7 +716,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
           console.error('Error al crear pedido:', err);
           this.loading.set(false);
           this.guardandoPedido.set(false);
-          alert('❌ Error al crear pedido: ' + (err.error?.detalle || err.message));
+          this.mostrarAviso(
+            'Error al crear pedido: ' + (err.error?.detalle || err.message || 'Intente nuevamente'),
+            'Error',
+            'error'
+          );
         }
       });
   }

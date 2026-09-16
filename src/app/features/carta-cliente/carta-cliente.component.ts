@@ -9,7 +9,7 @@ import { catchError, timeout, of, Subject, takeUntil } from 'rxjs';
 import { ProductoService } from '../../core/services/producto.service';
 import { PedidoClienteService } from '../../core/services/pedido-cliente.service';
 import { AuthService } from '../../core/services/auth.service';
-import { NotificationService } from '../../core/services/notificacion.service'; // ✅ NUEVO
+import { NotificationService } from '../../core/services/notificacion.service';
 
 // Interfaces
 import { Producto, ItemCarrito } from '../../core/models/interfaces';
@@ -19,6 +19,7 @@ import { ProductoCardComponent } from './components/producto-card/producto-card.
 import { CarritoLateralComponent } from './components/carrito-lateral/carrito-lateral.component';
 import { ModalPagoComponent } from './components/modal-pago/modal-pago.component';
 import { CategoriasNavComponent } from './components/categorias-nav/categorias-nav.component';
+import { ConfirmDialogComponent } from '../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-carta-cliente',
@@ -29,7 +30,8 @@ import { CategoriasNavComponent } from './components/categorias-nav/categorias-n
     ProductoCardComponent,
     CarritoLateralComponent,
     ModalPagoComponent,
-    CategoriasNavComponent
+    CategoriasNavComponent,
+    ConfirmDialogComponent   // ✅ NUEVO
   ],
   templateUrl: './carta-cliente.component.html',
   styleUrls: ['./carta-cliente.component.scss']
@@ -38,7 +40,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
-  private notificationService = inject(NotificationService); // ✅ NUEVO
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
 
   private destroy$ = new Subject<void>();
@@ -60,6 +62,9 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   pedidoCreadoId = signal<number | null>(null);
 
   clienteActual = signal<any>(this.authService.getUsuarioActual());
+
+  // ✅ NUEVO: Signals para el modal de confirmación
+  mostrarConfirmVaciar = signal(false);
 
   totalItems = computed(() =>
     this.carrito().reduce((sum, item) => sum + item.cantidad, 0)
@@ -216,12 +221,27 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ✅ NUEVO: abre el modal de confirmación
   vaciarCarrito(): void {
     if (this.carrito().length === 0) return;
-    if (confirm('¿Estás seguro de vaciar el carrito?')) {
-      this.carrito.set([]);
-      this.mostrarCarrito.set(false);
-    }
+    this.mostrarConfirmVaciar.set(true);
+  }
+
+  // ✅ NUEVO: confirma el vaciado del carrito
+  confirmarVaciarCarrito(): void {
+    this.carrito.set([]);
+    this.mostrarCarrito.set(false);
+    this.mostrarConfirmVaciar.set(false);
+
+    this.notificationService.success(
+      'El carrito se vació correctamente.',
+      'Carrito vaciado'
+    );
+  }
+
+  // ✅ NUEVO: cancela el vaciado
+  cancelarVaciarCarrito(): void {
+    this.mostrarConfirmVaciar.set(false);
   }
 
   toggleCarrito(): void {
@@ -292,7 +312,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     this.cargandoPedido.set(true);
 
-    // ✅ Validar cliente_id
     const clienteId = usuario?.id;
     const clienteIdValido =
       typeof clienteId === 'number' && Number.isFinite(clienteId) && clienteId > 0
@@ -400,7 +419,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ ÉXITO — Reemplaza el alert() feo
+  // ÉXITO
   // ============================================
   private mostrarExitoPendienteValidacion(): void {
     this.cargandoPedido.set(false);
@@ -409,7 +428,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
 
-    // ✅ Notificación toast elegante
     this.notificationService.success(
       'El cajero verificará tu pago y confirmará el pedido.',
       '¡Pedido registrado!'
@@ -425,7 +443,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
 
-    // ✅ Notificación toast elegante
     this.notificationService.success(
       'Tu pedido ha sido procesado correctamente.',
       '¡Pedido realizado!'

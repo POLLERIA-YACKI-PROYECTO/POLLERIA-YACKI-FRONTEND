@@ -42,18 +42,32 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   metodosPago = ['efectivo', 'tarjeta', 'yape', 'plin', 'transferencia'];
   estados = ['pendiente', 'preparando', 'listo', 'entregado', 'cancelado'];
 
+  // Modal verificación
   mostrarModalVerificacion = signal<boolean>(false);
   pedidoSeleccionado = signal<any>(null);
   tipoEntregaSeleccionado = signal<string>('local');
   confirmando = signal<boolean>(false);
 
-  // ✅ VISOR DE IMAGEN (dentro de la misma interfaz)
+  // Modal confirmar pago
+  mostrarModalConfirmarPago = signal<boolean>(false);
+  procesandoPago = signal<boolean>(false);
+
+  // Visor de imagen
   mostrarVisorImagen = signal<boolean>(false);
   imagenVisorUrl = signal<string>('');
   cargandoImagen = signal<boolean>(false);
   errorImagen = signal<boolean>(false);
 
-  // ✅ Cache buster para forzar recarga de imágenes
+  // Modal rechazo
+  mostrarModalRechazo = signal<boolean>(false);
+  motivoRechazo = signal<string>('');
+  rechazando = signal<boolean>(false);
+
+  // Modal eliminar
+  mostrarModalEliminar = signal<boolean>(false);
+  pedidoAEliminar = signal<any>(null);
+  eliminando = signal<boolean>(false);
+
   private cacheBuster = signal<number>(Date.now());
 
   // ============================================
@@ -61,12 +75,10 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ PedidosClientesAdmin: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
     if (!this.authService.isAdmin()) {
-      console.warn('🛡️ PedidosClientesAdmin: no es admin → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -87,7 +99,7 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
     this.cargando.set(true);
     this.loading.set(true);
 
-    this.pedidoClienteService.obtenerTodos()
+    this.pedidoClienteService.obtenerTodos(true)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (pedidos) => {
@@ -107,29 +119,21 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(false);
-          this.notificationService.error(
-            'No se pudieron cargar los pedidos.',
-            'Error'
-          );
+          this.notificationService.error('No se pudieron cargar los pedidos.', 'Error');
         }
       });
   }
 
   recargar(): void {
     this.yaCargado.set(false);
-    // ✅ Actualizar cache buster para forzar recarga de imágenes
     this.cacheBuster.set(Date.now());
     this.cargarPedidos();
   }
 
   calcularEstadisticas(pedidos: any[]): void {
     this.totalPedidos.set(pedidos.length);
-    this.totalPendientes.set(
-      pedidos.filter(p => !p.pagado && p.estado !== 'cancelado').length
-    );
-    this.totalPagados.set(
-      pedidos.filter(p => p.pagado === 1 || p.pagado === true).length
-    );
+    this.totalPendientes.set(pedidos.filter(p => !p.pagado && p.estado !== 'cancelado').length);
+    this.totalPagados.set(pedidos.filter(p => p.pagado === 1 || p.pagado === true).length);
     this.totalRecaudado.set(
       pedidos
         .filter(p => p.pagado === 1 || p.pagado === true)
@@ -141,14 +145,10 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
     let filtrados = [...this.pedidos()];
 
     const estado = this.filtroEstado();
-    if (estado !== 'todos') {
-      filtrados = filtrados.filter(p => p.estado === estado);
-    }
+    if (estado !== 'todos') filtrados = filtrados.filter(p => p.estado === estado);
 
     const metodo = this.filtroMetodoPago();
-    if (metodo !== 'todos') {
-      filtrados = filtrados.filter(p => p.metodo_pago === metodo);
-    }
+    if (metodo !== 'todos') filtrados = filtrados.filter(p => p.metodo_pago === metodo);
 
     const search = this.busqueda().toLowerCase().trim();
     if (search) {
@@ -168,7 +168,7 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ABRIR MODAL DE VERIFICACIÓN
+  // MODAL VERIFICACIÓN
   // ============================================
   abrirVerificacion(pedido: any): void {
     if (pedido.pagado) {
@@ -192,7 +192,7 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ OBTENER URL DEL COMPROBANTE (con cache buster)
+  // URL DEL COMPROBANTE
   // ============================================
   obtenerUrlComprobante(pedido: any): string {
     if (!pedido?.comprobante_pago) return '';
@@ -202,19 +202,15 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
       ? pedido.comprobante_pago
       : `/${pedido.comprobante_pago}`;
 
-    // ✅ Cache buster: usa el ID del pedido + timestamp
     return `${baseUrl}${ruta}?v=${this.cacheBuster()}`;
   }
 
   // ============================================
-  // ✅ VER COMPROBANTE EN VISOR INTERNO
+  // VISOR DE IMAGEN
   // ============================================
   verComprobante(pedido: any): void {
     if (!pedido?.comprobante_pago) {
-      this.notificationService.warning(
-        'Este pedido no tiene comprobante adjunto.',
-        'Sin comprobante'
-      );
+      this.notificationService.warning('Este pedido no tiene comprobante adjunto.', 'Sin comprobante');
       return;
     }
 
@@ -245,31 +241,34 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   // ============================================
   // CONFIRMAR PAGO
   // ============================================
+  abrirModalConfirmarPago(): void {
+    const pedido = this.pedidoSeleccionado();
+    if (!pedido) return;
+    this.mostrarModalConfirmarPago.set(true);
+  }
+
+  cerrarModalConfirmarPago(): void {
+    if (this.procesandoPago()) return;
+    this.mostrarModalConfirmarPago.set(false);
+  }
+
   confirmarPago(): void {
     const pedido = this.pedidoSeleccionado();
     if (!pedido) return;
 
-    if (this.confirmando()) return;
+    if (this.procesandoPago()) return;
 
     const tipoEntrega = this.tipoEntregaSeleccionado();
     const tipoLabel = tipoEntrega === 'delivery' ? 'Motorizado' : 'Local';
 
-    if (!confirm(
-      `¿Confirmar pago del pedido #${pedido.id}?\n\n` +
-      `Cliente: ${pedido.cliente_nombre}\n` +
-      `Método: ${this.getMetodoPagoLabel(pedido.metodo_pago)}\n` +
-      `Total: S/ ${Number(pedido.total).toFixed(2)}\n` +
-      `Tipo de entrega: ${tipoLabel}\n\n` +
-      `✅ Se creará una VENTA automáticamente.`
-    )) return;
-
-    this.confirmando.set(true);
+    this.procesandoPago.set(true);
 
     this.pedidoClienteService.confirmarPago(pedido.id, tipoEntrega)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          this.confirmando.set(false);
+          this.procesandoPago.set(false);
+          this.mostrarModalConfirmarPago.set(false);
           this.notificationService.success(
             `Pedido #${pedido.id} confirmado como ${tipoLabel}. Venta #${response.venta_id} creada.`,
             'Pago confirmado'
@@ -277,9 +276,9 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
           this.cerrarModal();
           this.recargar();
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Error al confirmar pago:', err);
-          this.confirmando.set(false);
+          this.procesandoPago.set(false);
 
           let mensaje = 'Error al confirmar el pago';
           if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
@@ -296,40 +295,109 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // RECHAZAR PAGO
+  // MODAL RECHAZO
   // ============================================
-  rechazarPago(): void {
+  abrirModalRechazo(): void {
     const pedido = this.pedidoSeleccionado();
     if (!pedido) return;
 
-    if (this.confirmando()) return;
+    this.motivoRechazo.set('No se recibió el pago');
+    this.mostrarModalRechazo.set(true);
+  }
 
-    const motivo = prompt(
-      `Motivo del rechazo del pedido #${pedido.id}:`,
-      'No se recibió el pago'
-    );
+  cerrarModalRechazo(): void {
+    if (this.rechazando()) return;
+    this.mostrarModalRechazo.set(false);
+    this.motivoRechazo.set('');
+  }
 
-    if (motivo === null) return;
+  confirmarRechazo(): void {
+    const pedido = this.pedidoSeleccionado();
+    if (!pedido) return;
 
-    this.confirmando.set(true);
+    const motivo = this.motivoRechazo().trim();
+    if (!motivo) {
+      this.notificationService.warning('Ingresa el motivo del rechazo.', 'Motivo requerido');
+      return;
+    }
 
-    this.pedidoClienteService.rechazarPago(pedido.id, motivo || 'No especificado')
+    if (this.rechazando()) return;
+
+    this.rechazando.set(true);
+
+    this.pedidoClienteService.rechazarPago(pedido.id, motivo)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.confirmando.set(false);
-          this.notificationService.info('Pedido rechazado.', 'Rechazado');
+          this.rechazando.set(false);
+          this.mostrarModalRechazo.set(false);
+          this.motivoRechazo.set('');
+          this.notificationService.info(
+            `Pedido #${pedido.id} rechazado: ${motivo}`,
+            'Pedido rechazado'
+          );
           this.cerrarModal();
           this.recargar();
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('Error al rechazar:', err);
-          this.confirmando.set(false);
+          this.rechazando.set(false);
 
           let mensaje = 'Error al rechazar el pedido';
           if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
           else if (err?.status === 401) mensaje = 'Sesión expirada.';
           else if (err?.status === 403) mensaje = 'No tienes permisos.';
+          else if (err?.error?.error) mensaje = err.error.error;
+
+          this.notificationService.error(mensaje, 'Error');
+        }
+      });
+  }
+
+  // ============================================
+  // MODAL ELIMINAR
+  // ============================================
+  abrirModalEliminar(pedido: any): void {
+    this.pedidoAEliminar.set(pedido);
+    this.mostrarModalEliminar.set(true);
+  }
+
+  cerrarModalEliminar(): void {
+    if (this.eliminando()) return;
+    this.mostrarModalEliminar.set(false);
+    this.pedidoAEliminar.set(null);
+  }
+
+  confirmarEliminar(): void {
+    const pedido = this.pedidoAEliminar();
+    if (!pedido) return;
+
+    if (this.eliminando()) return;
+
+    this.eliminando.set(true);
+
+    this.pedidoClienteService.eliminarPedido(pedido.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.eliminando.set(false);
+          this.mostrarModalEliminar.set(false);
+          this.pedidoAEliminar.set(null);
+          this.notificationService.success(
+            `Pedido #${pedido.id} eliminado correctamente.`,
+            'Pedido eliminado'
+          );
+          this.recargar();
+        },
+        error: (err: any) => {
+          console.error('Error al eliminar pedido:', err);
+          this.eliminando.set(false);
+
+          let mensaje = 'Error al eliminar el pedido';
+          if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+          else if (err?.status === 401) mensaje = 'Sesión expirada.';
+          else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar.';
+          else if (err?.status === 404) mensaje = 'El pedido ya no existe.';
           else if (err?.error?.error) mensaje = err.error.error;
 
           this.notificationService.error(mensaje, 'Error');

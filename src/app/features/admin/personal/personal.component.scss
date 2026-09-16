@@ -1,4 +1,5 @@
 // src/app/features/admin/personal/personal.component.scss
+
 .personal-container {
   animation: fadeIn 0.3s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1312,15 +1313,15 @@
   }
 }
 
-// Agregar al final del archivo personal.component.scss
-
+/* ============================================
+   ROL TEXT
+   ============================================ */
 .rol-text {
   margin-left: 6px;
   font-weight: 500;
   font-size: 12px;
 }
 
-// Estilos para cada rol (para que el texto también tenga color)
 .rol-admin .rol-text {
   color: #1e40af;
 }
@@ -1344,5 +1345,151 @@
 
   .rol-mesero .rol-text {
     color: #fbbf24;
+  }
+}
+
+/* ============================================
+   MODAL AVISO (reemplaza alert)
+   ============================================ */
+.modal-aviso {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 28px 24px;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  animation: zoomInModal 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: #f59e0b;
+  }
+}
+
+@keyframes zoomInModal {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-aviso-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: rgba(245, 158, 11, 0.12);
+  border-radius: 50%;
+  margin-bottom: 18px;
+
+  svg {
+    stroke: #f59e0b;
+  }
+}
+
+.modal-aviso-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #92400e;
+}
+
+.modal-aviso-mensaje {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.btn-modal-aviso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 24px;
+  background: #f59e0b;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    background: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Tema oscuro para el modal aviso */
+.personal-container.tema-oscuro .modal-aviso {
+  background: #151515;
+}
+
+.personal-container.tema-oscuro .modal-aviso-title {
+  color: #fbbf24;
+}
+
+.personal-container.tema-oscuro .modal-aviso-mensaje {
+  color: #b8b8b8;
+}
+
+.personal-container.tema-oscuro .modal-aviso-icon {
+  background: rgba(251, 191, 36, 0.15);
+
+  svg {
+    stroke: #fbbf24;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-aviso {
+    padding: 24px 20px 18px;
+    border-radius: 16px;
+    max-width: 96%;
+  }
+
+  .modal-aviso-icon {
+    width: 64px;
+    height: 64px;
+
+    svg {
+      width: 36px;
+      height: 36px;
+    }
+  }
+
+  .modal-aviso-title {
+    font-size: 17px;
+  }
+
+  .modal-aviso-mensaje {
+    font-size: 13px;
+  }
+
+  .btn-modal-aviso {
+    padding: 12px 20px;
+    font-size: 14px;
   }
 }

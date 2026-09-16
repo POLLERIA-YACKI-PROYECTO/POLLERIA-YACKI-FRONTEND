@@ -23,6 +23,9 @@ export class VentaService extends BaseApiService {
     });
   }
 
+  // ============================================
+  // GET
+  // ============================================
   obtenerVentas(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(this.apiUrl, {
       ttl: 30 * 1000,
@@ -38,13 +41,17 @@ export class VentaService extends BaseApiService {
     });
   }
 
-  obtenerVentasHoy(): Observable<any[]> {
+  obtenerVentasHoy(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(`${this.apiUrl}/hoy`, {
       ttl: 30 * 1000,
+      forceRefresh,
       headers: this.getHeaders(),
     });
   }
 
+  // ============================================
+  // MUTACIONES
+  // ============================================
   crearVenta(venta: any): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate('POST', this.apiUrl, venta, this.getHeaders());
@@ -60,6 +67,9 @@ export class VentaService extends BaseApiService {
     return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
   }
 
+  // ============================================
+  // CACHÉ
+  // ============================================
   limpiarCacheVentas(): void {
     this.limpiarCache(this.apiUrl);
   }

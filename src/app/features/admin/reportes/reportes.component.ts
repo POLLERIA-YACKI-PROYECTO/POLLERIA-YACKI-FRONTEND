@@ -263,7 +263,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
   // INICIALIZACIÓN
   // ==========================================
   ngOnInit(): void {
-    // ✅ FIX: Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
       console.warn('🛡️ Reportes: sin sesión');
       return;
@@ -325,7 +324,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   // ==========================================
-  // CARGAR DATOS (forkJoin + protección)
+  // CARGAR DATOS
   // ==========================================
   cargarDatos(): void {
     if (this.cargando() || this.yaCargado()) return;
@@ -354,14 +353,12 @@ export class ReportesComponent implements OnInit, OnDestroy {
           this.pedidosPendientes.set([]);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ FIX: Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
   }
 
   recargar(): void {
-    // ✅ FIX: Limpiar caché de servicios para traer datos frescos
     this.ventaService.limpiarCache?.();
     this.pedidoService.limpiarCache?.();
     this.yaCargado.set(false);
@@ -958,6 +955,25 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   obtenerDiasSemana(dato: FilaReporte): DiaSemana[] {
     return dato.dias || [];
+  }
+
+  // ✅ NUEVOS HELPERS PARA EL REPORTE SEMANAL (solucionan TS2532)
+  porcentajeLocal(dato: FilaReporte): number {
+    const total = this.numeroSeguro(dato.total);
+    if (total <= 0) return 0;
+    return (this.numeroSeguro(dato.total_local) / total) * 100;
+  }
+
+  porcentajeMotorizado(dato: FilaReporte): number {
+    const total = this.numeroSeguro(dato.total);
+    if (total <= 0) return 0;
+    return (this.numeroSeguro(dato.total_motorizado) / total) * 100;
+  }
+
+  porcentajeDia(diaTotal: number | undefined, dato: FilaReporte): number {
+    const total = this.numeroSeguro(dato.total);
+    if (total <= 0) return 0;
+    return (this.numeroSeguro(diaTotal) / total) * 100;
   }
 
   calcularSumaCampo(campo: keyof FilaReporte): number {

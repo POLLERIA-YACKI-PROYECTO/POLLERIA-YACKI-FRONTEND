@@ -923,3 +923,505 @@
     margin-top: 0;
   }
 }
+/* ============================================
+   REPORTE SEMANAL - VISTA REDISEÑADA
+   ============================================ */
+
+.semanas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* TARJETA DE CADA SEMANA */
+.semana-card {
+  background: #ffffff;
+  border: 1px solid #e8e0d6;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.semana-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: #ce8329;
+}
+
+/* CABECERA */
+.semana-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #f5f0e8;
+  margin-bottom: 16px;
+}
+
+.semana-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.semana-numero {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.semana-numero svg {
+  stroke: #ce8329;
+}
+
+.semana-titulo {
+  font-size: 17px;
+  font-weight: 800;
+  color: #5e412f;
+  letter-spacing: 0.3px;
+}
+
+.semana-rango {
+  font-size: 12px;
+  color: #888;
+  font-weight: 500;
+}
+
+.semana-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: linear-gradient(135deg, #5e412f 0%, #71492f 100%);
+  padding: 8px 16px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(94, 65, 47, 0.2);
+}
+
+.semana-total-label {
+  font-size: 10px;
+  color: rgba(233, 189, 110, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.semana-total-valor {
+  font-size: 20px;
+  font-weight: 800;
+  color: #e9bd6e;
+}
+
+/* BARRA DE PROGRESO LOCAL vs MOTORIZADO */
+.semana-barra {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #f5f0e8;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.semana-barra-local {
+  background: linear-gradient(135deg, #c43129 0%, #dc2626 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.5s ease;
+  min-width: 0;
+}
+
+.semana-barra-local span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+
+.semana-barra-motorizado {
+  background: linear-gradient(135deg, #71492f 0%, #5e412f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.5s ease;
+  min-width: 0;
+}
+
+.semana-barra-motorizado span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+
+/* LEYENDA */
+.semana-leyenda {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  background: #faf8f5;
+  border-radius: 8px;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.leyenda-color {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.leyenda-local .leyenda-color {
+  background: #c43129;
+}
+
+.leyenda-motorizado .leyenda-color {
+  background: #5e412f;
+}
+
+.leyenda-nombre {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2e2e2e;
+}
+
+.leyenda-monto {
+  font-size: 13px;
+  font-weight: 800;
+  color: #5e412f;
+  margin-left: auto;
+}
+
+.leyenda-cantidad {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+  background: #ffffff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid #e8e0d6;
+}
+
+/* DÍAS */
+.dias-titulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.dias-semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.dia-card {
+  background: #ffffff;
+  border: 1.5px solid #e8e0d6;
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+  min-height: 100px;
+}
+
+.dia-card:not(.dia-vacio):not(.dia-hoy):hover {
+  border-color: #ce8329;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(206, 131, 41, 0.15);
+}
+
+.dia-card.dia-vacio {
+  background: #faf8f5;
+  opacity: 0.7;
+}
+
+.dia-card.dia-hoy {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border-color: #ce8329;
+  border-width: 2px;
+  box-shadow: 0 3px 10px rgba(206, 131, 41, 0.25);
+}
+
+/* CABECERA DEL DÍA */
+.dia-cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  position: relative;
+}
+
+.dia-nombre {
+  font-size: 12px;
+  font-weight: 800;
+  color: #5e412f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dia-hoy .dia-nombre {
+  color: #ce8329;
+}
+
+.dia-fecha {
+  font-size: 10px;
+  color: #888;
+  font-weight: 500;
+}
+
+.dia-hoy-badge {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  background: #ce8329;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* CUERPO DEL DÍA */
+.dia-cuerpo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  justify-content: center;
+}
+
+.dia-cuerpo-vacio {
+  justify-content: center;
+}
+
+.dia-total {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2e7d32;
+  letter-spacing: -0.3px;
+}
+
+.dia-cantidad {
+  font-size: 10px;
+  color: #888;
+  font-weight: 500;
+}
+
+.dia-sin-ventas {
+  font-size: 11px;
+  color: #bbb;
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* BARRA DE PROGRESO DEL DÍA */
+.dia-barra {
+  width: 100%;
+  height: 4px;
+  background: #f0ece4;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dia-barra-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #32CD32 0%, #28a428 100%);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.dia-hoy .dia-barra-fill {
+  background: linear-gradient(90deg, #ce8329 0%, #a86a1e 100%);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .dias-semana {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .semana-card {
+    padding: 16px;
+  }
+
+  .semana-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .semana-total {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .semana-titulo {
+    font-size: 15px;
+  }
+
+  .semana-total-valor {
+    font-size: 18px;
+  }
+
+  .dias-semana {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .dia-card {
+    padding: 8px 6px;
+    min-height: 90px;
+  }
+
+  .dia-nombre {
+    font-size: 11px;
+  }
+
+  .dia-total {
+    font-size: 13px;
+  }
+
+  .semana-leyenda {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .leyenda-item {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .semana-card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .semana-titulo {
+    font-size: 14px;
+  }
+
+  .semana-total-label {
+    font-size: 9px;
+  }
+
+  .semana-total-valor {
+    font-size: 16px;
+  }
+
+  .dias-semana {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+  }
+
+  .dia-card {
+    padding: 6px 4px;
+    min-height: 80px;
+  }
+
+  .dia-nombre {
+    font-size: 10px;
+  }
+
+  .dia-fecha {
+    font-size: 9px;
+  }
+
+  .dia-total {
+    font-size: 12px;
+  }
+
+  .dia-cantidad {
+    font-size: 9px;
+  }
+
+  .dia-hoy-badge {
+    font-size: 7px;
+    padding: 1px 4px;
+  }
+
+  .semana-barra {
+    height: 24px;
+  }
+
+  .semana-barra-local span,
+  .semana-barra-motorizado span {
+    font-size: 10px;
+  }
+
+  .leyenda-nombre {
+    font-size: 11px;
+  }
+
+  .leyenda-monto {
+    font-size: 12px;
+  }
+
+  .leyenda-cantidad {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .dias-semana {
+    grid-template-columns: 1fr;
+  }
+
+  .dia-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: auto;
+    padding: 8px 12px;
+  }
+
+  .dia-cabecera {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dia-cuerpo {
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .dia-barra {
+    display: none;
+  }
+
+  .dia-hoy-badge {
+    position: static;
+    margin-left: 4px;
+  }
+}

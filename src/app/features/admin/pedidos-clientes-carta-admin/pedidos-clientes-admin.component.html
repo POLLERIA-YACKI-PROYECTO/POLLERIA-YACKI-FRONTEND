@@ -190,6 +190,20 @@
                     } @else {
                       <span class="badge-cancelado">❌ Cancelado</span>
                     }
+
+                    <!-- ✅ Botón eliminar -->
+                    <button
+                      class="btn-eliminar-pedido"
+                      (click)="abrirModalEliminar(pedido)"
+                      title="Eliminar pedido"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
+                      </svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -301,7 +315,7 @@
           </div>
         </div>
 
-        <!-- ✅ COMPROBANTE CON MARCO (URL corregida) -->
+        <!-- Comprobante -->
         @if (pedidoSeleccionado()?.comprobante_pago) {
           <div class="info-section comprobante-section">
             <h3>Comprobante de Pago</h3>
@@ -399,22 +413,100 @@
         <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="confirmando()">
           Cancelar
         </button>
-        <button class="btn-rechazar" (click)="rechazarPago()" [disabled]="confirmando()">
+        <button class="btn-rechazar" (click)="abrirModalRechazo()" [disabled]="confirmando()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
           Rechazar pago
         </button>
-        <button class="btn-confirmar" (click)="confirmarPago()" [disabled]="confirmando()">
-          @if (confirmando()) {
-            <div class="spinner-small"></div>
+        <button class="btn-confirmar" (click)="abrirModalConfirmarPago()" [disabled]="confirmando()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          Confirmar pago
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- MODAL CONFIRMAR PAGO                          -->
+<!-- ============================================ -->
+@if (mostrarModalConfirmarPago() && pedidoSeleccionado()) {
+  <div class="modal-overlay" (click)="cerrarModalConfirmarPago()">
+    <div class="modal-confirmar-pago" (click)="$event.stopPropagation()">
+
+      <div class="modal-confirmar-header">
+        <div class="modal-confirmar-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <h3>¿Confirmar pago?</h3>
+        <p class="modal-confirmar-sub">Pedido #{{ pedidoSeleccionado()?.id }}</p>
+      </div>
+
+      <div class="modal-confirmar-body">
+        <div class="confirmar-resumen">
+          <div class="resumen-linea">
+            <span class="resumen-label">Cliente</span>
+            <span class="resumen-valor">{{ pedidoSeleccionado()?.cliente_nombre }}</span>
+          </div>
+          <div class="resumen-linea">
+            <span class="resumen-label">Método</span>
+            <span class="metodo-badge {{ pedidoSeleccionado()?.metodo_pago }}">
+              {{ getMetodoPagoLabel(pedidoSeleccionado()?.metodo_pago) }}
+            </span>
+          </div>
+          <div class="resumen-linea">
+            <span class="resumen-label">Tipo de entrega</span>
+            <span class="resumen-valor">
+              {{ getTipoEntregaLabel(tipoEntregaSeleccionado()) }}
+            </span>
+          </div>
+          <div class="resumen-linea total">
+            <span class="resumen-label">Total</span>
+            <span class="resumen-valor total-monto">
+              S/ {{ pedidoSeleccionado()?.total | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="info-mensaje-exito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>Se creará una <strong>VENTA</strong> automáticamente.</span>
+        </div>
+      </div>
+
+      <div class="modal-confirmar-footer">
+        <button
+          class="btn-cancelar-modal"
+          (click)="cerrarModalConfirmarPago()"
+          [disabled]="procesandoPago()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="btn-confirmar-pago"
+          (click)="confirmarPago()"
+          [disabled]="procesandoPago()"
+        >
+          @if (procesandoPago()) {
+            <span class="spinner-small"></span>
             Confirmando...
           } @else {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
-            Confirmar pago
+            Sí, confirmar pago
           }
         </button>
       </div>
@@ -424,8 +516,172 @@
 }
 
 <!-- ============================================ -->
-<!-- ✅ VISOR DE IMAGEN A PANTALLA COMPLETA        -->
-<!-- (se abre DENTRO de la misma interfaz)        -->
+<!-- MODAL DE RECHAZO                              -->
+<!-- ============================================ -->
+@if (mostrarModalRechazo() && pedidoSeleccionado()) {
+  <div class="modal-overlay" (click)="cerrarModalRechazo()">
+    <div class="modal-rechazo" (click)="$event.stopPropagation()">
+
+      <div class="modal-rechazo-header">
+        <div class="modal-rechazo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Rechazar Pedido #{{ pedidoSeleccionado()?.id }}</h3>
+          <p class="modal-rechazo-sub">Indica el motivo del rechazo</p>
+        </div>
+      </div>
+
+      <div class="modal-rechazo-body">
+        <label class="motivo-label">Motivo del rechazo *</label>
+        <textarea
+          class="motivo-input"
+          [(ngModel)]="motivoRechazo"
+          placeholder="Ej: No se recibió el pago, comprobante ilegible, monto incorrecto..."
+          rows="4"
+          maxlength="255"
+          [disabled]="rechazando()"
+        ></textarea>
+        <small class="motivo-hint">{{ motivoRechazo().length }}/255 caracteres</small>
+
+        <div class="motivos-rapidos">
+          <span class="motivos-rapidos-label">Sugerencias rápidas:</span>
+          <div class="motivos-chips">
+            @for (sugerencia of [
+              'No se recibió el pago',
+              'Comprobante ilegible',
+              'Monto incorrecto',
+              'Comprobante duplicado',
+              'Datos del cliente incorrectos'
+            ]; track sugerencia) {
+              <button
+                type="button"
+                class="chip-motivo"
+                (click)="motivoRechazo.set(sugerencia)"
+                [disabled]="rechazando()"
+              >
+                {{ sugerencia }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-rechazo-footer">
+        <button
+          class="btn-cancelar-modal"
+          (click)="cerrarModalRechazo()"
+          [disabled]="rechazando()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="btn-confirmar-rechazo"
+          (click)="confirmarRechazo()"
+          [disabled]="rechazando() || !motivoRechazo().trim()"
+        >
+          @if (rechazando()) {
+            <span class="spinner-small"></span>
+            Rechazando...
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Confirmar rechazo
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- MODAL DE ELIMINACIÓN                          -->
+<!-- ============================================ -->
+@if (mostrarModalEliminar() && pedidoAEliminar()) {
+  <div class="modal-overlay" (click)="cerrarModalEliminar()">
+    <div class="modal-eliminar" (click)="$event.stopPropagation()">
+
+      <div class="modal-eliminar-header">
+        <div class="modal-eliminar-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+        </div>
+        <h3>Eliminar Pedido #{{ pedidoAEliminar()?.id }}</h3>
+      </div>
+
+      <div class="modal-eliminar-body">
+        <p class="eliminar-mensaje">¿Estás seguro de eliminar este pedido?</p>
+
+        <div class="eliminar-resumen">
+          <div class="resumen-item">
+            <span class="resumen-label">Cliente</span>
+            <span class="resumen-valor">{{ pedidoAEliminar()?.cliente_nombre }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Total</span>
+            <span class="resumen-valor total">S/ {{ pedidoAEliminar()?.total | number:'1.2-2' }}</span>
+          </div>
+          <div class="resumen-item">
+            <span class="resumen-label">Estado</span>
+            <span class="estado-badge {{ getEstadoClass(pedidoAEliminar()?.estado) }}">
+              {{ pedidoAEliminar()?.estado | titlecase }}
+            </span>
+          </div>
+        </div>
+
+        <div class="eliminar-advertencia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Esta acción no se puede deshacer</span>
+        </div>
+      </div>
+
+      <div class="modal-eliminar-footer">
+        <button
+          class="btn-cancelar-modal"
+          (click)="cerrarModalEliminar()"
+          [disabled]="eliminando()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="btn-confirmar-eliminar"
+          (click)="confirmarEliminar()"
+          [disabled]="eliminando()"
+        >
+          @if (eliminando()) {
+            <span class="spinner-small"></span>
+            Eliminando...
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Sí, eliminar
+          }
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ============================================ -->
+<!-- VISOR DE IMAGEN A PANTALLA COMPLETA          -->
 <!-- ============================================ -->
 @if (mostrarVisorImagen()) {
   <div class="visor-overlay" (click)="cerrarVisor()">

@@ -86,11 +86,16 @@ export class PedidoService extends BaseApiService {
     return this.cambiarEstado(id, estado);
   }
 
+  // ============================================
+  // ✅ MARCAR PEDIDO COMO PAGADO (CORREGIDO)
+  // - Usa PATCH (igual que el backend)
+  // - Usa /pagar (igual que el backend)
+  // ============================================
   marcarPagado(id: number, metodoPago: string): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate(
-      'PUT',
-      `${this.apiUrl}/${id}/marcar-pagado`,
+      'PATCH',
+      `${this.apiUrl}/${id}/pagar`,
       { metodo_pago: metodoPago },
       this.getHeaders()
     );

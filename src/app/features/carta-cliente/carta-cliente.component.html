@@ -151,4 +151,17 @@
     <span class="floating-total">{{ formatearPrecio(total()) }}</span>
   </button>
 
+  <!-- ✅ MODAL DE CONFIRMACIÓN PARA VACIAR EL CARRITO -->
+  <app-confirm-dialog
+    [visible]="mostrarConfirmVaciar()"
+    titulo="¿Vaciar el carrito?"
+    mensaje="Se eliminarán todos los productos que agregaste."
+    subMensaje="Esta acción no se puede deshacer."
+    textoConfirmar="Sí, vaciar"
+    textoCancelar="Cancelar"
+    tipo="warning"
+    (confirmar)="confirmarVaciarCarrito()"
+    (cancelar)="cancelarVaciarCarrito()"
+  ></app-confirm-dialog>
+
 </div>

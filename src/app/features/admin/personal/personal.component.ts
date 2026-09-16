@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { UsuarioService } from '../../../core/services/usuario.service';
+import { NotificationService } from '../../../core/services/notificacion.service';
 
 @Component({
   selector: 'app-personal',
@@ -17,6 +18,7 @@ import { UsuarioService } from '../../../core/services/usuario.service';
 export class PersonalComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private usuarioService = inject(UsuarioService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
 
   private destroy$ = new Subject<void>();
@@ -35,6 +37,13 @@ export class PersonalComponent implements OnInit, OnDestroy {
 
   mostrarModalEliminar = signal(false);
   personalAEliminar = signal<any>(null);
+  eliminando = signal(false);
+
+  // ✅ NUEVO: Modal de confirmación para admin principal
+  mostrarModalAviso = signal(false);
+  mensajeAviso = signal('');
+
+  guardando = signal(false);
 
   nuevoPersonal = signal({
     nombre: '',
@@ -51,9 +60,7 @@ export class PersonalComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ Personal: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -61,7 +68,6 @@ export class PersonalComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'admin') {
-      console.warn('🛡️ Personal: no es admin → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -106,8 +112,8 @@ export class PersonalComponent implements OnInit, OnDestroy {
           console.error('Error al cargar usuarios:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
+          this.notificationService.error('No se pudieron cargar los empleados.', 'Error');
         }
       });
   }
@@ -192,39 +198,52 @@ export class PersonalComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // GUARDAR (con mensajes específicos)
+  // GUARDAR
   // ============================================
   guardarPersonal(): void {
+    if (this.guardando()) return;
+
     const data = this.nuevoPersonal();
 
+    // Validaciones con notificaciones
     if (!data.nombre || !data.dni) {
-      alert('Por favor complete todos los campos obligatorios');
+      this.notificationService.warning(
+        'Completa el nombre y el DNI del empleado.',
+        'Campos incompletos'
+      );
       return;
     }
 
     if (data.dni.length !== 8) {
-      alert('El DNI debe tener 8 dígitos');
+      this.notificationService.warning(
+        'El DNI debe tener exactamente 8 dígitos.',
+        'DNI inválido'
+      );
       return;
     }
+
+    this.guardando.set(true);
 
     if (this.editando()) {
       this.usuarioService.actualizarUsuario(this.personalEdit().id, data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            alert('Empleado actualizado correctamente');
+            this.guardando.set(false);
+            this.notificationService.success(
+              `"${data.nombre}" se actualizó correctamente.`,
+              'Empleado actualizado'
+            );
             this.recargar();
             this.toggleFormulario();
           },
           error: (err) => {
+            this.guardando.set(false);
             console.error('Error al actualizar empleado:', err);
-            let mensaje = err.error?.error || 'Error al actualizar empleado';
-            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
-            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
-            else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar empleados.';
-            else if (err?.status === 404) mensaje = 'El empleado ya no existe.';
-            else if (err?.status === 409) mensaje = 'Ya existe un empleado con ese DNI o email.';
-            alert(`❌ ${mensaje}`);
+            this.notificationService.error(
+              this.obtenerMensajeError(err, 'actualizar'),
+              'Error al actualizar'
+            );
           }
         });
     } else {
@@ -232,20 +251,38 @@ export class PersonalComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            alert('Empleado agregado correctamente');
+            this.guardando.set(false);
+            this.notificationService.success(
+              `"${data.nombre}" se agregó correctamente.`,
+              'Empleado agregado'
+            );
             this.recargar();
             this.toggleFormulario();
           },
           error: (err) => {
+            this.guardando.set(false);
             console.error('Error al crear empleado:', err);
-            let mensaje = err.error?.error || 'Error al crear empleado';
-            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
-            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
-            else if (err?.status === 403) mensaje = 'No tienes permisos para crear empleados.';
-            else if (err?.status === 409) mensaje = 'Ya existe un empleado con ese DNI o email.';
-            alert(`❌ ${mensaje}`);
+            this.notificationService.error(
+              this.obtenerMensajeError(err, 'crear'),
+              'Error al crear'
+            );
           }
         });
+    }
+  }
+
+  private obtenerMensajeError(err: any, accion: 'crear' | 'actualizar' | 'eliminar'): string {
+    if (err?.error?.error) return err.error.error;
+    if (err?.error?.message) return err.error.message;
+
+    switch (err?.status) {
+      case 0: return 'No se pudo conectar con el servidor.';
+      case 401: return 'Sesión expirada. Vuelve a iniciar sesión.';
+      case 403: return `No tienes permisos para ${accion} empleados.`;
+      case 404: return 'El empleado ya no existe.';
+      case 409: return 'Ya existe un empleado con ese DNI o email.';
+      case 500: return 'Error interno del servidor.';
+      default: return `Error al ${accion} empleado.`;
     }
   }
 
@@ -253,15 +290,19 @@ export class PersonalComponent implements OnInit, OnDestroy {
   // MODAL ELIMINAR
   // ============================================
   abrirModalEliminar(persona: any): void {
+    // ✅ Si es el admin principal, mostrar aviso elegante (NO alert)
     if (persona.rol === 'admin' && persona.id === 1) {
-      alert('No se puede eliminar al administrador principal');
+      this.mensajeAviso.set('No se puede eliminar al administrador principal del sistema.');
+      this.mostrarModalAviso.set(true);
       return;
     }
+
     this.personalAEliminar.set(persona);
     this.mostrarModalEliminar.set(true);
   }
 
   cerrarModalEliminar(): void {
+    if (this.eliminando()) return;
     this.mostrarModalEliminar.set(false);
     this.personalAEliminar.set(null);
   }
@@ -270,25 +311,41 @@ export class PersonalComponent implements OnInit, OnDestroy {
     const persona = this.personalAEliminar();
     if (!persona) return;
 
+    if (this.eliminando()) return;
+
+    this.eliminando.set(true);
+
     this.usuarioService.eliminarUsuario(persona.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          alert('Empleado eliminado correctamente');
-          this.cerrarModalEliminar();
+          this.eliminando.set(false);
+          this.mostrarModalEliminar.set(false);
+          this.personalAEliminar.set(null);
+          this.notificationService.success(
+            `"${persona.nombreCompleto || persona.nombre}" se eliminó correctamente.`,
+            'Empleado eliminado'
+          );
           this.recargar();
         },
         error: (err) => {
+          this.eliminando.set(false);
           console.error('Error al eliminar empleado:', err);
-          let mensaje = err.error?.error || 'Error al eliminar empleado';
-          if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
-          else if (err?.status === 401) mensaje = 'Sesión expirada.';
-          else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar empleados.';
-          else if (err?.status === 404) mensaje = 'El empleado ya no existe.';
-          alert(`❌ ${mensaje}`);
+          this.notificationService.error(
+            this.obtenerMensajeError(err, 'eliminar'),
+            'Error al eliminar'
+          );
           this.cerrarModalEliminar();
         }
       });
+  }
+
+  // ============================================
+  // MODAL AVISO
+  // ============================================
+  cerrarModalAviso(): void {
+    this.mostrarModalAviso.set(false);
+    this.mensajeAviso.set('');
   }
 
   // ============================================

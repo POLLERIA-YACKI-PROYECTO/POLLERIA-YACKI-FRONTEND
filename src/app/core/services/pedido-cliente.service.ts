@@ -29,7 +29,9 @@ export class PedidoClienteService extends BaseApiService {
     });
   }
 
+  // ============================================
   // GET
+  // ============================================
   obtenerTodos(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(this.apiUrl, {
       ttl: 60 * 1000,
@@ -60,7 +62,9 @@ export class PedidoClienteService extends BaseApiService {
     });
   }
 
+  // ============================================
   // MUTACIONES
+  // ============================================
   crearPedido(pedido: any): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate('POST', this.apiUrl, pedido, this.getHeaders());
@@ -93,9 +97,15 @@ export class PedidoClienteService extends BaseApiService {
     return this.mutate('PUT', `${this.apiUrl}/${id}/estado`, { estado }, this.getHeaders());
   }
 
-  eliminar(id: number): Observable<any> {
+  // ✅ ELIMINAR PEDIDO
+  eliminarPedido(id: number): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());
+  }
+
+  // Alias por compatibilidad
+  eliminar(id: number): Observable<any> {
+    return this.eliminarPedido(id);
   }
 
   limpiarCachePedidos(): void {
