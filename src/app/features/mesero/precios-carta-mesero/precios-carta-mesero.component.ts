@@ -1,8 +1,9 @@
 // src/app/features/mesero/precios-carta-mesero/precios-carta-mesero.component.ts
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ProductoService } from '../../../core/services/producto.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -16,11 +17,17 @@ import { HeaderComponent } from '../../shared/components/header/header.component
   styleUrls: ['./precios-carta-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class PreciosCartaMeseroComponent implements OnInit {
+export class PreciosCartaMeseroComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private categoriaService = inject(CategoriaService);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+
+  // ✅ Flags anti-duplicado
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
@@ -58,38 +65,71 @@ export class PreciosCartaMeseroComponent implements OnInit {
     return conteo;
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ PreciosMesero: sin sesión → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ PreciosMesero: no es mesero → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
-  cargarDatos(): void {
-    this.loading.set(true);
-
-    this.categoriaService.obtenerCategorias().subscribe({
-      next: (categorias: any[]) => {
-        this.categorias.set(categorias);
-      },
-      error: (err: any) => console.error('Error al cargar categorías:', err)
-    });
-
-    this.productoService.obtenerProductos().subscribe({
-      next: (productos: any[]) => {
-        this.productos.set(productos);
-        this.productosFiltrados.set(productos);
-        this.loading.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar productos:', err);
-        this.loading.set(false);
-      }
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
+  // ============================================
+  // CARGAR DATOS (forkJoin paralelo)
+  // ============================================
+  cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
+    this.loading.set(true);
+
+    forkJoin({
+      categorias: this.categoriaService.obtenerCategorias()
+        .pipe(catchError(() => of([]))),
+      productos: this.productoService.obtenerProductos()
+        .pipe(catchError(() => of([])))
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ categorias, productos }) => {
+          this.categorias.set(categorias || []);
+          this.productos.set(productos || []);
+          this.productosFiltrados.set(productos || []);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Precios mesero cargado:', (productos || []).length, 'productos');
+        },
+        error: (err: any) => {
+          console.error('Error al cargar datos:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(false);
+        }
+      });
+  }
+
+  // ============================================
+  // TOGGLES
+  // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
@@ -122,18 +162,28 @@ export class PreciosCartaMeseroComponent implements OnInit {
     }
   }
 
+  // ============================================
+  // CATEGORÍAS
+  // ============================================
   seleccionarCategoria(categoriaId: string): void {
     this.categoriaSeleccionada.set(categoriaId);
     this.categoriaMenuAbierto.set(false);
+
     // Limpiar búsqueda al cambiar categoría
     this.terminoBusqueda.set('');
     this.buscadorActivo.set(false);
     this.resultadosBusqueda.set([]);
 
-    if (categoriaId === 'todas') {
+    this.aplicarFiltros();
+  }
+
+  private aplicarFiltros(): void {
+    const catId = this.categoriaSeleccionada();
+
+    if (catId === 'todas') {
       this.productosFiltrados.set(this.productos());
     } else {
-      const filtrados = this.productos().filter(p => p.categoria_id === parseInt(categoriaId));
+      const filtrados = this.productos().filter(p => p.categoria_id === parseInt(catId));
       this.productosFiltrados.set(filtrados);
     }
   }
@@ -147,19 +197,12 @@ export class PreciosCartaMeseroComponent implements OnInit {
     if (!termino) {
       this.buscadorActivo.set(false);
       this.resultadosBusqueda.set([]);
-      // Restaurar según categoría seleccionada
-      if (this.categoriaSeleccionada() === 'todas') {
-        this.productosFiltrados.set(this.productos());
-      } else {
-        const filtrados = this.productos().filter(p => p.categoria_id === parseInt(this.categoriaSeleccionada()));
-        this.productosFiltrados.set(filtrados);
-      }
+      this.aplicarFiltros();
       return;
     }
 
     this.buscadorActivo.set(true);
 
-    // Buscar en todos los productos
     const todosLosProductos = this.productos();
     const resultados = this.productoService.buscarProductos(termino, todosLosProductos);
 
@@ -171,13 +214,7 @@ export class PreciosCartaMeseroComponent implements OnInit {
     this.terminoBusqueda.set('');
     this.buscadorActivo.set(false);
     this.resultadosBusqueda.set([]);
-    // Restaurar según categoría seleccionada
-    if (this.categoriaSeleccionada() === 'todas') {
-      this.productosFiltrados.set(this.productos());
-    } else {
-      const filtrados = this.productos().filter(p => p.categoria_id === parseInt(this.categoriaSeleccionada()));
-      this.productosFiltrados.set(filtrados);
-    }
+    this.aplicarFiltros();
   }
 
   // Resaltar coincidencias en el texto
@@ -189,6 +226,9 @@ export class PreciosCartaMeseroComponent implements OnInit {
     return texto.replace(regex, '<mark class="highlight">$1</mark>');
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   getIconoCategoria(categoriaId: number): string {
     const cat = this.categorias().find(c => c.id === categoriaId);
     return cat?.icono || '';
@@ -199,6 +239,9 @@ export class PreciosCartaMeseroComponent implements OnInit {
     return cat?.nombre || 'Sin categoría';
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);
   }

@@ -1,7 +1,8 @@
 // src/app/features/mesero/ticket/ticket.component.ts
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -14,10 +15,16 @@ import { HeaderComponent } from '../../shared/components/header/header.component
   styleUrls: ['./ticket.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class TicketComponent implements OnInit {
+export class TicketComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private pedidoService = inject(PedidoService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+
+  // ✅ Flags anti-duplicado
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
@@ -35,98 +42,124 @@ export class TicketComponent implements OnInit {
     return this.tickets().reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
   });
 
-  // Fecha actual para el ticket
   fechaActual = new Date().toLocaleString();
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Ticket: sin sesión → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
-    console.log('👤 Mesero logueado:', this.usuario());
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ Ticket: no es mesero → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.cargarTickets();
   }
 
-  // ✅ CARGAR TODOS LOS PEDIDOS ENTREGADOS DEL MESERO
-  cargarTickets(): void {
-    this.loading.set(true);
-    console.log('📝 Cargando tickets para mesero ID:', this.usuario()?.id);
-
-    this.pedidoService.obtenerPedidosPagadosMesero().subscribe({
-      next: (pedidos: any[]) => {
-        console.log('📝 Pedidos entregados del mesero (RAW):', pedidos);
-        console.log('📝 Cantidad de pedidos entregados:', pedidos?.length || 0);
-        
-        if (pedidos && pedidos.length > 0) {
-          pedidos.forEach((p: any, index: number) => {
-            console.log(`📝 Pedido entregado ${index + 1}: ID=${p.id}, Tipo=${p.tipo_entrega}, Cliente=${p.cliente_nombre}, Total=${p.total}, Pagado=${p.pagado}`);
-          });
-        }
-        
-        const ticketsFormateados = pedidos.map((p: any) => {
-          let items = p.items;
-          if (typeof items === 'string') {
-            try {
-              items = JSON.parse(items);
-            } catch (e) {
-              items = [];
-            }
-          }
-
-          const totalItems = items?.length || 0;
-          
-          return {
-            id: p.id,
-            cliente: p.cliente_nombre_real || p.cliente_nombre || 'Cliente',
-            items: items || [],
-            totalItems: totalItems,
-            total: parseFloat(p.total) || 0,
-            subtotal: parseFloat(p.subtotal) || 0,
-            igv: parseFloat(p.igv) || 0,
-            fecha: p.fecha_pago || p.created_at,
-            tipo_entrega: p.tipo_entrega || 'local',
-            metodo_pago: p.metodo_pago || 'efectivo',
-            estado: p.estado || 'entregado',
-            usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Mesero',
-            observaciones: p.observaciones || '',
-            mesa: p.mesa_id || null,
-            pagado: p.pagado || 0
-          };
-        });
-
-        console.log('📝 Tickets formateados:', ticketsFormateados);
-        console.log('📝 Cantidad de tickets:', ticketsFormateados.length);
-
-        // Ordenar por fecha descendente (más reciente primero)
-        ticketsFormateados.sort((a: any, b: any) => {
-          return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
-        });
-
-        this.tickets.set(ticketsFormateados);
-        this.loading.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar tickets:', err);
-        this.loading.set(false);
-      }
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  // ✅ Ver detalle del ticket
+  // ============================================
+  // CARGAR TICKETS
+  // ============================================
+  cargarTickets(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
+    this.loading.set(true);
+
+    this.pedidoService.obtenerPedidosPagadosMesero()
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (pedidos: any[]) => {
+          const ticketsFormateados = (pedidos || []).map((p: any) => {
+            let items = p.items;
+            if (typeof items === 'string') {
+              try {
+                items = JSON.parse(items);
+              } catch (e) {
+                items = [];
+              }
+            }
+            if (!Array.isArray(items)) items = [];
+
+            return {
+              id: p.id,
+              cliente: p.cliente_nombre_real || p.cliente_nombre || 'Cliente',
+              items: items,
+              totalItems: items.length,
+              total: parseFloat(p.total) || 0,
+              subtotal: parseFloat(p.subtotal) || 0,
+              igv: parseFloat(p.igv) || 0,
+              fecha: p.fecha_pago || p.created_at,
+              tipo_entrega: p.tipo_entrega || 'local',
+              metodo_pago: p.metodo_pago || 'efectivo',
+              estado: p.estado || 'entregado',
+              usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Mesero',
+              observaciones: p.observaciones || '',
+              mesa: p.mesa_id || null,
+              pagado: p.pagado || 0
+            };
+          });
+
+          // Ordenar por fecha descendente
+          ticketsFormateados.sort((a: any, b: any) => {
+            return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+          });
+
+          this.tickets.set(ticketsFormateados);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Tickets cargados:', ticketsFormateados.length);
+        },
+        error: (err: any) => {
+          console.error('Error al cargar tickets:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(false);
+        }
+      });
+  }
+
+  // ✅ Recargar manualmente
+  recargarTickets(): void {
+    this.pedidoService.limpiarCachePedidos();
+    this.yaCargado.set(false);
+    this.cargarTickets();
+  }
+
+  // ============================================
+  // VER TICKET
+  // ============================================
   verTicket(ticket: any): void {
-    console.log('📋 Ver ticket:', ticket);
     this.ticketSeleccionado.set(ticket);
     this.mostrarDetalleTicket.set(true);
   }
 
-  // ✅ Cerrar detalle
   cerrarDetalle(): void {
     this.mostrarDetalleTicket.set(false);
     this.ticketSeleccionado.set(null);
   }
 
-  // ✅ Imprimir ticket
+  // ============================================
+  // IMPRIMIR TICKET
+  // ============================================
   imprimirTicket(): void {
     const ticket = this.ticketSeleccionado();
     if (!ticket) return;
@@ -171,17 +204,11 @@ export class TicketComponent implements OnInit {
                 color: #888;
                 margin: 2px 0;
               }
-              .info {
-                font-size: 11px;
-                margin-bottom: 10px;
-              }
+              .info { font-size: 11px; margin-bottom: 10px; }
               .info-line {
                 display: flex;
                 justify-content: space-between;
                 padding: 2px 0;
-              }
-              .info-line strong {
-                color: #222;
               }
               .separador {
                 text-align: center;
@@ -203,12 +230,8 @@ export class TicketComponent implements OnInit {
                 font-size: 10px;
                 color: #666;
               }
-              td {
-                padding: 3px 0;
-              }
-              .text-right {
-                text-align: right;
-              }
+              td { padding: 3px 0; }
+              .text-right { text-align: right; }
               .total-line {
                 display: flex;
                 justify-content: space-between;
@@ -221,9 +244,7 @@ export class TicketComponent implements OnInit {
                 font-size: 14px;
                 font-weight: bold;
               }
-              .total-final span:last-child {
-                color: #c5302a;
-              }
+              .total-final span:last-child { color: #c5302a; }
               .footer {
                 text-align: center;
                 font-size: 11px;
@@ -231,9 +252,6 @@ export class TicketComponent implements OnInit {
                 border-top: 2px dashed #333;
                 padding-top: 10px;
                 margin-top: 10px;
-              }
-              .footer p {
-                margin: 2px 0;
               }
               .metodo-pago {
                 background: #f0f0f0;
@@ -275,21 +293,9 @@ export class TicketComponent implements OnInit {
             </div>
             <div style="text-align:center;margin-top:12px;" class="no-print">
               <button onclick="window.print()" style="padding:8px 20px;background:#c5302a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin:4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;">
-                  <polyline points="6 9 6 2 18 2 18 9"/>
-                  <path d="M18 9H6"/>
-                  <rect x="6" y="14" width="12" height="8"/>
-                  <line x1="10" y1="17" x2="14" y2="17"/>
-                  <line x1="10" y1="19" x2="14" y2="19"/>
-                  <rect x="8" y="11" width="8" height="2"/>
-                </svg>
                 Imprimir
               </button>
               <button onclick="window.close()" style="padding:8px 20px;background:#666;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin:4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
                 Cerrar
               </button>
             </div>
@@ -300,9 +306,11 @@ export class TicketComponent implements OnInit {
     }
   }
 
-  // ✅ Generar contenido del ticket
+  // ============================================
+  // GENERAR CONTENIDO DEL TICKET
+  // ============================================
   generarContenidoTicket(ticket: any): string {
-    const itemsHtml = ticket.items.map((item: any, index: number) => {
+    const itemsHtml = (ticket.items || []).map((item: any, index: number) => {
       const nombre = item.nombre || 'Producto';
       const cantidad = item.cantidad || 1;
       const precio = parseFloat(item.precio) || 0;
@@ -318,8 +326,8 @@ export class TicketComponent implements OnInit {
       `;
     }).join('');
 
-    const tipoEntregaLabel = ticket.tipo_entrega === 'delivery' || ticket.tipo_entrega === 'motorizada' 
-      ? 'Motorizado' 
+    const tipoEntregaLabel = ticket.tipo_entrega === 'delivery' || ticket.tipo_entrega === 'motorizada'
+      ? 'Motorizado'
       : 'Local';
 
     const metodoPagoLabels: Record<string, string> = {
@@ -403,7 +411,9 @@ export class TicketComponent implements OnInit {
     `;
   }
 
-  // ✅ MÉTODOS DEL MENÚ
+  // ============================================
+  // MENÚ Y NAVEGACIÓN
+  // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
@@ -432,7 +442,6 @@ export class TicketComponent implements OnInit {
     }
   }
 
-  // ✅ NAVEGACIÓN
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);
   }

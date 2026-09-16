@@ -1,55 +1,36 @@
 // src/app/core/interceptors/auth.interceptor.ts
-import { Injectable, inject } from '@angular/core';
-import {
-  HttpInterceptor,
-  HttpRequest,
-  HttpHandler,
-  HttpEvent
-} from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { inject } from '@angular/core';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private authService = inject(AuthService);
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const token = authService.getToken();
 
-  intercept(
-    req: HttpRequest<any>,
-    next: HttpHandler
-  ): Observable<HttpEvent<any>> {
-    const token = this.authService.getToken();
+  // ✅ Rutas que NO deben llevar token (evita errores 401 en login)
+  const publicRoutes = [
+    '/api/auth/login',
+    '/api/auth/login-admin',
+    '/api/auth/login-mesero',
+    '/api/auth/cliente/login',
+    '/api/auth/cliente/register',
+    '/api/health',
+    '/api/docs',
+    '/api/docs.json',
+  ];
 
-    // Rutas públicas que NO requieren token
-    const publicRoutes = [
-      '/api/auth/login',
-      '/api/auth/login-admin',
-      '/api/auth/login-mesero',
-      '/api/auth/cliente/login',
-      '/api/auth/cliente/register',
-      '/api/health',
-      '/api/categorias',
-      '/api/configuracion'
-    ];
+  const isPublicRoute = publicRoutes.some((route) => req.url.includes(route));
 
-    const isPublicRoute = publicRoutes.some((route) =>
-      req.url.includes(route)
-    );
-
-    // Si es pública, no agregar token
-    if (isPublicRoute) {
-      return next.handle(req);
-    }
-
-    // Si hay token, clonar request con Authorization
-    if (token) {
-      const cloned = req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      return next.handle(cloned);
-    }
-
-    return next.handle(req);
+  // ✅ Si hay token, SIEMPRE agregarlo (incluso a categorías/configuración)
+  //    Así el backend identifica al usuario en el rate limit
+  if (token && !isPublicRoute) {
+    const cloned = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return next(cloned);
   }
-}
+
+  return next(req);
+};

@@ -1,25 +1,22 @@
 // src/app/app.config.ts
 import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptors,        // ⬅️ CAMBIO CLAVE
+} from '@angular/common/http';
 import { routes } from './app.routes';
-import { AuthInterceptor } from './core/interceptors/auth.interceptor';
-import { RateLimitInterceptor } from './core/interceptors/rate-limit.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
+// ❌ NO importes RateLimitInterceptor
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZonelessChangeDetection(),
+    provideZonelessChangeDetection(),  // ✅ Nombre correcto en Angular 20
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()),
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptor,
-      multi: true
-    },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: RateLimitInterceptor,
-      multi: true
-    }
-  ]
+
+    // ✅ Interceptores FUNCIONALES (obligatorio en zoneless)
+    provideHttpClient(
+      withInterceptors([authInterceptor])
+    ),
+  ],
 };

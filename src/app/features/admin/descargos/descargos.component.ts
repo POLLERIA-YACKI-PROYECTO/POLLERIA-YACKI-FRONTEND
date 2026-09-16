@@ -46,12 +46,25 @@ export class DescargosComponent implements OnInit, OnDestroy {
     { value: 'otros', label: 'Otros' }
   ];
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (this.usuario()?.rol !== 'admin') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Descargos: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (this.usuario()?.rol !== 'admin') {
+      console.warn('🛡️ Descargos: no es admin → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
@@ -64,6 +77,9 @@ export class DescargosComponent implements OnInit, OnDestroy {
     this.temaOscuro.set(!this.temaOscuro());
   }
 
+  // ============================================
+  // CARGAR DATOS
+  // ============================================
   cargarDatos(): void {
     if (this.cargando() || this.yaCargado()) return;
 
@@ -78,11 +94,14 @@ export class DescargosComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
+          console.log('✅ Descargos cargados:', (descargos || []).length);
         },
         error: (err) => {
           console.error('Error al cargar descargos:', err);
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
@@ -92,6 +111,9 @@ export class DescargosComponent implements OnInit, OnDestroy {
     this.cargarDatos();
   }
 
+  // ============================================
+  // FORMULARIO
+  // ============================================
   toggleFormulario(): void {
     this.mostrarFormulario.set(!this.mostrarFormulario());
     if (!this.mostrarFormulario()) {
@@ -113,14 +135,19 @@ export class DescargosComponent implements OnInit, OnDestroy {
     this.mostrarFormulario.set(true);
   }
 
+  // ============================================
+  // GUARDAR (con mensajes de error específicos)
+  // ============================================
   guardarDescargo(): void {
-    if (!this.nuevoDescargo().producto || this.nuevoDescargo().cantidad <= 0 || !this.nuevoDescargo().motivo) {
+    const data = this.nuevoDescargo();
+
+    if (!data.producto || data.cantidad <= 0 || !data.motivo) {
       alert('Por favor complete todos los campos correctamente');
       return;
     }
 
     if (this.editando()) {
-      this.descargoService.actualizarDescargo(this.descargoEdit().id, this.nuevoDescargo())
+      this.descargoService.actualizarDescargo(this.descargoEdit().id, data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -130,11 +157,17 @@ export class DescargosComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al actualizar descargo:', err);
-            alert('Error al actualizar descargo');
+            let mensaje = 'Error al actualizar descargo';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar descargos.';
+            else if (err?.status === 404) mensaje = 'El descargo ya no existe.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     } else {
-      this.descargoService.crearDescargo(this.nuevoDescargo())
+      this.descargoService.crearDescargo(data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -144,12 +177,20 @@ export class DescargosComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al crear descargo:', err);
-            alert('Error al crear descargo');
+            let mensaje = 'Error al crear descargo';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para crear descargos.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     }
   }
 
+  // ============================================
+  // ELIMINAR
+  // ============================================
   eliminarDescargo(id: number): void {
     if (confirm('¿Está seguro de eliminar este descargo?')) {
       this.descargoService.eliminarDescargo(id)
@@ -161,12 +202,21 @@ export class DescargosComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al eliminar descargo:', err);
-            alert('Error al eliminar descargo');
+            let mensaje = 'Error al eliminar descargo';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar descargos.';
+            else if (err?.status === 404) mensaje = 'El descargo ya no existe.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     }
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   getTipoLabel(tipo: string): string {
     const tipos: any = {
       'merma': 'Merma',

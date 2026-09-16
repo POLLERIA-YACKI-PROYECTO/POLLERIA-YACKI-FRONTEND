@@ -61,12 +61,25 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   mostrarResumen = signal<boolean>(false);
   resultadoPago = signal<any>(null);
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'admin') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ VentasAdmin: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'admin') {
+      console.warn('🛡️ VentasAdmin: no es admin → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
@@ -167,13 +180,15 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Ventas admin cargado');
+          console.log('✅ Ventas admin cargado:', ventasUnicas.length, 'ventas');
         },
         error: (error: any) => {
           console.error('Error ventas:', error);
           this.errorMessage.set('Error al cargar las ventas');
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
@@ -181,6 +196,12 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   recargar(): void {
     this.yaCargado.set(false);
     this.cargarDatos();
+  }
+
+  // ✅ Alias para compatibilidad con el HTML
+  recargarDatos(): void {
+    console.log('🔄 Recargando datos de ventas...');
+    this.recargar();
   }
 
   // ============================================
@@ -256,6 +277,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   cerrarModalPago(): void {
+    // ✅ No cerrar si está procesando
+    if (this.procesandoPago()) return;
+
     this.mostrarModalPago.set(false);
     this.pedidoEnPago.set(null);
     this.procesandoPago.set(false);
@@ -268,11 +292,14 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CONFIRMAR PAGO
+  // CONFIRMAR PAGO (con reset SIEMPRE)
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoEnPago();
     if (!pedido) return;
+
+    // ✅ Guarda contra doble submit
+    if (this.procesandoPago()) return;
 
     const metodo = this.metodoSeleccionado();
     if (!metodo) {
@@ -321,11 +348,18 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
         },
         error: (err: any) => {
           console.error('❌ Error:', err);
+          // ✅ SIEMPRE resetear procesandoPago
           this.procesandoPago.set(false);
           this.tipoPago.set('error');
 
           let mensaje = 'Error al procesar el pago';
-          if (err.error) {
+          if (err?.status === 0) {
+            mensaje = 'No se pudo conectar con el servidor.';
+          } else if (err?.status === 401) {
+            mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+          } else if (err?.status === 403) {
+            mensaje = 'No tienes permisos para procesar pagos.';
+          } else if (err?.error) {
             mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
           }
 
@@ -344,7 +378,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // UTILIDADES
+  // UTILIDADES DE ESTADO
   // ============================================
   estaPagado(pedido: any): boolean {
     return pedido.pagado === 1 || pedido.pagado === true;
@@ -459,6 +493,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     );
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irDashboard(): void {
     this.router.navigate(['/admin/dashboard-admin']);
   }
@@ -466,10 +503,5 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   cerrarSesion(): void {
     this.authService.logout();
     this.router.navigate(['/login-admin']);
-  }
-    recargarDatos(): void {
-    console.log('🔄 Recargando datos de ventas...');
-    this.yaCargado.set(false);
-    this.cargarDatos();
   }
 }

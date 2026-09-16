@@ -28,7 +28,7 @@ export class PedidoService extends BaseApiService {
   // ============================================
   obtenerPedidos(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(this.apiUrl, {
-      ttl: 30 * 1000,
+      ttl: 2 * 60 * 1000,
       forceRefresh,
       headers: this.getHeaders(),
     });
@@ -36,7 +36,7 @@ export class PedidoService extends BaseApiService {
 
   obtenerPedidosPendientes(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(`${this.apiUrl}/pendientes`, {
-      ttl: 30 * 1000,
+      ttl: 60 * 1000,
       forceRefresh,
       headers: this.getHeaders(),
     });
@@ -44,22 +44,21 @@ export class PedidoService extends BaseApiService {
 
   obtenerPedido(id: number): Observable<any> {
     return this.getCached<any>(`${this.apiUrl}/${id}`, {
-      ttl: 30 * 1000,
+      ttl: 2 * 60 * 1000,
       headers: this.getHeaders(),
     });
   }
 
   obtenerPorMesa(mesaId: number): Observable<any[]> {
     return this.getCached<any[]>(`${this.apiUrl}/mesa/${mesaId}`, {
-      ttl: 30 * 1000,
+      ttl: 60 * 1000,
       headers: this.getHeaders(),
     });
   }
 
-  // ✅ NUEVO: Pedidos pagados del mesero actual
   obtenerPedidosPagadosMesero(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(`${this.apiUrl}/pagados-mesero`, {
-      ttl: 30 * 1000,
+      ttl: 2 * 60 * 1000,
       forceRefresh,
       headers: this.getHeaders(),
     });
@@ -78,18 +77,15 @@ export class PedidoService extends BaseApiService {
     return this.mutate('PUT', `${this.apiUrl}/${id}`, pedido, this.getHeaders());
   }
 
-  // ✅ NUEVO: Cambiar estado (usado por pedidos-mesero)
   cambiarEstado(id: number, estado: string): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate('PUT', `${this.apiUrl}/${id}/estado`, { estado }, this.getHeaders());
   }
 
-  // Alias por compatibilidad
   actualizarEstado(id: number, estado: string): Observable<any> {
     return this.cambiarEstado(id, estado);
   }
 
-  // ✅ NUEVO: Marcar pagado (usado por ventas-admin)
   marcarPagado(id: number, metodoPago: string): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate(

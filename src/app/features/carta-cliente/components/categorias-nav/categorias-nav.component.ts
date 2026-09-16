@@ -1,5 +1,12 @@
 // src/app/features/carta-cliente/components/categorias-nav/categorias-nav.component.ts
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  signal,
+  ChangeDetectionStrategy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface CategoriaNav {
@@ -35,7 +42,9 @@ const CATEGORIAS_FIJAS: CategoriaNav[] = [
   standalone: true,
   imports: [CommonModule],
   templateUrl: './categorias-nav.component.html',
-  styleUrls: ['./categorias-nav.component.scss']
+  styleUrls: ['./categorias-nav.component.scss'],
+  // ✅ OnPush: reduce ciclos de detección de cambios
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CategoriasNavComponent {
   @Input() categoriaSeleccionada: number = 1;
@@ -44,11 +53,18 @@ export class CategoriasNavComponent {
   categorias = CATEGORIAS_FIJAS;
   dropdownAbierto = signal(false);
 
+  // ✅ Cache de iconos SVG (evita regenerar strings en cada render)
+  private iconCache: Record<string, string> = {};
+
   get categoriaActual(): CategoriaNav | undefined {
     return this.categorias.find(c => c.id === this.categoriaSeleccionada);
   }
 
   seleccionarCategoria(id: number): void {
+    if (this.categoriaSeleccionada === id) {
+      this.cerrarDropdown();
+      return;
+    }
     this.categoriaSeleccionada = id;
     this.categoriaChange.emit(id);
     this.cerrarDropdown();
@@ -62,8 +78,12 @@ export class CategoriasNavComponent {
     this.dropdownAbierto.set(false);
   }
 
-  // ✅ SVG Icons para categorías
+  // ✅ SVG Icons con cache
   getCategoriaIcon(nombre: string): string {
+    if (this.iconCache[nombre]) {
+      return this.iconCache[nombre];
+    }
+
     const icons: Record<string, string> = {
       'Brasas': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 6 4 10 4 14c0 4 3 6 8 6s8-2 8-6c0-4-4-8-8-12z"/><path d="M12 18c-3 0-6-1-6-4"/></svg>`,
       'Broasters': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 6 4 10 4 14c0 4 3 6 8 6s8-2 8-6c0-4-4-8-8-12z"/><path d="M8 14c0 2 2 3 4 3s4-1 4-3"/><path d="M10 8l2 2 2-2"/></svg>`,
@@ -84,6 +104,9 @@ export class CategoriasNavComponent {
       'Pepsi': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 8l8 8"/><path d="M16 8l-8 8"/></svg>`,
       'Chicha/Maracuyá': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><line x1="6" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="16" x2="18" y2="16"/><path d="M8 2l4 4 4-4"/></svg>`
     };
-    return icons[nombre] || icons['Brasas'];
+
+    const icon = icons[nombre] || icons['Brasas'];
+    this.iconCache[nombre] = icon;
+    return icon;
   }
 }

@@ -56,10 +56,10 @@
       </svg>
       <input
         type="text"
-        [(ngModel)]="busqueda"
+        [ngModel]="busqueda()"
+        (ngModelChange)="onBusquedaChange($event)"
         placeholder="Buscar productos..."
         class="input-buscar"
-        (input)="filtrarProductos()"
         aria-label="Buscar productos"
       >
     </div>
@@ -89,13 +89,15 @@
     </div>
 
     <div class="productos-grid" *ngIf="!loading() && !error()">
+      <!-- ✅ CAMBIO: productosFiltradosPorBusqueda() → productosFiltrados() -->
       <app-producto-card
-        *ngFor="let producto of productosFiltradosPorBusqueda()"
+        *ngFor="let producto of productosFiltrados()"
         [producto]="producto"
         (agregar)="agregarAlCarrito($event)"
       ></app-producto-card>
 
-      <div class="empty-state" *ngIf="productosFiltradosPorBusqueda().length === 0">
+      <!-- ✅ CAMBIO: productosFiltradosPorBusqueda() → productosFiltrados() -->
+      <div class="empty-state" *ngIf="productosFiltrados().length === 0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>

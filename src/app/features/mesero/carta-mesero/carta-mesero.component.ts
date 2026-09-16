@@ -1,8 +1,9 @@
 // src/app/features/mesero/carta-mesero/carta-mesero.component.ts
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 import { ProductoService } from '../../../core/services/producto.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { ConfiguracionService } from '../../../core/services/configuracion.service';
@@ -17,12 +18,20 @@ import { HeaderComponent } from '../../shared/components/header/header.component
   styleUrls: ['./carta-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class CartaMeseroComponent implements OnInit {
+export class CartaMeseroComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private categoriaService = inject(CategoriaService);
   private configService = inject(ConfiguracionService);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  // ✅ Subject para limpiar suscripciones
+  private destroy$ = new Subject<void>();
+
+  // ✅ Flags anti-duplicado
+  private cargando = signal(false);
+  private yaCargado = signal(false);
+  private categoriasCargadas = signal(false);
 
   temaOscuro = signal<boolean>(true);
   menuAbierto = signal<boolean>(false);
@@ -48,15 +57,36 @@ export class CartaMeseroComponent implements OnInit {
     return cat ? cat.nombre : 'Seleccionar categoría';
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ CartaMesero: sin sesión → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ CartaMesero: no es mesero → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ============================================
+  // TOGGLES
+  // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
@@ -69,6 +99,9 @@ export class CartaMeseroComponent implements OnInit {
     this.categoriaMenuAbierto.set(!this.categoriaMenuAbierto());
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
@@ -89,49 +122,80 @@ export class CartaMeseroComponent implements OnInit {
     }
   }
 
+  // ============================================
+  // CARGAR DATOS (categorías + config en paralelo)
+  // ============================================
   cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
 
-    this.categoriaService.obtenerCategorias().subscribe({
-      next: (categorias: any[]) => {
-        this.categorias.set(categorias);
-        if (categorias.length > 0) {
-          this.categoriaSeleccionada.set(categorias[0].id);
-          this.cargarProductos(categorias[0].id);
-        }
-      },
-      error: (err: any) => {
-        console.error('Error al cargar categorías:', err);
-        this.loading.set(false);
-      }
-    });
+    forkJoin({
+      categorias: this.categoriaService.obtenerCategorias()
+        .pipe(catchError(() => of([]))),
+      config: this.configService.obtenerConfiguracion()
+        .pipe(catchError(() => of({})))
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ categorias, config }) => {
+          this.categorias.set(categorias || []);
+          this.categoriasCargadas.set(true);
+          this.configuracion.set(config || {});
 
-    this.configService.obtenerConfiguracion().subscribe({
-      next: (config: any) => this.configuracion.set(config),
-      error: (err: any) => console.error('Error al cargar configuración:', err)
-    });
+          if (categorias?.length > 0) {
+            this.categoriaSeleccionada.set(categorias[0].id);
+            this.cargarProductos(categorias[0].id);
+          } else {
+            this.loading.set(false);
+            this.cargando.set(false);
+          }
+
+          this.yaCargado.set(true);
+          console.log('✅ Carta mesero cargada:', (categorias || []).length, 'categorías');
+        },
+        error: (err) => {
+          console.error('Error al cargar datos:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+          // ✅ Resetear para permitir reintento
+          this.yaCargado.set(false);
+        }
+      });
   }
 
+  // ============================================
+  // CARGAR PRODUCTOS DE UNA CATEGORÍA
+  // ============================================
   cargarProductos(categoriaId: number): void {
     this.loading.set(true);
     this.categoriaSeleccionada.set(categoriaId);
     this.categoriaMenuAbierto.set(false);
+
     // Limpiar búsqueda al cambiar categoría
     this.terminoBusqueda.set('');
     this.buscadorActivo.set(false);
     this.resultadosBusqueda.set([]);
 
-    this.productoService.obtenerPorCategoria(categoriaId).subscribe({
-      next: (productos: any[]) => {
-        this.productos.set(productos);
-        this.productosFiltrados.set(productos);
-        this.loading.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar productos:', err);
-        this.loading.set(false);
-      }
-    });
+    this.productoService.obtenerPorCategoria(categoriaId)
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (productos: any[]) => {
+          this.productos.set(productos || []);
+          this.productosFiltrados.set(productos || []);
+          this.loading.set(false);
+        },
+        error: (err: any) => {
+          console.error('Error al cargar productos:', err);
+          this.productos.set([]);
+          this.productosFiltrados.set([]);
+          this.loading.set(false);
+        }
+      });
   }
 
   seleccionarCategoria(categoriaId: number): void {
@@ -161,7 +225,6 @@ export class CartaMeseroComponent implements OnInit {
 
     this.buscadorActivo.set(true);
 
-    // Buscar en todos los productos (no solo los de la categoría actual)
     const todosLosProductos = this.productos();
     const resultados = this.productoService.buscarProductos(termino, todosLosProductos);
 
@@ -173,7 +236,7 @@ export class CartaMeseroComponent implements OnInit {
     this.terminoBusqueda.set('');
     this.buscadorActivo.set(false);
     this.resultadosBusqueda.set([]);
-    // Restaurar productos de la categoría actual
+
     if (this.categoriaSeleccionada() !== null) {
       this.cargarProductos(this.categoriaSeleccionada()!);
     } else {
@@ -181,7 +244,6 @@ export class CartaMeseroComponent implements OnInit {
     }
   }
 
-  // Resaltar coincidencias en el texto
   resaltarCoincidencia(texto: string): string {
     const termino = this.terminoBusqueda().trim();
     if (!termino) return texto;

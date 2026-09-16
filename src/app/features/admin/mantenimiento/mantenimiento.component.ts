@@ -24,6 +24,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private cargando = signal(false);
   private yaCargado = signal(false);
+  private categoriasCargadas = signal(false);
 
   productos = signal<any[]>([]);
   productosFiltrados = signal<any[]>([]);
@@ -44,12 +45,25 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
     stock: 0
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (this.usuario()?.rol !== 'admin') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Mantenimiento: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (this.usuario()?.rol !== 'admin') {
+      console.warn('🛡️ Mantenimiento: no es admin → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
@@ -63,7 +77,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CARGAR DATOS (forkJoin + caché)
+  // CARGAR DATOS (categorías solo una vez)
   // ============================================
   cargarDatos(): void {
     if (this.cargando() || this.yaCargado()) return;
@@ -71,14 +85,26 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
     this.cargando.set(true);
     this.loading.set(true);
 
+    // ✅ Si las categorías ya están cargadas, solo pedir productos
+    if (this.categoriasCargadas() && this.categorias().length > 0) {
+      this.soloCargarProductos();
+      return;
+    }
+
+    // ✅ Primera carga: categorías + productos
     forkJoin({
-      categorias: this.categoriaService.obtenerCategorias().pipe(catchError(() => of([]))),
-      productos: this.productoService.obtenerProductos().pipe(catchError(() => of([])))
+      categorias: this.categoriaService
+        .obtenerCategorias()
+        .pipe(catchError(() => of([]))),
+      productos: this.productoService
+        .obtenerProductos()
+        .pipe(catchError(() => of([])))
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ categorias, productos }) => {
           this.categorias.set(categorias || []);
+          this.categoriasCargadas.set(true);
           this.productos.set(productos || []);
           this.productosFiltrados.set(productos || []);
 
@@ -89,19 +115,46 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Mantenimiento cargado');
+          console.log('✅ Mantenimiento cargado:', (productos || []).length, 'productos');
         },
         error: (err) => {
           console.error('Error al cargar datos:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
+        }
+      });
+  }
+
+  // ✅ Solo productos (sin tocar categorías)
+  private soloCargarProductos(): void {
+    this.productoService
+      .obtenerProductos(true)  // forceRefresh = true
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (productos) => {
+          this.productos.set(productos || []);
+          this.productosFiltrados.set(productos || []);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Productos recargados (categorías cacheadas)');
+        },
+        error: (err) => {
+          console.error('Error al recargar productos:', err);
           this.loading.set(false);
           this.cargando.set(false);
         }
       });
   }
 
+  // ✅ RECARGAR (limpiando caché de productos)
   recargar(): void {
     this.productoService.limpiarCache();
-    this.categoriaService.limpiarCache();
     this.yaCargado.set(false);
     this.cargarDatos();
   }
@@ -177,13 +230,15 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
   }
 
   guardarProducto(): void {
-    if (!this.nuevoProducto().nombre || this.nuevoProducto().precio <= 0) {
+    const data = this.nuevoProducto();
+
+    if (!data.nombre || data.precio <= 0) {
       alert('Por favor complete todos los campos correctamente');
       return;
     }
 
     if (this.editando()) {
-      this.productoService.actualizarProducto(this.productoEdit().id, this.nuevoProducto())
+      this.productoService.actualizarProducto(this.productoEdit().id, data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -193,11 +248,17 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al actualizar producto:', err);
-            alert('Error al actualizar producto');
+            let mensaje = 'Error al actualizar producto';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar productos.';
+            else if (err?.status === 404) mensaje = 'El producto ya no existe.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     } else {
-      this.productoService.crearProducto(this.nuevoProducto())
+      this.productoService.crearProducto(data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -207,7 +268,12 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al crear producto:', err);
-            alert('Error al crear producto');
+            let mensaje = 'Error al crear producto';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para crear productos.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     }
@@ -224,12 +290,21 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al eliminar producto:', err);
-            alert('Error al eliminar producto');
+            let mensaje = 'Error al eliminar producto';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar productos.';
+            else if (err?.status === 404) mensaje = 'El producto ya no existe.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     }
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   getNombreCategoria(id: number): string {
     const cat = this.categorias().find(c => c.id === id);
     return cat ? cat.nombre : 'Sin categoría';

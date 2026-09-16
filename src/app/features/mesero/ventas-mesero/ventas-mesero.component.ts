@@ -1,7 +1,8 @@
 // src/app/features/mesero/ventas-mesero/ventas-mesero.component.ts
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -14,10 +15,16 @@ import { HeaderComponent } from '../../shared/components/header/header.component
   styleUrls: ['./ventas-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class VentasMeseroComponent implements OnInit {
+export class VentasMeseroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private pedidoService = inject(PedidoService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
+
+  // ✅ Flags anti-duplicado
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
@@ -53,64 +60,104 @@ export class VentasMeseroComponent implements OnInit {
     return total > 0 ? this.totalRecaudado() / total : 0;
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ VentasMesero: sin sesión → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ VentasMesero: no es mesero → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.cargarVentas();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ============================================
+  // CARGAR VENTAS
+  // ============================================
   cargarVentas(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
-    
-    this.pedidoService.obtenerPedidosPagadosMesero().subscribe({
-      next: (pedidos: any[]) => {
-        console.log('📝 Pedidos entregados del mesero:', pedidos);
-        
-        const ventasFormateadas = pedidos.map((p: any) => {
-          let items = p.items;
-          if (typeof items === 'string') {
-            try {
-              items = JSON.parse(items);
-            } catch (e) {
-              items = [];
+
+    this.pedidoService.obtenerPedidosPagadosMesero()
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (pedidos: any[]) => {
+          const ventasFormateadas = (pedidos || []).map((p: any) => {
+            let items = p.items;
+            if (typeof items === 'string') {
+              try {
+                items = JSON.parse(items);
+              } catch (e) {
+                items = [];
+              }
             }
-          }
-          
-          return {
-            id: p.id,
-            cliente_nombre: p.cliente_nombre_real || p.cliente_nombre || 'Consumidor Final',
-            items: items || [],
-            total: parseFloat(p.total) || 0,
-            subtotal: parseFloat(p.subtotal) || 0,
-            igv: parseFloat(p.igv) || 0,
-            tipo_entrega: p.tipo_entrega || 'local',
-            metodo_pago: p.metodo_pago || 'efectivo',
-            estado: p.estado || 'completada',
-            fecha_venta: p.fecha_pago || p.created_at,
-            created_at: p.created_at,
-            usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Mesero',
-            observaciones: p.observaciones || '',
-            mesa_id: p.mesa_id || null
-          };
-        });
+            if (!Array.isArray(items)) items = [];
 
-        // Ordenar por fecha descendente
-        ventasFormateadas.sort((a: any, b: any) => {
-          return new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime();
-        });
+            return {
+              id: p.id,
+              cliente_nombre: p.cliente_nombre_real || p.cliente_nombre || 'Consumidor Final',
+              items: items,
+              total: parseFloat(p.total) || 0,
+              subtotal: parseFloat(p.subtotal) || 0,
+              igv: parseFloat(p.igv) || 0,
+              tipo_entrega: p.tipo_entrega || 'local',
+              metodo_pago: p.metodo_pago || 'efectivo',
+              estado: p.estado || 'completada',
+              fecha_venta: p.fecha_pago || p.created_at,
+              created_at: p.created_at,
+              usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Mesero',
+              observaciones: p.observaciones || '',
+              mesa_id: p.mesa_id || null
+            };
+          });
 
-        this.ventas.set(ventasFormateadas);
-        this.ventasRecientes.set(ventasFormateadas.slice(0, 20));
-        this.loading.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar ventas:', err);
-        this.loading.set(false);
-      }
-    });
+          // Ordenar por fecha descendente
+          ventasFormateadas.sort((a: any, b: any) => {
+            return new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime();
+          });
+
+          this.ventas.set(ventasFormateadas);
+          this.ventasRecientes.set(ventasFormateadas.slice(0, 20));
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Ventas mesero cargadas:', ventasFormateadas.length);
+        },
+        error: (err: any) => {
+          console.error('Error al cargar ventas:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(false);
+        }
+      });
+  }
+
+  // ✅ Recargar manualmente
+  recargarVentas(): void {
+    this.pedidoService.limpiarCachePedidos();
+    this.yaCargado.set(false);
+    this.cargarVentas();
   }
 
   // ============================================
@@ -123,11 +170,11 @@ export class VentasMeseroComponent implements OnInit {
   formatearFecha(fecha: string): string {
     if (!fecha) return '--';
     const d = new Date(fecha);
-    return d.toLocaleDateString('es-PE', { 
-      day: '2-digit', 
-      month: 'short', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return d.toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 

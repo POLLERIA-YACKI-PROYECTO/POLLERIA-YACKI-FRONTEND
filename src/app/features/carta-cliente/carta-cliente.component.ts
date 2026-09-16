@@ -1,9 +1,9 @@
 // src/app/features/carta-cliente/carta-cliente.component.ts
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, timeout, of } from 'rxjs';
+import { catchError, timeout, of, Subject, takeUntil } from 'rxjs';
 
 // Services
 import { ProductoService } from '../../core/services/producto.service';
@@ -33,11 +33,18 @@ import { CategoriasNavComponent } from './components/categorias-nav/categorias-n
   templateUrl: './carta-cliente.component.html',
   styleUrls: ['./carta-cliente.component.scss']
 })
-export class CartaClienteComponent implements OnInit {
+export class CartaClienteComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  // ✅ Subject para limpiar suscripciones
+  private destroy$ = new Subject<void>();
+
+  // ✅ Flags anti-duplicado
+  private cargando = signal(false);
+  private yaCargado = signal(false);
 
   // Signals
   loading = signal(true);
@@ -51,10 +58,8 @@ export class CartaClienteComponent implements OnInit {
   cargandoPedido = signal(false);
   busqueda = signal('');
 
-  // ✅ ID del pedido creado (para el modal)
   pedidoCreadoId = signal<number | null>(null);
 
-  // Cliente actual
   clienteActual = signal<any>(this.authService.getUsuarioActual());
 
   // Computed
@@ -72,55 +77,68 @@ export class CartaClienteComponent implements OnInit {
   igv = computed(() => this.subtotal() * 0.18);
   total = computed(() => this.subtotal() + this.igv());
 
-  productosFiltradosPorBusqueda = computed(() => {
-    const search = this.busqueda().toLowerCase().trim();
-    const productos = this.productosFiltrados();
-
-    if (!search) return productos;
-
-    return productos.filter(
-      (p) =>
-        p.nombre.toLowerCase().includes(search) ||
-        (p.descripcion && p.descripcion.toLowerCase().includes(search))
-    );
-  });
-
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    if (!this.authService.isCliente()) {
+    // ✅ Verificar autenticación
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ CartaCliente: sin sesión → /login-cliente');
       this.router.navigate(['/login-cliente']);
       return;
     }
+
+    if (!this.authService.isCliente()) {
+      console.warn('🛡️ CartaCliente: no es cliente → /login-cliente');
+      this.router.navigate(['/login-cliente']);
+      return;
+    }
+
     this.cargarProductos();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   // ============================================
   // CARGAR PRODUCTOS
   // ============================================
   cargarProductos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
     this.error.set(null);
 
     this.productoService
       .obtenerProductos()
       .pipe(
-        timeout(5000),
+        timeout(8000),
         catchError((err) => {
           console.warn('Error al cargar productos:', err?.message);
           this.error.set('Error al cargar productos. Por favor, intente nuevamente.');
           this.loading.set(false);
+          this.cargando.set(false);
           return of([]);
-        })
+        }),
+        takeUntil(this.destroy$)
       )
       .subscribe({
         next: (productos) => {
           this.productos.set(productos || []);
           this.filtrarProductos();
           this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Carta cliente cargada:', (productos || []).length, 'productos');
         },
         error: (err) => {
           console.error('Error al cargar productos:', err);
           this.error.set('Error al cargar los productos. Por favor, intente nuevamente.');
           this.loading.set(false);
+          this.cargando.set(false);
         }
       });
   }
@@ -156,6 +174,11 @@ export class CartaClienteComponent implements OnInit {
     this.filtrarProductos();
   }
 
+  onBusquedaChange(valor: string): void {
+    this.busqueda.set(valor);
+    this.filtrarProductos();
+  }
+
   // ============================================
   // CARRITO
   // ============================================
@@ -175,21 +198,17 @@ export class CartaClienteComponent implements OnInit {
     this.mostrarCarrito.set(true);
   }
 
-  eliminarDelCarrito(productoId: number): void {
-    const carritoActual = this.carrito();
-    const itemExistente = carritoActual.find(
-      (item) => item.producto.id === productoId
-    );
+  eliminarDelCarrito(index: number): void {
+    const carritoActual = [...this.carrito()];
+    if (index < 0 || index >= carritoActual.length) return;
 
-    if (!itemExistente) return;
-
-    if (itemExistente.cantidad > 1) {
-      itemExistente.cantidad--;
-      this.carrito.set([...carritoActual]);
+    const item = carritoActual[index];
+    if (item.cantidad > 1) {
+      item.cantidad--;
+      this.carrito.set(carritoActual);
     } else {
-      this.carrito.set(
-        carritoActual.filter((item) => item.producto.id !== productoId)
-      );
+      carritoActual.splice(index, 1);
+      this.carrito.set(carritoActual);
     }
   }
 
@@ -279,47 +298,57 @@ export class CartaClienteComponent implements OnInit {
       observaciones: datosPago.observaciones || ''
     };
 
-    this.pedidoClienteService.crearPedido(pedido).subscribe({
-      next: (response: any) => {
-        if (response?.success !== false) {
-          const pedidoId = response?.pedido?.id;
+    this.pedidoClienteService.crearPedido(pedido)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          if (response?.success !== false) {
+            const pedidoId = response?.pedido?.id;
 
-          if (pedidoId) {
-            this.pedidoCreadoId.set(pedidoId);
-            this.cargandoPedido.set(false);
-            // El modal detecta el cambio y muestra el estado correcto
+            if (pedidoId) {
+              this.pedidoCreadoId.set(pedidoId);
+              this.cargandoPedido.set(false);
+            } else {
+              this.finalizarPedido();
+            }
           } else {
-            this.finalizarPedido();
+            this.cargandoPedido.set(false);
+            alert(
+              'Error al crear el pedido: ' +
+                (response?.detalle || response?.error || 'Error desconocido')
+            );
           }
-        } else {
+        },
+        error: (err: any) => {
+          console.error('Error al crear pedido:', err);
           this.cargandoPedido.set(false);
-          alert(
-            'Error al crear el pedido: ' +
-              (response?.detalle || response?.error || 'Error desconocido')
-          );
+          let mensaje =
+            err?.error?.detalle ||
+            err?.error?.error ||
+            err?.error?.message;
+
+          if (!mensaje) {
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para crear pedidos.';
+            else if (err?.status === 429) mensaje = 'Demasiadas peticiones. Espera un momento.';
+            else mensaje = `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`;
+          }
+
+          alert(mensaje);
         }
-      },
-      error: (err: any) => {
-        console.error('Error al crear pedido:', err);
-        this.cargandoPedido.set(false);
-        const mensaje =
-          err?.error?.detalle ||
-          err?.error?.error ||
-          err?.error?.message ||
-          `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`;
-        alert(mensaje);
-      }
-    });
+      });
   }
 
   // ============================================
-  // ✅ SUBIR COMPROBANTE (Yape / Plin / Transferencia QR)
+  // SUBIR COMPROBANTE
   // ============================================
   subirComprobante(evento: { pedidoId: number; archivo: File }): void {
     this.cargandoPedido.set(true);
 
     this.pedidoClienteService
       .subirComprobante(evento.pedidoId, evento.archivo)
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.cargandoPedido.set(false);
@@ -334,21 +363,18 @@ export class CartaClienteComponent implements OnInit {
   }
 
   // ============================================
-  // ✅ CONFIRMAR EFECTIVO (solo avisa)
+  // CONFIRMAR EFECTIVO / MÁQUINA
   // ============================================
   confirmarEfectivo(evento: { pedidoId: number }): void {
     this.mostrarExitoPendienteValidacion();
   }
 
-  // ============================================
-  // ✅ CONFIRMAR MÁQUINA IZIPAY (solo avisa)
-  // ============================================
   confirmarMaquina(evento: { pedidoId: number }): void {
     this.mostrarExitoPendienteValidacion();
   }
 
   // ============================================
-  // MOSTRAR ÉXITO (pendiente de validación)
+  // ÉXITO
   // ============================================
   private mostrarExitoPendienteValidacion(): void {
     this.cargandoPedido.set(false);
@@ -360,9 +386,6 @@ export class CartaClienteComponent implements OnInit {
     this.router.navigate(['/cliente/carta']);
   }
 
-  // ============================================
-  // FINALIZAR (fallback)
-  // ============================================
   finalizarPedido(): void {
     this.cargandoPedido.set(false);
     this.mostrarModalPago.set(false);
@@ -392,6 +415,9 @@ export class CartaClienteComponent implements OnInit {
     img.onerror = null;
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irAdmin(): void {
     this.router.navigate(['/login-admin']);
   }

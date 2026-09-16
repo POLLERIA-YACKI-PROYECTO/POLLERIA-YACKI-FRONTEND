@@ -25,23 +25,34 @@ export class AdminComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // ✅ Protección
   private destroy$ = new Subject<void>();
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Admin: sin sesión → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     const usuario = this.authService.getUsuarioActual();
     this.usuario.set(usuario);
 
     if (!usuario) {
+      console.warn('🛡️ Admin: usuario no encontrado → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
 
     const rol = usuario?.rol;
     if (rol !== 'admin' && rol !== 'cajero') {
+      console.warn('🛡️ Admin: rol no permitido → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -51,6 +62,8 @@ export class AdminComponent implements OnInit, OnDestroy {
     if (temaGuardado === 'true') {
       this.temaOscuro.set(true);
     }
+
+    console.log('✅ Admin cargado:', usuario.nombre || usuario.email);
   }
 
   ngOnDestroy(): void {
@@ -58,12 +71,18 @@ export class AdminComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // ============================================
+  // TEMA
+  // ============================================
   toggleTema(): void {
     const nuevoTema = !this.temaOscuro();
     this.temaOscuro.set(nuevoTema);
     localStorage.setItem('tema-oscuro', String(nuevoTema));
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   cerrarSesion(): void {
     this.authService.logout();
     this.router.navigate(['/login-admin']);

@@ -1,6 +1,15 @@
-// pedido-detalle.component.ts - COMPLETO CORREGIDO
-
-import { Component, Input, Output, EventEmitter, signal, computed, OnInit, OnChanges } from '@angular/core';
+// src/app/features/mesero/components/pedido-detalle/pedido-detalle.component.ts
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  signal,
+  computed,
+  OnChanges,
+  SimpleChanges,
+  ChangeDetectionStrategy
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -9,15 +18,16 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './pedido-detalle.component.html',
-  styleUrls: ['./pedido-detalle.component.scss']
+  styleUrls: ['./pedido-detalle.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PedidoDetalleComponent implements OnChanges {
   @Input() pedido: any = null;
   @Input() visible = false;
   @Output() cerrar = new EventEmitter<void>();
-  @Output() actualizarEstado = new EventEmitter<{ id: number, estado: string }>();
+  @Output() actualizarEstado = new EventEmitter<{ id: number; estado: string }>();
 
-  // ✅ Estado interno para los items
+  // ✅ Estado interno
   itemsInternos = signal<any[]>([]);
   clienteNombre = signal<string>('Cliente');
   usuarioNombre = signal<string>('Desconocido');
@@ -33,10 +43,10 @@ export class PedidoDetalleComponent implements OnChanges {
     { value: 'cancelado', label: 'Cancelado', class: 'estado-cancelado' }
   ];
 
-  // ✅ Computed properties con datos internos
+  // ✅ Computed properties
   totalItems = computed(() => this.itemsInternos().length);
   itemsPedido = computed(() => this.itemsInternos());
-  
+
   subtotal = computed(() => {
     return this.itemsInternos().reduce((sum: number, item: any) => {
       const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : (item.precio || 0);
@@ -48,17 +58,27 @@ export class PedidoDetalleComponent implements OnChanges {
   igv = computed(() => this.subtotal() * 0.18);
   total = computed(() => this.subtotal() + this.igv());
 
-  // ✅ Cuando cambia el pedido, procesar los datos
-  ngOnChanges(): void {
-    if (this.pedido) {
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
+  ngOnChanges(changes: SimpleChanges): void {
+    // ✅ Solo procesar si cambió el pedido o la visibilidad
+    if (changes['pedido'] && this.pedido) {
+      this.procesarPedido();
+    }
+    if (changes['visible'] && this.visible && this.pedido) {
       this.procesarPedido();
     }
   }
 
-  // ✅ Procesar el pedido al recibirlo
+  // ============================================
+  // PROCESAR PEDIDO
+  // ============================================
   private procesarPedido(): void {
-    console.log('🔄 Procesando pedido en detalle:', this.pedido);
-    
+    if (!this.pedido) return;
+
+    console.log('🔄 Procesando pedido en detalle:', this.pedido?.id);
+
     // Extraer items
     let items = this.pedido.items || [];
     if (typeof items === 'string') {
@@ -72,35 +92,32 @@ export class PedidoDetalleComponent implements OnChanges {
     if (!Array.isArray(items)) {
       items = [];
     }
-    
+
     this.itemsInternos.set(items);
     this.totalItemsCount.set(items.length);
-    
+
     // Cliente
     this.clienteNombre.set(
-      this.pedido.cliente_nombre_real || 
-      this.pedido.cliente_nombre || 
+      this.pedido.cliente_nombre_real ||
+      this.pedido.cliente_nombre ||
       'Cliente'
     );
-    
+
     // Usuario
     this.usuarioNombre.set(
-      this.pedido.usuario_nombre || 
+      this.pedido.usuario_nombre ||
       'Desconocido'
     );
-    
+
     // Fecha
-    if (this.pedido.created_at) {
-      this.fechaPedido.set(this.pedido.created_at);
-    } else {
-      this.fechaPedido.set(new Date().toISOString());
-    }
-    
-    console.log('✅ Items procesados:', this.itemsInternos());
-    console.log('✅ Total items:', this.totalItemsCount());
+    this.fechaPedido.set(
+      this.pedido.created_at || new Date().toISOString()
+    );
   }
 
-  // ✅ MÉTODOS EXISTENTES
+  // ============================================
+  // UTILIDADES DE ESTADO
+  // ============================================
   getEstadoClass(estado: string): string {
     const clases: any = {
       'pendiente': 'estado-pendiente',
@@ -176,6 +193,9 @@ export class PedidoDetalleComponent implements OnChanges {
     return `S/ ${num.toFixed(2)}`;
   }
 
+  // ============================================
+  // ACCIONES
+  // ============================================
   cambiarEstado(estado: string): void {
     if (!this.pedido) return;
     if (confirm(`¿Cambiar estado a "${this.getEstadoTexto(estado)}"?`)) {

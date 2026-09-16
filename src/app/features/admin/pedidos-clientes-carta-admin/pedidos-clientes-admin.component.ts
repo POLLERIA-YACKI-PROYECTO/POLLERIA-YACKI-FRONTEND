@@ -54,8 +54,18 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   mostrarVisorImagen = signal<boolean>(false);
   imagenVisorUrl = signal<string>('');
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ PedidosClientesAdmin: sin sesión → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
     if (!this.authService.isAdmin()) {
+      console.warn('🛡️ PedidosClientesAdmin: no es admin → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -87,7 +97,7 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Pedidos clientes cargados');
+          console.log('✅ Pedidos clientes cargados:', lista.length);
         },
         error: (err) => {
           console.error('Error al cargar pedidos:', err);
@@ -95,6 +105,8 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
           this.pedidosFiltrados.set([]);
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
@@ -201,11 +213,14 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CONFIRMAR PAGO
+  // CONFIRMAR PAGO (con reset de confirmando SIEMPRE)
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoSeleccionado();
     if (!pedido) return;
+
+    // ✅ Guarda contra doble submit
+    if (this.confirmando()) return;
 
     const tipoEntrega = this.tipoEntregaSeleccionado();
     const tipoLabel = tipoEntrega === 'delivery' ? 'Motorizado' : 'Local';
@@ -236,18 +251,40 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al confirmar pago:', err);
+          // ✅ SIEMPRE resetear confirmando, incluso si es error de red
           this.confirmando.set(false);
-          alert(err?.error?.error || 'Error al confirmar el pago');
+
+          let mensaje = 'Error al confirmar el pago';
+          if (err?.status === 0) {
+            mensaje = 'No se pudo conectar con el servidor. Verifica tu conexión.';
+          } else if (err?.status === 401) {
+            mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+          } else if (err?.status === 403) {
+            mensaje = 'No tienes permisos para confirmar pagos.';
+          } else if (err?.status === 409) {
+            mensaje = 'Este pedido ya fue confirmado por otro usuario.';
+          } else if (err?.status === 500) {
+            mensaje = 'Error interno del servidor. Intenta de nuevo.';
+          } else if (err?.error?.error) {
+            mensaje = err.error.error;
+          } else if (err?.error?.message) {
+            mensaje = err.error.message;
+          }
+
+          alert(`❌ ${mensaje}`);
         }
       });
   }
 
   // ============================================
-  // RECHAZAR PAGO
+  // RECHAZAR PAGO (con reset de confirmando SIEMPRE)
   // ============================================
   rechazarPago(): void {
     const pedido = this.pedidoSeleccionado();
     if (!pedido) return;
+
+    // ✅ Guarda contra doble submit
+    if (this.confirmando()) return;
 
     const motivo = prompt(
       `Motivo del rechazo del pedido #${pedido.id}:`,
@@ -269,8 +306,21 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al rechazar:', err);
+          // ✅ SIEMPRE resetear confirmando
           this.confirmando.set(false);
-          alert(err?.error?.error || 'Error al rechazar el pedido');
+
+          let mensaje = 'Error al rechazar el pedido';
+          if (err?.status === 0) {
+            mensaje = 'No se pudo conectar con el servidor.';
+          } else if (err?.status === 401) {
+            mensaje = 'Sesión expirada.';
+          } else if (err?.status === 403) {
+            mensaje = 'No tienes permisos.';
+          } else if (err?.error?.error) {
+            mensaje = err.error.error;
+          }
+
+          alert(`❌ ${mensaje}`);
         }
       });
   }

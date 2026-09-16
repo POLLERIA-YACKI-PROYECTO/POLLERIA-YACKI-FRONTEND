@@ -26,10 +26,9 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   private pedidoClienteService = inject(PedidoClienteService);
   private router = inject(Router);
 
-  // ✅ Subject para cancelar suscripciones
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags para evitar duplicados
+  // ✅ Flags para evitar cargas duplicadas
   private cargando = signal(false);
   private yaCargado = signal(false);
 
@@ -87,12 +86,12 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR DATOS (UNA SOLA VEZ)
+  // ✅ CARGAR DATOS EN DOS FASES (evita saturar el pool)
   // ============================================
   cargarDatos(): void {
     // ✅ Evitar cargas duplicadas
     if (this.cargando() || this.yaCargado()) {
-      console.log('⚠️ Ya se está cargando o ya se cargó, evitando duplicado');
+      console.log('⚠️ Dashboard ya cargado o cargando, evitando duplicado');
       return;
     }
 
@@ -100,26 +99,56 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    // ✅ Cargar todo en paralelo con manejo de errores individual
+    // ✅ FASE 1: Solo 2 peticiones (productos y usuarios)
+    // Esto reduce la presión sobre el pool de MySQL
     forkJoin({
-      productos: this.productoService.obtenerProductos().pipe(catchError(() => of([]))),
-      usuarios: this.usuarioService.obtenerUsuarios().pipe(catchError(() => of([]))),
-      pedidosPendientes: this.pedidoService.obtenerPedidosPendientes().pipe(catchError(() => of([]))),
-      pedidosWeb: this.pedidoClienteService.obtenerPendientes().pipe(catchError(() => of([]))),
-      resumen: this.dashboardService.obtenerResumenUnificado().pipe(catchError(() => of(null)))
+      productos: this.productoService
+        .obtenerProductos()
+        .pipe(catchError(() => of([]))),
+      usuarios: this.usuarioService
+        .obtenerUsuarios()
+        .pipe(catchError(() => of([]))),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ productos, usuarios, pedidosPendientes, pedidosWeb, resumen }) => {
-          // 1. Productos
+        next: ({ productos, usuarios }) => {
+          // Procesar productos
           const totalProductos = Array.isArray(productos) ? productos.length : 0;
           this.actualizarStat('productos', totalProductos);
 
-          // 2. Usuarios
+          // Procesar usuarios
           const activos = (usuarios || []).filter((u: any) => u.activo !== false);
           this.actualizarStat('usuarios', activos.length);
 
-          // 3. Pedidos pendientes
+          // ✅ FASE 2: Cargar el resto (3 peticiones) después de que las primeras terminen
+          this.cargarFase2();
+        },
+        error: (err) => {
+          console.error('Error en fase 1 del dashboard:', err);
+          this.errorMessage.set('Error al cargar datos del dashboard');
+          this.loading.set(false);
+          this.cargando.set(false);
+        },
+      });
+  }
+
+  // ✅ FASE 2: pedidos + resumen (se ejecuta después de la fase 1)
+  private cargarFase2(): void {
+    forkJoin({
+      pedidosPendientes: this.pedidoService
+        .obtenerPedidosPendientes()
+        .pipe(catchError(() => of([]))),
+      pedidosWeb: this.pedidoClienteService
+        .obtenerPendientes()
+        .pipe(catchError(() => of([]))),
+      resumen: this.dashboardService
+        .obtenerResumenUnificado()
+        .pipe(catchError(() => of(null))),
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: ({ pedidosPendientes, pedidosWeb, resumen }) => {
+          // Pedidos pendientes
           const pendientesMesero = pedidosPendientes || [];
           this.pedidosPendientes.set(pendientesMesero);
 
@@ -127,7 +156,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
           const totalPendientes = pendientesMesero.length + pendientesWeb.length;
           this.actualizarStat('pendientes', totalPendientes);
 
-          // 4. Resumen unificado
+          // Resumen unificado
           if (resumen?.success) {
             const { resumen: r, ventasRecientes: recientes } = resumen;
 
@@ -143,7 +172,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
               recaudadoLocal: r.recaudadoLocal || 0,
               recaudadoDelivery: r.recaudadoDelivery || 0,
               ventasHoy: r.ventasHoy || 0,
-              recaudadoHoy: r.recaudadoHoy || 0
+              recaudadoHoy: r.recaudadoHoy || 0,
             });
 
             const recientesFormateados = (recientes || []).map((v: any) => ({
@@ -153,28 +182,30 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
               fecha: v.fecha ? this.formatearFecha(v.fecha) : '--',
               estado: v.estado || 'completada',
               tipo: v.tipo_entrega || 'local',
-              origen: v.origen || 'venta'
+              origen: v.origen || 'venta',
             }));
             this.ventasRecientes.set(recientesFormateados);
           }
 
+          // ✅ Marcar como completado
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
           console.log('✅ Dashboard cargado correctamente');
         },
         error: (err) => {
-          console.error('Error al cargar dashboard:', err);
-          this.errorMessage.set('Error al cargar datos del dashboard');
+          console.error('Error en fase 2 del dashboard:', err);
           this.loading.set(false);
           this.cargando.set(false);
-        }
+        },
       });
   }
 
   // ✅ RECARGAR (manual)
   recargar(): void {
     this.productoService.limpiarCache();
+    this.usuarioService.limpiarCache();
+    this.pedidoService.limpiarCachePedidos();
     this.yaCargado.set(false);
     this.cargarDatos();
   }
@@ -232,7 +263,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   getOrigenLabel(origen: string): string {
     const labels: any = {
       venta: 'Mesero',
-      pedido_web: 'Carta Web'
+      pedido_web: 'Carta Web',
     };
     return labels[origen] || 'Mesero';
   }
@@ -246,7 +277,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       local: 'Local',
       delivery: 'Motorizado',
       motorizada: 'Motorizado',
-      paraLlevar: 'Para Llevar'
+      paraLlevar: 'Para Llevar',
     };
     return labels[tipo] || 'Local';
   }

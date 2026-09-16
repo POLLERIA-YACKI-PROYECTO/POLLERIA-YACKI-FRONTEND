@@ -18,13 +18,11 @@ export const ClienteGuard: CanActivateFn = (route, state) => {
     rol: usuario?.rol
   });
 
-  // Sin token o sin usuario → login
   if (!token || !usuario) {
-    console.warn(' ClienteGuard: sin sesión → /login-cliente');
+    console.warn('ClienteGuard: sin sesión → /login-cliente');
     return router.parseUrl('/login-cliente');
   }
 
-  // Verificar que sea cliente (acepta tipo o rol)
   const esCliente = usuario.tipo === 'cliente' || usuario.rol === 'cliente';
 
   if (!esCliente) {
@@ -33,4 +31,4 @@ export const ClienteGuard: CanActivateFn = (route, state) => {
   }
 
   return true;
-};
+};   // ⬅️ UN SOLO `};`, no dos

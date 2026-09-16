@@ -1,7 +1,8 @@
 <!-- src/app/features/shared/components/sidebar/sidebar.component.html -->
 <aside class="sidebar">
   <nav class="sidebar-menu">
-    @for (item of menuItems(); track item.route) {
+    <!-- ✅ CAMBIO: menuItems() → menuItems (sin paréntesis) -->
+    @for (item of menuItems; track item.route) {
       <a
         [routerLink]="item.route"
         routerLinkActive="active"

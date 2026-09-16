@@ -263,6 +263,12 @@ export class ReportesComponent implements OnInit, OnDestroy {
   // INICIALIZACIÓN
   // ==========================================
   ngOnInit(): void {
+    // ✅ FIX: Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Reportes: sin sesión');
+      return;
+    }
+
     this.usuario.set(this.authService.getUsuarioActual());
 
     const hoy = new Date();
@@ -340,7 +346,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Reportes cargados');
+          console.log('✅ Reportes cargados:', this.ventas().length, 'ventas');
         },
         error: (error) => {
           console.error('Error al cargar datos:', error);
@@ -348,12 +354,16 @@ export class ReportesComponent implements OnInit, OnDestroy {
           this.pedidosPendientes.set([]);
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ FIX: Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
 
-  // ✅ NUEVO: Recargar manualmente
   recargar(): void {
+    // ✅ FIX: Limpiar caché de servicios para traer datos frescos
+    this.ventaService.limpiarCache?.();
+    this.pedidoService.limpiarCache?.();
     this.yaCargado.set(false);
     this.cargarDatos();
   }

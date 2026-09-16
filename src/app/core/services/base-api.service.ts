@@ -8,12 +8,14 @@ import {
   retryWhen,
   mergeMap,
   finalize,
+  timeout,
 } from 'rxjs/operators';
 
 export abstract class BaseApiService {
   private readonly cache = new Map<string, { data: any; timestamp: number }>();
   private readonly enCurso = new Map<string, Observable<any>>();
   private readonly bloqueadoHasta = new Map<string, number>();
+
   private readonly TTL_DEFAULT = 5 * 60 * 1000;
   private readonly BLOQUEO_429_MS = 30 * 1000;
 
@@ -31,10 +33,14 @@ export abstract class BaseApiService {
     const { ttl = this.TTL_DEFAULT, forceRefresh = false, params, headers } = options;
     const key = `${url}?${params?.toString() || ''}`;
 
-    // 1. Bloqueo por 429
+    // 1. Bloqueo local por 429
     const bloqueadoHasta = this.bloqueadoHasta.get(key) || 0;
     if (Date.now() < bloqueadoHasta) {
-      return throwError(() => ({ status: 429, message: 'Rate limit (bloqueado)' }));
+      console.warn(`🚫 ${url} bloqueado (rate limit local)`);
+      return throwError(() => ({
+        status: 429,
+        message: 'Rate limit (bloqueado localmente)',
+      }));
     }
 
     // 2. Caché
@@ -53,31 +59,40 @@ export abstract class BaseApiService {
 
     // 4. Nueva petición
     const req$ = this.http.get<T>(url, { params, headers }).pipe(
+      timeout(15000),
+
+      // ✅ Reintento SOLO en 503, 1 vez
       retryWhen((errors) =>
         errors.pipe(
           mergeMap((error, index) => {
-            if ((error?.status === 429 || error?.status === 503) && index < 2) {
-              return timer(Math.pow(2, index) * 1000);
+            if (error?.status === 503 && index < 1) {
+              console.warn(`⏳ 503 en ${url}, reintentando...`);
+              return timer(2000);
             }
             return throwError(() => error);
           })
         )
       ),
+
       tap((data) => {
         this.cache.set(key, { data, timestamp: Date.now() });
+        this.bloqueadoHasta.delete(key);
       }),
+
       catchError((error) => {
         if (error?.status === 429) {
           this.bloqueadoHasta.set(key, Date.now() + this.BLOQUEO_429_MS);
-          console.warn(`🚫 429 en ${url}. Bloqueado por 30s.`);
+          console.warn(`🚫 429 en ${url}. Bloqueado 30s.`);
         }
         return throwError(() => error);
       }),
+
       finalize(() => {
         this.enCurso.delete(key);
       }),
-      // ✅ refCount: true → la suscripción HTTP se cierra cuando no hay suscriptores
-      shareReplay({ bufferSize: 1, refCount: true })
+
+      // ✅ refCount: false → NO se cancela al hacer F5
+      shareReplay({ bufferSize: 1, refCount: false })
     );
 
     this.enCurso.set(key, req$);
@@ -90,7 +105,9 @@ export abstract class BaseApiService {
     body?: any,
     headers?: HttpHeaders
   ): Observable<T> {
-    return this.http.request<T>(method, url, { body, headers });
+    return this.http.request<T>(method, url, { body, headers }).pipe(
+      timeout(30000)
+    );
   }
 
   limpiarCache(url?: string): void {

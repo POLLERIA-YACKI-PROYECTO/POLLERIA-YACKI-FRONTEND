@@ -3,7 +3,7 @@ import { Component, signal, inject, OnInit, computed, OnDestroy } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin, Subject, takeUntil, timeout } from 'rxjs';
+import { forkJoin, Subject, takeUntil, timeout, catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { PedidoService } from '../../../core/services/pedido.service';
 import { ProductoService } from '../../../core/services/producto.service';
@@ -30,6 +30,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  // ✅ Flags anti-duplicado
+  private cargando = signal(false);
+  private yaCargado = signal(false);
+  private categoriasCargadas = signal(false);
+
   // Estados
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
@@ -37,6 +42,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   opcionSeleccionada = signal<string>('');
   loading = signal<boolean>(true);
   cargandoProductos = signal<boolean>(false);
+  guardandoPedido = signal<boolean>(false);
 
   // ✅ Modal de éxito
   mostrarModalExito = signal<boolean>(false);
@@ -85,12 +91,25 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   cantidadProducto = signal<number>(1);
   productoSeleccionado = signal<any>(null);
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ PedidosMesero: sin sesión → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ PedidosMesero: no es mesero → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
@@ -100,99 +119,78 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CARGA DE DATOS OPTIMIZADA
+  // CARGA DE DATOS
   // ============================================
   cargarDatos(): void {
+    if (this.cargando() || this.yaCargado()) return;
+
+    this.cargando.set(true);
     this.loading.set(true);
 
     forkJoin({
-      categorias: this.categoriaService.obtenerCategorias().pipe(timeout(10000)),
-      pedidos: this.pedidoService.obtenerPedidos().pipe(timeout(10000)),
-      clientes: this.clienteService.obtenerClientes().pipe(timeout(10000))
+      categorias: this.categoriaService.obtenerCategorias()
+        .pipe(timeout(10000), catchError(() => of([]))),
+      pedidos: this.pedidoService.obtenerPedidos()
+        .pipe(timeout(10000), catchError(() => of([]))),
+      clientes: this.clienteService.obtenerClientes()
+        .pipe(timeout(10000), catchError(() => of([])))
     })
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: ({ categorias, pedidos, clientes }) => {
-        this.categorias.set(categorias);
-        if (categorias.length > 0) {
-          this.categoriaSeleccionada.set(categorias[0].id);
-          this.cargarProductos(categorias[0].id);
-        }
-
-        const pedidosParseados = pedidos.map((p: any) => {
-          if (p.items && typeof p.items === 'string') {
-            try {
-              p.items = JSON.parse(p.items);
-            } catch (e) {
-              p.items = [];
-            }
-          }
-          return p;
-        });
-        this.pedidos.set(pedidosParseados);
-        this.filtrarPedidosPorTipo();
-
-        this.clientes.set(clientes);
-        this.loading.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar datos:', err);
-        this.loading.set(false);
-        this.cargarDatosIndividuales();
-      }
-    });
-  }
-
-  private cargarDatosIndividuales(): void {
-    this.categoriaService.obtenerCategorias()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (categorias: any[]) => {
-          this.categorias.set(categorias);
-          if (categorias.length > 0) {
+        next: ({ categorias, pedidos, clientes }) => {
+          this.categorias.set(categorias || []);
+          this.categoriasCargadas.set(true);
+
+          if (categorias?.length > 0) {
             this.categoriaSeleccionada.set(categorias[0].id);
             this.cargarProductos(categorias[0].id);
           }
-        },
-        error: (err: any) => console.error('Error al cargar categorías:', err)
-      });
 
-    this.pedidoService.obtenerPedidos()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (pedidos: any[]) => {
-          const pedidosParseados = pedidos.map((p: any) => {
-            if (p.items && typeof p.items === 'string') {
-              try {
-                p.items = JSON.parse(p.items);
-              } catch (e) {
-                p.items = [];
-              }
-            }
-            return p;
-          });
+          const pedidosParseados = this.parsearPedidos(pedidos || []);
           this.pedidos.set(pedidosParseados);
           this.filtrarPedidosPorTipo();
+
+          this.clientes.set(clientes || []);
           this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Pedidos mesero cargado:', pedidosParseados.length, 'pedidos');
         },
         error: (err: any) => {
-          console.error('Error al cargar pedidos:', err);
+          console.error('Error al cargar datos:', err);
           this.loading.set(false);
+          this.cargando.set(false);
+          // ✅ Resetear para permitir reintento
+          this.yaCargado.set(false);
         }
-      });
-
-    this.clienteService.obtenerClientes()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (clientes: any[]) => {
-          this.clientes.set(clientes);
-        },
-        error: (err: any) => console.error('Error al cargar clientes:', err)
       });
   }
 
+  // ✅ Parsear items de pedidos (JSON string → array)
+  private parsearPedidos(pedidos: any[]): any[] {
+    return pedidos.map((p: any) => {
+      if (p.items && typeof p.items === 'string') {
+        try {
+          p.items = JSON.parse(p.items);
+        } catch (e) {
+          p.items = [];
+        }
+      } else if (!Array.isArray(p.items)) {
+        p.items = [];
+      }
+      return p;
+    });
+  }
+
+  // ✅ Recargar manualmente
+  recargarDatos(): void {
+    this.pedidoService.limpiarCachePedidos();
+    this.yaCargado.set(false);
+    this.cargarDatos();
+  }
+
   // ============================================
-  // MÉTODOS EXISTENTES (se mantienen igual)
+  // FILTRADO DE PEDIDOS
   // ============================================
   filtrarPedidosPorTipo(): void {
     const pedidos = this.pedidos();
@@ -217,21 +215,29 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     this.filtrarPedidosPorTipo();
   }
 
+  // ============================================
+  // PRODUCTOS
+  // ============================================
   cargarProductos(categoriaId: number): void {
     this.cargandoProductos.set(true);
     this.categoriaSeleccionada.set(categoriaId);
 
-    this.productoService.obtenerPorCategoria(categoriaId).subscribe({
-      next: (productos: any[]) => {
-        this.productos.set(productos);
-        this.productosFiltrados.set(productos);
-        this.cargandoProductos.set(false);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar productos:', err);
-        this.cargandoProductos.set(false);
-      }
-    });
+    this.productoService.obtenerPorCategoria(categoriaId)
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (productos: any[]) => {
+          this.productos.set(productos || []);
+          this.productosFiltrados.set(productos || []);
+          this.cargandoProductos.set(false);
+        },
+        error: (err: any) => {
+          console.error('Error al cargar productos:', err);
+          this.cargandoProductos.set(false);
+        }
+      });
   }
 
   seleccionarCategoria(categoriaId: number): void {
@@ -240,7 +246,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // MÉTODOS PARA ESTADOS DE PEDIDOS
+  // ESTADOS
   // ============================================
   getEstadoClass(estado: string): string {
     const clases: any = {
@@ -295,9 +301,12 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     return labels[tipo] || 'Local';
   }
 
+  // ============================================
+  // VER DETALLE
+  // ============================================
   verDetalle(pedido: any): void {
     const pedidoCopia = JSON.parse(JSON.stringify(pedido));
-    
+
     if (pedidoCopia.items) {
       if (typeof pedidoCopia.items === 'string') {
         try {
@@ -311,11 +320,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     } else {
       pedidoCopia.items = [];
     }
-    
+
     pedidoCopia.cliente_nombre = pedidoCopia.cliente_nombre_real || pedidoCopia.cliente_nombre || 'Cliente';
     pedidoCopia.usuario_nombre = pedidoCopia.usuario_nombre_completo || pedidoCopia.usuario_nombre || 'Mesero';
     pedidoCopia.created_at = pedidoCopia.created_at || pedidoCopia.fecha || new Date().toISOString();
-    
+
     this.pedidoSeleccionado.set(pedidoCopia);
     this.mostrarDetalle.set(true);
   }
@@ -326,17 +335,19 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   actualizarEstadoPedido(event: { id: number, estado: string }): void {
-    this.pedidoService.cambiarEstado(event.id, event.estado).subscribe({
-      next: () => {
-        alert(`✅ Pedido #${event.id} actualizado a "${this.getEstadoTexto(event.estado)}"`);
-        this.cerrarDetalle();
-        this.cargarDatos();
-      },
-      error: (err) => {
-        console.error('Error al actualizar estado:', err);
-        alert('❌ Error al actualizar el estado del pedido');
-      }
-    });
+    this.pedidoService.cambiarEstado(event.id, event.estado)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          alert(`✅ Pedido #${event.id} actualizado a "${this.getEstadoTexto(event.estado)}"`);
+          this.cerrarDetalle();
+          this.recargarDatos();
+        },
+        error: (err) => {
+          console.error('Error al actualizar estado:', err);
+          alert('❌ Error al actualizar el estado del pedido');
+        }
+      });
   }
 
   // ============================================
@@ -399,7 +410,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     }
 
     const encontrados = this.clientes().filter((c: any) =>
-      c.nombre.toLowerCase().includes(termino) ||
+      c.nombre?.toLowerCase().includes(termino) ||
       (c.dni && c.dni.includes(termino))
     );
     this.clientesEncontrados.set(encontrados.slice(0, 5));
@@ -441,6 +452,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     const cantidad = this.cantidadProducto();
     const itemsActuales = this.itemsPedido();
     const itemExistente = itemsActuales.find((i: any) => i.id === producto.id);
+    const precio = typeof producto.precio === 'string' ? parseFloat(producto.precio) : producto.precio;
 
     if (itemExistente) {
       itemExistente.cantidad += cantidad;
@@ -450,9 +462,9 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       this.itemsPedido.update((items: any[]) => [...items, {
         id: producto.id,
         nombre: producto.nombre,
-        precio: typeof producto.precio === 'string' ? parseFloat(producto.precio) : producto.precio,
+        precio: precio,
         cantidad: cantidad,
-        subtotal: (typeof producto.precio === 'string' ? parseFloat(producto.precio) : producto.precio) * cantidad
+        subtotal: precio * cantidad
       }]);
     }
 
@@ -477,9 +489,12 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // GUARDAR PEDIDO CON MODAL DE ÉXITO
+  // GUARDAR PEDIDO
   // ============================================
   guardarPedido(): void {
+    // ✅ Guarda contra doble submit
+    if (this.guardandoPedido()) return;
+
     if (this.itemsPedido().length === 0) {
       alert('Agregue al menos un producto al pedido');
       return;
@@ -497,7 +512,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : Number(item.cantidad);
       const subtotalItem = precio * cantidad;
       subtotal += subtotalItem;
-      
+
       return {
         id: Number(item.id),
         nombre: String(item.nombre).trim(),
@@ -509,11 +524,6 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
 
     const igv = subtotal * 0.18;
     const total = subtotal + igv;
-
-    console.log('📝 Items procesados:', JSON.stringify(itemsConPrecio));
-    console.log('📝 Subtotal:', subtotal);
-    console.log('📝 IGV:', igv);
-    console.log('📝 Total:', total);
 
     const pedidoData: any = {
       usuario_id: this.usuario().id,
@@ -529,6 +539,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       pagado: 0
     };
 
+    this.guardandoPedido.set(true);
     this.loading.set(true);
 
     if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
@@ -540,49 +551,53 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
         email: this.nuevoCliente.email
       };
 
-      this.clienteService.crearCliente(nuevoClienteData).subscribe({
-        next: (clienteCreado: any) => {
-          pedidoData.cliente_id = clienteCreado.id;
-          pedidoData.cliente_nombre = clienteCreado.nombre || nombreCliente;
-          this.crearPedido(pedidoData);
-        },
-        error: (err: any) => {
-          console.error('Error al crear cliente:', err);
-          this.loading.set(false);
-          alert('Error al crear cliente');
-        }
-      });
+      this.clienteService.crearCliente(nuevoClienteData)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (clienteCreado: any) => {
+            pedidoData.cliente_id = clienteCreado.id;
+            pedidoData.cliente_nombre = clienteCreado.nombre || nombreCliente;
+            this.crearPedido(pedidoData);
+          },
+          error: (err: any) => {
+            console.error('Error al crear cliente:', err);
+            this.loading.set(false);
+            this.guardandoPedido.set(false);
+            alert('Error al crear cliente');
+          }
+        });
     } else {
       this.crearPedido(pedidoData);
     }
   }
 
   crearPedido(pedidoData: any): void {
-    this.pedidoService.crearPedido(pedidoData).subscribe({
-      next: (response: any) => {
-        console.log('✅ Pedido creado:', response);
-        this.loading.set(false);
-        this.cerrarModal();
-        
-        // ✅ Mostrar modal de éxito
-        this.pedidoCreado.set(response.pedido || response);
-        this.mensajeExito.set(`Pedido #${response.pedido?.id || 'creado'} correctamente`);
-        this.mostrarModalExito.set(true);
-        
-        // Recargar datos después de 2 segundos
-        setTimeout(() => {
-          this.cargarDatos();
-        }, 500);
-      },
-      error: (err: any) => {
-        console.error('Error al crear pedido:', err);
-        this.loading.set(false);
-        alert('❌ Error al crear pedido: ' + (err.error?.detalle || err.message));
-      }
-    });
+    this.pedidoService.crearPedido(pedidoData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          console.log('✅ Pedido creado:', response);
+          this.loading.set(false);
+          this.guardandoPedido.set(false);
+          this.cerrarModal();
+
+          this.pedidoCreado.set(response.pedido || response);
+          this.mensajeExito.set(`Pedido #${response.pedido?.id || 'creado'} correctamente`);
+          this.mostrarModalExito.set(true);
+
+          setTimeout(() => {
+            this.recargarDatos();
+          }, 500);
+        },
+        error: (err: any) => {
+          console.error('Error al crear pedido:', err);
+          this.loading.set(false);
+          this.guardandoPedido.set(false);
+          alert('❌ Error al crear pedido: ' + (err.error?.detalle || err.message));
+        }
+      });
   }
 
-  // ✅ Cerrar modal de éxito
   cerrarModalExito(): void {
     this.mostrarModalExito.set(false);
     this.pedidoCreado.set(null);
@@ -590,7 +605,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // NAVEGACIÓN
+  // NAVEGACIÓN POR RUTAS
   // ============================================
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);
@@ -598,6 +613,10 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
 
   irMesas(): void {
     this.router.navigate(['/mesero/mesas']);
+  }
+
+  irPedidos(): void {
+    this.router.navigate(['/mesero/pedidos']);
   }
 
   irPrecios(): void {
@@ -615,9 +634,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   irDashboard(): void {
     this.router.navigate(['/mesero/dashboard']);
   }
-irPedidos(): void {
-  this.router.navigate(['/mesero/pedidos']);
-}
+
   cerrarSesion(): void {
     this.authService.logout();
     this.router.navigate(['/login-mesero']);

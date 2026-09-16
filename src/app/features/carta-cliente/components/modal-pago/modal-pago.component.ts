@@ -7,7 +7,9 @@ import {
   signal,
   OnChanges,
   SimpleChanges,
-  inject
+  inject,
+  OnDestroy,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,9 +33,10 @@ type MetodoPago = 'efectivo' | 'yape' | 'plin' | 'transferencia' | 'tarjeta';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './modal-pago.component.html',
-  styleUrls: ['./modal-pago.component.scss']
+  styleUrls: ['./modal-pago.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ModalPagoComponent implements OnChanges {
+export class ModalPagoComponent implements OnChanges, OnDestroy {
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
 
@@ -61,12 +64,16 @@ export class ModalPagoComponent implements OnChanges {
   mensajeError = signal('');
   qrDataUrl = signal<string>('');
 
-  // ✅ Sub-opción transferencia
   tipoTransferencia = signal<'qr' | 'maquina'>('qr');
 
-  // ✅ Archivo del comprobante
   comprobanteArchivo = signal<File | null>(null);
   comprobantePreview = signal<string>('');
+
+  // ✅ Cache de iconos SVG
+  private iconCache: Record<string, SafeHtml> = {};
+
+  // ✅ Timer de reset del formulario
+  private resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   metodosPago = [
     { id: 'efectivo' as MetodoPago, label: 'Efectivo', sub: 'Pagar en caja', icon: 'efectivo' },
@@ -88,6 +95,13 @@ export class ModalPagoComponent implements OnChanges {
       } else {
         this.resetEstado();
       }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
+      this.resetTimer = null;
     }
   }
 
@@ -191,7 +205,6 @@ export class ModalPagoComponent implements OnChanges {
         break;
 
       case 'tarjeta':
-        // Redirigir a Izipay o mostrar mensaje
         this.estadoPago.set('maquina_izipay');
         break;
 
@@ -293,7 +306,7 @@ export class ModalPagoComponent implements OnChanges {
   }
 
   // ============================================
-  // SELECCIONAR COMPROBANTE
+  // COMPROBANTE
   // ============================================
   onComprobanteSeleccionado(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -329,9 +342,6 @@ export class ModalPagoComponent implements OnChanges {
     this.comprobantePreview.set('');
   }
 
-  // ============================================
-  // CONFIRMAR CON COMPROBANTE (Yape/Plin/Izipay QR)
-  // ============================================
   confirmarConComprobante(): void {
     const archivo = this.comprobanteArchivo();
     if (!archivo) {
@@ -352,7 +362,7 @@ export class ModalPagoComponent implements OnChanges {
   }
 
   // ============================================
-  // CONFIRMAR EFECTIVO
+  // CONFIRMACIONES
   // ============================================
   confirmarEfectivo(): void {
     if (!this.pedidoId) return;
@@ -360,9 +370,6 @@ export class ModalPagoComponent implements OnChanges {
     this.confirmarEfectivoCaja.emit({ pedidoId: this.pedidoId });
   }
 
-  // ============================================
-  // CONFIRMAR MÁQUINA IZIPAY
-  // ============================================
   confirmarMaquinaIzipay(): void {
     if (!this.pedidoId) return;
     this.estadoPago.set('exitoso');
@@ -391,9 +398,13 @@ export class ModalPagoComponent implements OnChanges {
   }
 
   // ============================================
-  // SVG DE ICONOS
+  // SVG DE ICONOS (con cache)
   // ============================================
   getMetodoPagoSVG(metodo: string): SafeHtml {
+    if (this.iconCache[metodo]) {
+      return this.iconCache[metodo];
+    }
+
     const icons: Record<string, string> = {
       efectivo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 10v4M18 10v4"/></svg>`,
       yape: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M8 12l3 3 5-6"/></svg>`,
@@ -401,6 +412,9 @@ export class ModalPagoComponent implements OnChanges {
       transferencia: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M3 12h18"/><path d="M18 7l5 5-5 5"/><path d="M6 7l-5 5 5 5"/></svg>`,
       tarjeta: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="6" cy="15" r="1"/></svg>`
     };
-    return this.sanitizer.bypassSecurityTrustHtml(icons[metodo] || icons['efectivo']);
+
+    const safe = this.sanitizer.bypassSecurityTrustHtml(icons[metodo] || icons['efectivo']);
+    this.iconCache[metodo] = safe;
+    return safe;
   }
 }

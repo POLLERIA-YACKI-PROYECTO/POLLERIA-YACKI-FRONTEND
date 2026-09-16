@@ -5,7 +5,8 @@ import {
   inject,
   Input,
   Output,
-  signal
+  signal,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Producto } from '../../../../core/models/interfaces';
@@ -16,7 +17,9 @@ import { ProductoService } from '../../../../core/services/producto.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './producto-card.component.html',
-  styleUrls: ['./producto-card.component.scss']
+  styleUrls: ['./producto-card.component.scss'],
+  // ✅ OnPush: solo re-renderiza si cambian inputs
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductoCardComponent {
   private productoService = inject(ProductoService);
@@ -25,6 +28,9 @@ export class ProductoCardComponent {
   @Output() agregar = new EventEmitter<Producto>();
 
   agregando = signal(false);
+
+  // ✅ Timer para limpiar el estado "agregando" si el componente se destruye
+  private resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   get imagenUrl(): string {
     return this.productoService.getImagenUrl(
@@ -69,19 +75,44 @@ export class ProductoCardComponent {
       : '0.00';
   }
 
+  // ============================================
+  // AGREGAR AL CARRITO
+  // ============================================
   onAgregar(): void {
     if (!this.estaDisponible) {
+      return;
+    }
+
+    // ✅ Evita doble click mientras se procesa
+    if (this.agregando()) {
       return;
     }
 
     this.agregando.set(true);
     this.agregar.emit(this.producto);
 
-    setTimeout(() => {
+    // ✅ Limpiar timer anterior si existe
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
+    }
+
+    this.resetTimer = setTimeout(() => {
       this.agregando.set(false);
+      this.resetTimer = null;
     }, 500);
   }
 
+  // ✅ Limpiar timer al destruir (evita memory leak)
+  ngOnDestroy(): void {
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
+      this.resetTimer = null;
+    }
+  }
+
+  // ============================================
+  // IMÁGENES
+  // ============================================
   onImageError(event: Event): void {
     const imagen = event.target as HTMLImageElement;
 

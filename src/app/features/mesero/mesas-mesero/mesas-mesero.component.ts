@@ -1,8 +1,9 @@
 // src/app/features/mesero/mesas-mesero/mesas-mesero.component.ts
-import { Component, signal, inject, OnInit, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { MesaService, Mesa } from '../../../core/services/mesa.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -15,10 +16,12 @@ import { HeaderComponent } from '../../shared/components/header/header.component
   styleUrls: ['./mesas-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class MesasMeseroComponent implements OnInit {
+export class MesasMeseroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private mesaService = inject(MesaService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
@@ -53,9 +56,21 @@ export class MesasMeseroComponent implements OnInit {
     });
   }
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ MesasMesero: sin sesión → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.usuario.set(this.authService.getUsuarioActual());
+
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ MesasMesero: no es mesero → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -63,10 +78,18 @@ export class MesasMeseroComponent implements OnInit {
     this.mesaService.cargarMesas();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   getMesaByNumero(numero: number): Mesa | undefined {
     return this.mesas().find(m => m.numero === numero);
   }
 
+  // ============================================
+  // TOGGLES
+  // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
@@ -95,13 +118,18 @@ export class MesasMeseroComponent implements OnInit {
     }
   }
 
+  // ============================================
+  // SELECCIÓN DE MESA
+  // ============================================
   seleccionarMesa(numero: number): void {
     this.mesaService.seleccionarMesa(numero);
     const mesa = this.mesas().find(m => m.numero === numero);
     this.selectedMesa.set(mesa || null);
   }
 
-  // ✅ ABRIR MODAL PARA OCUPAR MESA
+  // ============================================
+  // MODAL OCUPAR
+  // ============================================
   abrirModalOcupar(): void {
     const num = this.mesaSeleccionada();
     if (num === null) {
@@ -121,7 +149,6 @@ export class MesasMeseroComponent implements OnInit {
     this.mostrarModalOcupar.set(true);
   }
 
-  // ✅ OCUPAR MESA CON LOS DATOS DEL MODAL
   ocuparMesa(): void {
     const num = this.mesaAOcupar();
     if (num === null) return;
@@ -139,7 +166,6 @@ export class MesasMeseroComponent implements OnInit {
     this.cantidadPersonas.set(1);
   }
 
-  // ✅ CERRAR MODAL OCUPAR
   cerrarModalOcupar(): void {
     this.mostrarModalOcupar.set(false);
     this.mesaAOcupar.set(null);
@@ -147,7 +173,9 @@ export class MesasMeseroComponent implements OnInit {
     this.cantidadPersonas.set(1);
   }
 
-  // ✅ ABRIR MODAL DE CONFIRMACIÓN PARA LIBERAR MESA
+  // ============================================
+  // MODAL LIBERAR
+  // ============================================
   abrirModalLiberar(): void {
     const num = this.mesaSeleccionada();
     if (num === null) {
@@ -166,7 +194,6 @@ export class MesasMeseroComponent implements OnInit {
     this.mostrarModalLiberar.set(true);
   }
 
-  // ✅ LIBERAR MESA (CONFIRMADO)
   confirmarLiberarMesa(): void {
     const num = this.mesaALiberar();
     if (num === null) return;
@@ -178,14 +205,15 @@ export class MesasMeseroComponent implements OnInit {
     this.clienteALiberar.set('');
   }
 
-  // ✅ CERRAR MODAL LIBERAR
   cerrarModalLiberar(): void {
     this.mostrarModalLiberar.set(false);
     this.mesaALiberar.set(null);
     this.clienteALiberar.set('');
   }
 
-  // NAVEGACIÓN
+  // ============================================
+  // NAVEGACIÓN POR RUTAS
+  // ============================================
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);
   }

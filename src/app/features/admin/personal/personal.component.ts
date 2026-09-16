@@ -47,12 +47,25 @@ export class PersonalComponent implements OnInit, OnDestroy {
     salario: null as number | null
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (!this.usuario() || this.usuario()?.rol !== 'admin') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Personal: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (!this.usuario() || this.usuario()?.rol !== 'admin') {
+      console.warn('🛡️ Personal: no es admin → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
@@ -87,21 +100,27 @@ export class PersonalComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Personal cargado');
+          console.log('✅ Personal cargado:', usuariosFormateados.length, 'empleados');
         },
         error: (err) => {
           console.error('Error al cargar usuarios:', err);
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
 
   recargar(): void {
+    this.usuarioService.limpiarCache();
     this.yaCargado.set(false);
     this.cargarDatos();
   }
 
+  // ============================================
+  // UTILIDADES DE ROL
+  // ============================================
   getRolDisplay(rol: string): string {
     const rolesMap: any = {
       'admin': 'Administrador',
@@ -113,6 +132,31 @@ export class PersonalComponent implements OnInit, OnDestroy {
     return rolesMap[rol] || rol;
   }
 
+  getRolClass(rol: string): string {
+    const clases: any = {
+      'admin': 'rol-admin',
+      'cajero': 'rol-cajero',
+      'mesero': 'rol-mesero',
+      'cocinero': 'rol-cocinero',
+      'delivery': 'rol-delivery'
+    };
+    return clases[rol] || '';
+  }
+
+  getRolSvg(rol: string): string {
+    const iconos: any = {
+      'admin': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+      'cajero': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="16" cy="15" r="1"/></svg>`,
+      'mesero': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/></svg>`,
+      'cocinero': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><path d="M9 15c0 2 1.5 3 3 3s3-1 3-3"/></svg>`,
+      'delivery': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="13" rx="2"/><polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/></svg>`
+    };
+    return iconos[rol] || '';
+  }
+
+  // ============================================
+  // FORMULARIO
+  // ============================================
   toggleFormulario(): void {
     this.mostrarFormulario.set(!this.mostrarFormulario());
     if (!this.mostrarFormulario()) {
@@ -147,19 +191,24 @@ export class PersonalComponent implements OnInit, OnDestroy {
     this.mostrarFormulario.set(true);
   }
 
+  // ============================================
+  // GUARDAR (con mensajes específicos)
+  // ============================================
   guardarPersonal(): void {
-    if (!this.nuevoPersonal().nombre || !this.nuevoPersonal().dni) {
+    const data = this.nuevoPersonal();
+
+    if (!data.nombre || !data.dni) {
       alert('Por favor complete todos los campos obligatorios');
       return;
     }
 
-    if (this.nuevoPersonal().dni.length !== 8) {
+    if (data.dni.length !== 8) {
       alert('El DNI debe tener 8 dígitos');
       return;
     }
 
     if (this.editando()) {
-      this.usuarioService.actualizarUsuario(this.personalEdit().id, this.nuevoPersonal())
+      this.usuarioService.actualizarUsuario(this.personalEdit().id, data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -169,11 +218,17 @@ export class PersonalComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al actualizar empleado:', err);
-            alert(err.error?.error || 'Error al actualizar empleado');
+            let mensaje = err.error?.error || 'Error al actualizar empleado';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar empleados.';
+            else if (err?.status === 404) mensaje = 'El empleado ya no existe.';
+            else if (err?.status === 409) mensaje = 'Ya existe un empleado con ese DNI o email.';
+            alert(`❌ ${mensaje}`);
           }
         });
     } else {
-      this.usuarioService.crearUsuario(this.nuevoPersonal())
+      this.usuarioService.crearUsuario(data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -183,12 +238,20 @@ export class PersonalComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al crear empleado:', err);
-            alert(err.error?.error || 'Error al crear empleado');
+            let mensaje = err.error?.error || 'Error al crear empleado';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para crear empleados.';
+            else if (err?.status === 409) mensaje = 'Ya existe un empleado con ese DNI o email.';
+            alert(`❌ ${mensaje}`);
           }
         });
     }
   }
 
+  // ============================================
+  // MODAL ELIMINAR
+  // ============================================
   abrirModalEliminar(persona: any): void {
     if (persona.rol === 'admin' && persona.id === 1) {
       alert('No se puede eliminar al administrador principal');
@@ -217,34 +280,20 @@ export class PersonalComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al eliminar empleado:', err);
-          alert(err.error?.error || 'Error al eliminar empleado');
+          let mensaje = err.error?.error || 'Error al eliminar empleado';
+          if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+          else if (err?.status === 401) mensaje = 'Sesión expirada.';
+          else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar empleados.';
+          else if (err?.status === 404) mensaje = 'El empleado ya no existe.';
+          alert(`❌ ${mensaje}`);
           this.cerrarModalEliminar();
         }
       });
   }
 
-  getRolClass(rol: string): string {
-    const clases: any = {
-      'admin': 'rol-admin',
-      'cajero': 'rol-cajero',
-      'mesero': 'rol-mesero',
-      'cocinero': 'rol-cocinero',
-      'delivery': 'rol-delivery'
-    };
-    return clases[rol] || '';
-  }
-
-  getRolSvg(rol: string): string {
-    const iconos: any = {
-      'admin': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
-      'cajero': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><circle cx="16" cy="15" r="1"/></svg>`,
-      'mesero': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/></svg>`,
-      'cocinero': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/><path d="M9 15c0 2 1.5 3 3 3s3-1 3-3"/></svg>`,
-      'delivery': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="15" height="13" rx="2"/><polyline points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/></svg>`
-    };
-    return iconos[rol] || '';
-  }
-
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irDashboard(): void {
     this.router.navigate(['/admin/dashboard-admin']);
   }

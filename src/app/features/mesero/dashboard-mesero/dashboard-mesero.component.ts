@@ -1,7 +1,8 @@
 // src/app/features/mesero/dashboard-mesero/dashboard-mesero.component.ts
-import { Component, signal, inject, OnInit, effect } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { MesaService, Mesa } from '../../../core/services/mesa.service';
 import { HeaderComponent } from '../../shared/components/header/header.component';
@@ -14,10 +15,12 @@ import { HeaderComponent } from '../../shared/components/header/header.component
   styleUrls: ['./dashboard-mesero.component.scss'],
   host: { 'class': 'mesero-mode' }
 })
-export class DashboardMeseroComponent implements OnInit {
+export class DashboardMeseroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private mesaService = inject(MesaService);
   private router = inject(Router);
+
+  private destroy$ = new Subject<void>();
 
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(true);
@@ -36,6 +39,9 @@ export class DashboardMeseroComponent implements OnInit {
   mesasOcupadas = signal<number>(0);
   mesasLibres = signal<number>(0);
 
+  // ✅ Timer de bienvenida (para limpiar al destruir)
+  private welcomeTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
     effect(() => {
       const mesas = this.mesas();
@@ -45,9 +51,21 @@ export class DashboardMeseroComponent implements OnInit {
     });
   }
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ DashboardMesero: sin sesión → /login-mesero');
+      this.router.navigate(['/login-mesero']);
+      return;
+    }
+
     this.usuario.set(this.authService.getUsuarioActual());
+
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
+      console.warn('🛡️ DashboardMesero: no es mesero → /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -60,26 +78,47 @@ export class DashboardMeseroComponent implements OnInit {
     const claveVisita = `visitado_${this.usuario()?.id}`;
     const yaVisitado = localStorage.getItem(claveVisita);
 
+    // ✅ Limpiar timer anterior si existe
+    if (this.welcomeTimer) {
+      clearTimeout(this.welcomeTimer);
+      this.welcomeTimer = null;
+    }
+
     if (!yaVisitado) {
       this.esPrimeraVez.set(true);
       this.mensajeBienvenida.set(`Bienvenido ${nombre}`);
       localStorage.setItem(claveVisita, 'true');
       this.mostrarBienvenida.set(true);
 
-      setTimeout(() => {
+      this.welcomeTimer = setTimeout(() => {
         this.mostrarBienvenida.set(false);
+        this.welcomeTimer = null;
       }, 3000);
     } else {
       this.esPrimeraVez.set(false);
       this.mensajeBienvenida.set(`Gusto volver a verte ${nombre}`);
       this.mostrarBienvenida.set(true);
 
-      setTimeout(() => {
+      this.welcomeTimer = setTimeout(() => {
         this.mostrarBienvenida.set(false);
+        this.welcomeTimer = null;
       }, 2000);
     }
   }
 
+  ngOnDestroy(): void {
+    // ✅ Limpiar timer al destruir
+    if (this.welcomeTimer) {
+      clearTimeout(this.welcomeTimer);
+      this.welcomeTimer = null;
+    }
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ============================================
+  // TOGGLES
+  // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
   }
@@ -88,6 +127,9 @@ export class DashboardMeseroComponent implements OnInit {
     this.menuAbierto.set(!this.menuAbierto());
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   seleccionarOpcion(opcion: string): void {
     this.opcionSeleccionada.set(opcion);
     this.menuAbierto.set(false);
@@ -130,7 +172,9 @@ export class DashboardMeseroComponent implements OnInit {
     this.mesaService.seleccionarMesa(numero);
   }
 
-  // NAVEGACIÓN CORREGIDA
+  // ============================================
+  // NAVEGACIÓN POR RUTAS
+  // ============================================
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);
   }

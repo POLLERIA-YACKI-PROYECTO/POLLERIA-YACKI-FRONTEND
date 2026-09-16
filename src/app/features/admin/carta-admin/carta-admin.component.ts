@@ -35,6 +35,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   // ✅ Flags para evitar cargas duplicadas
   private cargando = signal(false);
   private yaCargado = signal(false);
+  private categoriasCargadas = signal(false);
 
   @ViewChild('inputFile') inputFile!: ElementRef<HTMLInputElement>;
   @ViewChild('formularioProducto') formularioProducto?: ElementRef<HTMLElement>;
@@ -82,7 +83,6 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // ✅ Cancelar todas las suscripciones
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -92,19 +92,24 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR DATOS (CON CACHÉ Y SIN DUPLICADOS)
+  // ✅ CARGAR DATOS (CATEGORÍAS SOLO UNA VEZ)
   // ============================================
   cargarDatos(): void {
-    // ✅ Evitar cargas duplicadas
     if (this.cargando() || this.yaCargado()) {
-      console.log('⚠️ Ya se está cargando o ya se cargó, evitando duplicado');
+      console.log('⚠️ Carta admin ya cargada o cargando, evitando duplicado');
       return;
     }
 
     this.cargando.set(true);
     this.loading.set(true);
 
-    // ✅ forkJoin: 2 peticiones en paralelo con manejo de errores individual
+    // ✅ Si las categorías ya están cargadas, solo pedir productos
+    if (this.categoriasCargadas() && this.categorias().length > 0) {
+      this.soloCargarProductos();
+      return;
+    }
+
+    // ✅ Primera carga: categorías + productos
     forkJoin({
       categorias: this.categoriaService
         .obtenerCategorias()
@@ -117,6 +122,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ({ categorias, productos }) => {
           this.categorias.set(categorias || []);
+          this.categoriasCargadas.set(true);
           this.productos.set(productos || []);
           this.productosFiltrados.set(productos || []);
 
@@ -140,10 +146,42 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ RECARGAR (solo cuando se solicita)
+  // ✅ Solo productos (sin tocar categorías)
+  private soloCargarProductos(): void {
+    this.productoService
+      .obtenerProductos(true)  // forceRefresh = true para traer datos frescos
+      .pipe(
+        catchError(() => of([])),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (productos) => {
+          this.productos.set(productos || []);
+          this.productosFiltrados.set(productos || []);
+          this.loading.set(false);
+          this.cargando.set(false);
+          this.yaCargado.set(true);
+          console.log('✅ Productos recargados (categorías cacheadas)');
+        },
+        error: (err) => {
+          console.error('Error al recargar productos:', err);
+          this.loading.set(false);
+          this.cargando.set(false);
+        },
+      });
+  }
+
+  // ✅ RECARGAR (solo cuando se solicita explícitamente)
   recargar(): void {
+    // Limpiar caché de productos (categorías se mantienen)
     this.productoService.limpiarCache();
-    this.categoriaService.limpiarCache();
+    this.yaCargado.set(false);
+    this.cargarDatos();
+  }
+
+  // ✅ RECARGAR SOLO PRODUCTOS (para operaciones CRUD)
+  private recargarProductos(): void {
+    this.productoService.limpiarCache();
     this.yaCargado.set(false);
     this.cargarDatos();
   }

@@ -1,4 +1,4 @@
-//src\app\core\guards\auth.guard.ts
+// src/app/core/guards/auth.guard.ts
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -9,7 +9,7 @@ export const AuthGuard = () => {
 
   const usuario = authService.getUsuarioActual();
   const token = authService.getToken();
-  
+
   console.log('AuthGuard - Usuario:', usuario);
   console.log('AuthGuard - Token:', token);
 

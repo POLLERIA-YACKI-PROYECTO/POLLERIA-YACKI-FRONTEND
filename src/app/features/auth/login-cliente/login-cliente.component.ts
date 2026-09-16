@@ -1,6 +1,6 @@
 // src/app/features/cliente/login-cliente/login-cliente.component.ts
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -8,6 +8,7 @@ import {
   Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -17,10 +18,13 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './login-cliente.component.html',
   styleUrls: ['./login-cliente.component.scss']
 })
-export class LoginClienteComponent implements OnInit {
+export class LoginClienteComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  // ✅ Subject para limpiar suscripciones
+  private destroy$ = new Subject<void>();
 
   loginForm: FormGroup;
   registerForm: FormGroup;
@@ -31,12 +35,8 @@ export class LoginClienteComponent implements OnInit {
   showPassword = signal(false);
   currentYear = new Date().getFullYear();
 
-  // ✅ CAMBIO: Ya NO usamos signal para el usuario actual
-  // Esto evita que al recargar muestre la vista de perfil
   currentUser = signal<any>(null);
 
-  // ✅ CAMBIO: isLoggedIn ahora depende de una bandera de sesión
-  // que se resetea al recargar (solo se activa tras login exitoso en esta sesión)
   private sesionActivaEnEstaVista = signal(false);
   isLoggedIn = computed(() => this.sesionActivaEnEstaVista());
 
@@ -55,26 +55,27 @@ export class LoginClienteComponent implements OnInit {
     });
   }
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    // ✅ CAMBIO: Al recargar, SIEMPRE limpiamos el estado
-    // y forzamos la vista de login/registro
+    // ✅ Resetear estado al entrar
     this.sesionActivaEnEstaVista.set(false);
     this.currentUser.set(null);
     this.isLoginMode.set(true);
     this.errorMessage.set('');
     this.loginForm.reset();
     this.registerForm.reset();
-
-    // ❌ ELIMINADO: Ya NO redirigimos automáticamente a /cliente/carta
-    // if (this.authService.isCliente() && this.authService.getToken()) {
-    //   this.router.navigate(['/cliente/carta']);
-    // }
-
-    // ✅ Opcional: Si quieres que el usuario tenga que volver a loguearse,
-    // puedes limpiar el token viejo al entrar aquí:
-    // this.authService.logout();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ============================================
+  // MODO LOGIN/REGISTRO
+  // ============================================
   toggleMode(): void {
     if (this.isLoading()) return;
     this.isLoginMode.set(!this.isLoginMode());
@@ -102,26 +103,23 @@ export class LoginClienteComponent implements OnInit {
 
     const { email, password } = this.loginForm.value;
 
-    this.authService.loginCliente({ email, password }).subscribe({
-      next: (response) => {
-        this.isLoading.set(false);
+    this.authService.loginCliente({ email, password })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
 
-        // ✅ CAMBIO: Activamos la bandera de sesión SOLO aquí,
-        // después de un login exitoso en esta vista
-        this.sesionActivaEnEstaVista.set(true);
-        this.currentUser.set(this.authService.getUsuarioActual());
+          this.sesionActivaEnEstaVista.set(true);
+          this.currentUser.set(this.authService.getUsuarioActual());
 
-        console.log('✅ Login exitoso → /cliente/carta');
-        this.router.navigate(['/cliente/carta']);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.errorMessage.set(
-          error?.error?.message ||
-            'No pudimos iniciar sesión. Verifica tus datos e intenta nuevamente.'
-        );
-      }
-    });
+          console.log('✅ Login exitoso → /cliente/carta');
+          this.router.navigate(['/cliente/carta']);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(this.obtenerMensajeError(error, 'login'));
+        }
+      });
   }
 
   // ============================================
@@ -141,29 +139,66 @@ export class LoginClienteComponent implements OnInit {
 
     const payload = this.registerForm.value;
 
-    this.authService.registerCliente(payload).subscribe({
-      next: () => {
-        this.isLoading.set(false);
+    this.authService.registerCliente(payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.isLoading.set(false);
+          this.sesionActivaEnEstaVista.set(true);
+          this.currentUser.set(this.authService.getUsuarioActual());
 
-        // ✅ CAMBIO: Activamos la bandera tras registro exitoso
-        this.sesionActivaEnEstaVista.set(true);
-        this.currentUser.set(this.authService.getUsuarioActual());
-
-        console.log('✅ Registro exitoso → /cliente/carta');
-        this.router.navigate(['/cliente/carta']);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.errorMessage.set(
-          error?.error?.message ||
-            (error?.status >= 500
-              ? 'El servidor no puede registrar clientes en este momento. Revisa que la API y la base de datos estén activas.'
-              : 'No se pudo completar el registro. Intenta nuevamente.')
-        );
-      }
-    });
+          console.log('✅ Registro exitoso → /cliente/carta');
+          this.router.navigate(['/cliente/carta']);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(this.obtenerMensajeError(error, 'register'));
+        }
+      });
   }
 
+  // ============================================
+  // MENSAJES DE ERROR
+  // ============================================
+  private obtenerMensajeError(error: any, contexto: 'login' | 'register'): string {
+    // Si el backend manda mensaje claro
+    if (error?.error?.message) return error.error.message;
+    if (error?.error?.error) return error.error.error;
+
+    // Por status HTTP
+    switch (error?.status) {
+      case 0:
+        return 'No se pudo conectar con el servidor. Verifica tu conexión.';
+      case 400:
+        return contexto === 'login'
+          ? 'Correo o contraseña incorrectos.'
+          : 'Los datos ingresados no son válidos.';
+      case 401:
+        return 'Correo o contraseña incorrectos.';
+      case 403:
+        return 'Acceso denegado.';
+      case 404:
+        return 'Correo o contraseña incorrectos.';
+      case 409:
+        return 'Ya existe una cuenta con ese correo. Intenta iniciar sesión.';
+      case 429:
+        return 'Demasiados intentos. Espera un momento antes de reintentar.';
+      case 500:
+      case 502:
+      case 503:
+        return contexto === 'login'
+          ? 'Error del servidor, intenta más tarde.'
+          : 'El servidor no puede registrar clientes en este momento. Revisa que la API y la base de datos estén activas.';
+      default:
+        return contexto === 'login'
+          ? 'No pudimos iniciar sesión. Verifica tus datos e intenta nuevamente.'
+          : 'No se pudo completar el registro. Intenta nuevamente.';
+    }
+  }
+
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irACarta(): void {
     this.router.navigate(['/cliente/carta']);
   }
@@ -178,6 +213,9 @@ export class LoginClienteComponent implements OnInit {
     this.errorMessage.set('');
   }
 
+  // ============================================
+  // INPUT TELÉFONO
+  // ============================================
   onTelefonoInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const limpio = input.value.replace(/\D/g, '').slice(0, 9);

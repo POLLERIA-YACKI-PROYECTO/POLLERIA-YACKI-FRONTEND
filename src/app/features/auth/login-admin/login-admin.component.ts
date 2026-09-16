@@ -1,8 +1,9 @@
 // src/app/features/auth/login-admin/login-admin.component.ts
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -12,10 +13,13 @@ import { AuthService } from '../../../core/services/auth.service';
   templateUrl: './login-admin.component.html',
   styleUrls: ['./login-admin.component.scss']
 })
-export class LoginAdminComponent implements OnInit {
+export class LoginAdminComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  // ✅ Subject para limpiar en destroy
+  private destroy$ = new Subject<void>();
 
   loginForm!: FormGroup;
   errorMessage = signal<string>('');
@@ -31,21 +35,41 @@ export class LoginAdminComponent implements OnInit {
     });
   }
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    const usuario = this.authService.getUsuarioActual();
-    if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
-      this.router.navigate(['/admin/dashboard-admin']);
+    // ✅ Si ya está autenticado como admin/cajero, redirigir
+    if (this.authService.isAuthenticated()) {
+      const usuario = this.authService.getUsuarioActual();
+      if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
+        console.log('✅ Ya autenticado → /admin/dashboard-admin');
+        this.router.navigate(['/admin/dashboard-admin']);
+      }
     }
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ============================================
+  // MANEJO DE IMAGEN
+  // ============================================
   handleImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500"%3E%3Crect width="500" height="500" rx="250" fill="%235e412f"/%3E%3Ctext x="250" y="320" font-size="180" text-anchor="middle" fill="%23e9bd6e" font-family="Arial" font-weight="bold"%3E%3C/text%3E%3C/svg%3E';
   }
 
+  // ============================================
+  // SUBMIT LOGIN
+  // ============================================
   onSubmit(): void {
+    if (this.isLoading()) return;  // ✅ Guarda contra doble submit
+
     if (this.loginForm.invalid) {
-      this.errorMessage.set('Por favor ingrese un DNI valido (8 digitos)');
+      this.errorMessage.set('Por favor ingrese un DNI válido (8 dígitos)');
       return;
     }
 
@@ -54,59 +78,57 @@ export class LoginAdminComponent implements OnInit {
 
     const dni = this.loginForm.get('dni')?.value;
 
-    this.authService.loginAdmin(dni).subscribe({
-      next: (usuario) => {
-        this.isLoading.set(false);
-        this.nombreUsuario.set(usuario.nombre);
-        this.mostrarBienvenida.set(true);
+    this.authService.loginAdmin(dni)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: any) => {
+          this.isLoading.set(false);
+          // ✅ Extraer nombre del response (puede venir en response.nombre o response.usuario.nombre)
+          const nombre = response?.nombre || response?.usuario?.nombre || 'Admin';
+          this.nombreUsuario.set(nombre);
+          this.mostrarBienvenida.set(true);
 
-        setTimeout(() => {
-          this.router.navigate(['/admin/dashboard-admin']);
-        }, 1500);
-      },
-      error: (error) => {
-        this.isLoading.set(false);
-        this.errorMessage.set(this.obtenerMensajeError(error));
-      }
-    });
+          setTimeout(() => {
+            this.router.navigate(['/admin/dashboard-admin']);
+          }, 1500);
+        },
+        error: (error) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(this.obtenerMensajeError(error));
+        }
+      });
   }
 
+  // ============================================
+  // MENSAJES DE ERROR
+  // ============================================
   private obtenerMensajeError(error: any): string {
-    // Si el backend manda un mensaje claro, usarlo
-    if (error?.error?.message) {
-      return error.error.message;
-    }
+    if (error?.error?.message) return error.error.message;
+    if (error?.error?.error) return error.error.error;
 
-    if (error?.error?.error) {
-      return error.error.error;
-    }
-
-    // Si el AuthService ya limpio el error
-    if (error?.message && typeof error.message === 'string' && !error.message.includes('Http failure')) {
+    if (error?.message &&
+        typeof error.message === 'string' &&
+        !error.message.includes('Http failure')) {
       return error.message;
     }
 
-    // Manejo por codigo de estado HTTP
     switch (error?.status) {
-      case 0:
-        return 'No se pudo conectar con el servidor';
-      case 400:
-        return 'DNI invalido o incorrecto';
-      case 401:
-        return 'DNI invalido o incorrecto';
-      case 403:
-        return 'Acceso denegado. Se requiere rol de administrador o cajero';
-      case 404:
-        return 'DNI invalido o incorrecto';
+      case 0: return 'No se pudo conectar con el servidor';
+      case 400: return 'DNI inválido o incorrecto';
+      case 401: return 'DNI inválido o incorrecto';
+      case 403: return 'Acceso denegado. Se requiere rol de administrador o cajero';
+      case 404: return 'DNI inválido o incorrecto';
+      case 429: return 'Demasiados intentos. Espera un momento antes de reintentar.';
       case 500:
       case 502:
-      case 503:
-        return 'Error del servidor, intente mas tarde';
-      default:
-        return 'DNI invalido o incorrecto';
+      case 503: return 'Error del servidor, intente más tarde';
+      default: return 'DNI inválido o incorrecto';
     }
   }
 
+  // ============================================
+  // NAVEGACIÓN
+  // ============================================
   irLoginMesero(): void {
     this.router.navigate(['/login-mesero']);
   }

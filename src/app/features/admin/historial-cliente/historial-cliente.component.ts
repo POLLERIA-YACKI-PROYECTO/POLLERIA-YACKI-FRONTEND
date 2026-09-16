@@ -15,6 +15,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '../../../../environments/environment';
 
 interface ClienteHistorial {
   id: number;
@@ -72,7 +73,9 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private apiUrl = 'http://localhost:3000/api/historial';
+
+  // ✅ Usar environment en vez de hardcodear la URL
+  private apiUrl = `${environment.apiUrl}/historial`;
 
   // ✅ Protección anti-saturación
   private destroy$ = new Subject<void>();
@@ -119,7 +122,23 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
     );
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ HistorialCliente: sin sesión → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
+    if (!this.authService.isAdmin()) {
+      console.warn('🛡️ HistorialCliente: no es admin → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     this.usuario.set(this.authService.getUsuarioActual());
     this.cargarTodo();
   }
@@ -164,6 +183,7 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
+          console.log('✅ Historial cliente cargado:', (data.clientes || []).length, 'clientes');
         },
         error: (err) => {
           console.error('Error historial:', err);
@@ -171,11 +191,15 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
           let mensaje = 'No se pudo cargar el historial de clientes';
           if (err?.status === 429) mensaje = 'Demasiadas peticiones. Espera un momento.';
           else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+          else if (err?.status === 403) mensaje = 'No tienes permisos para ver el historial.';
           else if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+          else if (err?.error?.error) mensaje = err.error.error;
 
           this.error.set(mensaje);
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
@@ -189,6 +213,8 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
   // VER DETALLE DE COMPRAS
   // ============================================
   verDetalleCompras(cliente: ClienteHistorial): void {
+    if (this.cargandoCompras()) return;  // ✅ Evita doble click
+
     this.clienteSeleccionado.set(cliente);
     this.mostrarModalDetalle.set(true);
     this.cargandoCompras.set(true);

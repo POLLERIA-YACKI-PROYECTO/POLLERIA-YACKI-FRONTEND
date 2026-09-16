@@ -1,15 +1,15 @@
-// src\app\core\guards\admin.guard.ts
+// src/app/core/guards/mesero.guard.ts
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const MeseroGuard = () => {
+export const MeseroGuard = () => {   // ⬅️ MeseroGuard
   const authService = inject(AuthService);
   const router = inject(Router);
 
   const usuario = authService.getUsuarioActual();
   const token = authService.getToken();
-  
+
   console.log('MeseroGuard - Usuario:', usuario);
   console.log('MeseroGuard - Token:', token);
 
@@ -23,7 +23,6 @@ export const MeseroGuard = () => {
     return true;
   }
 
-  // Si es admin, redirigir a su dashboard
   if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
     console.log('MeseroGuard - Usuario es admin, redirigiendo a dashboard-admin');
     return router.parseUrl('/admin/dashboard-admin');

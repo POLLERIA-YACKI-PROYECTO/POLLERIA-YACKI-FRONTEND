@@ -38,12 +38,25 @@ export class ComprasComponent implements OnInit, OnDestroy {
     precio: 0
   });
 
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
-    this.usuario.set(this.authService.getUsuarioActual());
-    if (this.usuario()?.rol !== 'admin') {
+    // ✅ Verificar autenticación primero
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🛡️ Compras: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
+
+    this.usuario.set(this.authService.getUsuarioActual());
+
+    if (this.usuario()?.rol !== 'admin') {
+      console.warn('🛡️ Compras: no es admin → /login-admin');
+      this.router.navigate(['/login-admin']);
+      return;
+    }
+
     this.cargarDatos();
   }
 
@@ -56,6 +69,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.temaOscuro.set(!this.temaOscuro());
   }
 
+  // ============================================
+  // CARGAR DATOS
+  // ============================================
   cargarDatos(): void {
     if (this.cargando() || this.yaCargado()) return;
 
@@ -70,11 +86,14 @@ export class ComprasComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
+          console.log('✅ Compras cargadas:', (compras || []).length);
         },
         error: (err) => {
           console.error('Error al cargar compras:', err);
           this.loading.set(false);
           this.cargando.set(false);
+          // ✅ Resetear yaCargado para permitir reintento
+          this.yaCargado.set(false);
         }
       });
   }
@@ -84,6 +103,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.cargarDatos();
   }
 
+  // ============================================
+  // FORMULARIO
+  // ============================================
   toggleFormulario(): void {
     this.mostrarFormulario.set(!this.mostrarFormulario());
     if (!this.mostrarFormulario()) {
@@ -105,14 +127,19 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.mostrarFormulario.set(true);
   }
 
+  // ============================================
+  // GUARDAR (con reset de editando SIEMPRE)
+  // ============================================
   guardarCompra(): void {
-    if (!this.nuevaCompra().proveedor || !this.nuevaCompra().producto || this.nuevaCompra().cantidad <= 0 || this.nuevaCompra().precio <= 0) {
+    const data = this.nuevaCompra();
+
+    if (!data.proveedor || !data.producto || data.cantidad <= 0 || data.precio <= 0) {
       alert('Por favor complete todos los campos correctamente');
       return;
     }
 
     if (this.editando()) {
-      this.compraService.actualizarCompra(this.compraEdit().id, this.nuevaCompra())
+      this.compraService.actualizarCompra(this.compraEdit().id, data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -122,11 +149,18 @@ export class ComprasComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al actualizar compra:', err);
-            alert('Error al actualizar compra');
+            // ✅ Mensaje específico por status
+            let mensaje = 'Error al actualizar compra';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar compras.';
+            else if (err?.status === 404) mensaje = 'La compra ya no existe.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     } else {
-      this.compraService.crearCompra(this.nuevaCompra())
+      this.compraService.crearCompra(data)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
@@ -136,12 +170,20 @@ export class ComprasComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al crear compra:', err);
-            alert('Error al crear compra');
+            let mensaje = 'Error al crear compra';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para crear compras.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     }
   }
 
+  // ============================================
+  // ELIMINAR
+  // ============================================
   eliminarCompra(id: number): void {
     if (confirm('¿Está seguro de eliminar esta compra?')) {
       this.compraService.eliminarCompra(id)
@@ -153,12 +195,21 @@ export class ComprasComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al eliminar compra:', err);
-            alert('Error al eliminar compra');
+            let mensaje = 'Error al eliminar compra';
+            if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar compras.';
+            else if (err?.status === 404) mensaje = 'La compra ya no existe.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            alert(`❌ ${mensaje}`);
           }
         });
     }
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   calcularTotal(cantidad: number, precio: number): number {
     return cantidad * precio;
   }

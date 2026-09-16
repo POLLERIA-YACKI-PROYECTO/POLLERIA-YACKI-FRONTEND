@@ -4,7 +4,8 @@ import {
   EventEmitter,
   inject,
   Input,
-  Output
+  Output,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItemCarrito } from '../../../../core/models/interfaces';
@@ -15,7 +16,8 @@ import { ProductoService } from '../../../../core/services/producto.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './carrito-lateral.component.html',
-  styleUrls: ['./carrito-lateral.component.scss']
+  styleUrls: ['./carrito-lateral.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CarritoLateralComponent {
   private productoService = inject(ProductoService);
@@ -31,17 +33,24 @@ export class CarritoLateralComponent {
   @Output() eliminar = new EventEmitter<number>();
   @Output() pagar = new EventEmitter<void>();
 
+  // ============================================
+  // GETTERS
+  // ============================================
   get tieneItems(): boolean {
-    return this.items.length > 0;
+    return Array.isArray(this.items) && this.items.length > 0;
   }
 
   get totalItems(): number {
+    if (!Array.isArray(this.items)) return 0;
     return this.items.reduce(
-      (suma, item) => suma + item.cantidad,
+      (suma, item) => suma + (Number(item.cantidad) || 0),
       0
     );
   }
 
+  // ============================================
+  // UTILIDADES
+  // ============================================
   obtenerPrecioNumerico(precio: number | string): number {
     const numero =
       typeof precio === 'string'
@@ -51,6 +60,21 @@ export class CarritoLateralComponent {
     return Number.isFinite(numero) ? numero : 0;
   }
 
+  formatearPrecio(precio: number | string): string {
+    return `S/ ${this.obtenerPrecioNumerico(precio).toFixed(2)}`;
+  }
+
+  formatearSubtotal(
+    precio: number | string,
+    cantidad: number
+  ): string {
+    const importe = this.obtenerPrecioNumerico(precio) * (Number(cantidad) || 0);
+    return `S/ ${importe.toFixed(2)}`;
+  }
+
+  // ============================================
+  // IMÁGENES
+  // ============================================
   getImagenUrl(imagen?: string | null): string {
     return this.productoService.getImagenUrl(imagen);
   }
@@ -66,15 +90,25 @@ export class CarritoLateralComponent {
     imagen.src = this.productoService.getImagenUrl('imagen.jpg');
   }
 
-  formatearPrecio(precio: number | string): string {
-    return `S/ ${this.obtenerPrecioNumerico(precio).toFixed(2)}`;
+  // ============================================
+  // ACCIONES
+  // ============================================
+  onCerrar(): void {
+    this.cerrar.emit();
   }
 
-  formatearSubtotal(
-    precio: number | string,
-    cantidad: number
-  ): string {
-    const importe = this.obtenerPrecioNumerico(precio) * cantidad;
-    return `S/ ${importe.toFixed(2)}`;
+  onVaciar(): void {
+    if (!this.tieneItems) return;
+    this.vaciar.emit();
+  }
+
+  onEliminar(index: number): void {
+    if (index < 0 || index >= this.items.length) return;
+    this.eliminar.emit(index);
+  }
+
+  onPagar(): void {
+    if (!this.tieneItems) return;
+    this.pagar.emit();
   }
 }
