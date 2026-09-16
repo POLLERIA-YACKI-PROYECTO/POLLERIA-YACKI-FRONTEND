@@ -49,6 +49,18 @@ export class CarritoLateralComponent {
   }
 
   // ============================================
+  // TRACK BY (optimización *ngFor)
+  // ============================================
+  /**
+   * Le dice a Angular cómo identificar cada item del *ngFor.
+   * Sin esto, Angular destruye y recrea todos los <article> al cambiar el carrito.
+   * Con esto, solo actualiza los que cambiaron.
+   */
+  trackByProductoId(index: number, item: ItemCarrito): any {
+    return item?.producto?.id ?? index;
+  }
+
+  // ============================================
   // UTILIDADES
   // ============================================
   obtenerPrecioNumerico(precio: number | string): number {
@@ -73,10 +85,22 @@ export class CarritoLateralComponent {
   }
 
   // ============================================
-  // IMÁGENES
+  // IMÁGENES CON CACHE BUSTING
   // ============================================
-  getImagenUrl(imagen?: string | null): string {
-    return this.productoService.getImagenUrl(imagen);
+  /**
+   * Genera la URL de la imagen del producto en el carrito.
+   *
+   * ✅ Cache busting: usa el `updated_at` del producto como versión.
+   * Si el admin cambia la imagen del producto, `updated_at` cambia,
+   * la URL cambia, y el navegador pide la imagen nueva.
+   */
+  getImagenUrl(item: ItemCarrito): string {
+    const producto: any = item?.producto;
+    const version = producto?.updated_at
+      ? new Date(producto.updated_at).getTime()
+      : undefined;
+
+    return this.productoService.getImagenUrl(producto?.imagen, version);
   }
 
   manejarErrorImagen(event: Event): void {

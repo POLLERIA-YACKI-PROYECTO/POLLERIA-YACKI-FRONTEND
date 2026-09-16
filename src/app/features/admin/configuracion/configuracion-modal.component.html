@@ -1,0 +1,542 @@
+<!-- src/app/features/admin/configuracion/configuracion-modal.component.html -->
+<div class="modal-overlay" [class.active]="visible" (click)="cerrarModal()"></div>
+
+<div class="modal-config" [class.active]="visible">
+  <!-- HEADER -->
+  <header class="modal-header">
+    <div class="modal-titulo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <div>
+        <h2>Configuración</h2>
+        <p class="subtitle">Datos generales, pagos y horarios</p>
+      </div>
+    </div>
+    <button class="btn-cerrar" (click)="cerrarModal()" [disabled]="guardando()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- TABS -->
+  <nav class="modal-tabs">
+    <button
+      class="tab"
+      [class.active]="tabActiva() === 'empresa'"
+      (click)="setTab('empresa')"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <path d="M3 21h18"/>
+        <path d="M5 21V7l8-4v18"/>
+        <path d="M19 21V11l-6-4"/>
+      </svg>
+      Empresa
+    </button>
+    <button
+      class="tab"
+      [class.active]="tabActiva() === 'pagos'"
+      (click)="setTab('pagos')"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <line x1="2" y1="10" x2="22" y2="10"/>
+      </svg>
+      Pagos
+    </button>
+    <button
+      class="tab"
+      [class.active]="tabActiva() === 'horarios'"
+      (click)="setTab('horarios')"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Horarios
+    </button>
+  </nav>
+
+  <!-- BODY -->
+  <div class="modal-body">
+    @if (cargando()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando configuración...</p>
+      </div>
+    } @else {
+      <!-- ============================================ -->
+      <!-- TAB EMPRESA                                  -->
+      <!-- ============================================ -->
+      @if (tabActiva() === 'empresa') {
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre de la empresa</label>
+            <input
+              type="text"
+              [ngModel]="form()['EMPRESA_NOMBRE']"
+              (ngModelChange)="updateField('EMPRESA_NOMBRE', $event)"
+              placeholder="Doña Yacki"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>RUC</label>
+            <input
+              type="text"
+              [ngModel]="form()['EMPRESA_RUC']"
+              (ngModelChange)="updateField('EMPRESA_RUC', $event)"
+              placeholder="12345678901"
+              maxlength="11"
+            >
+          </div>
+
+          <div class="form-group full">
+            <label>Dirección</label>
+            <input
+              type="text"
+              [ngModel]="form()['EMPRESA_DIRECCION']"
+              (ngModelChange)="updateField('EMPRESA_DIRECCION', $event)"
+              placeholder="Mz M2 Lt 33, Jardines de Chillón"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input
+              type="tel"
+              [ngModel]="form()['EMPRESA_TELEFONO']"
+              (ngModelChange)="updateField('EMPRESA_TELEFONO', $event)"
+              placeholder="902458936"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>IGV (%)</label>
+            <input
+              type="number"
+              [ngModel]="form()['IGV']"
+              (ngModelChange)="updateField('IGV', $event)"
+              min="0"
+              max="100"
+              step="0.1"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Símbolo de moneda</label>
+            <input
+              type="text"
+              [ngModel]="form()['MONEDA_SIMBOLO']"
+              (ngModelChange)="updateField('MONEDA_SIMBOLO', $event)"
+              placeholder="S/"
+              maxlength="5"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Instagram</label>
+            <input
+              type="text"
+              [ngModel]="form()['INSTAGRAM']"
+              (ngModelChange)="updateField('INSTAGRAM', $event)"
+              placeholder="@donayacki_oficial"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Facebook</label>
+            <input
+              type="text"
+              [ngModel]="form()['FACEBOOK']"
+              (ngModelChange)="updateField('FACEBOOK', $event)"
+              placeholder="@donayacki"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>TikTok</label>
+            <input
+              type="text"
+              [ngModel]="form()['TIKTOK']"
+              (ngModelChange)="updateField('TIKTOK', $event)"
+              placeholder="@donayacki"
+            >
+          </div>
+        </div>
+      }
+
+      <!-- ============================================ -->
+      <!-- TAB PAGOS                                    -->
+      <!-- ============================================ -->
+      @if (tabActiva() === 'pagos') {
+        <div class="pagos-grid">
+          <!-- YAPE -->
+          <div class="pago-card yape">
+            <div class="pago-header">
+              <span class="pago-badge yape">Yape</span>
+            </div>
+
+            <div class="pago-campos">
+              <div class="form-group">
+                <label>Número Yape</label>
+                <input
+                  type="tel"
+                  [ngModel]="form()['YAPE_NUMERO']"
+                  (ngModelChange)="updateField('YAPE_NUMERO', $event)"
+                  placeholder="902458936"
+                  maxlength="15"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>Titular</label>
+                <input
+                  type="text"
+                  [ngModel]="form()['YAPE_TITULAR']"
+                  (ngModelChange)="updateField('YAPE_TITULAR', $event)"
+                  placeholder="Yacki Perez"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>QR de Yape</label>
+
+                @if (previewYapeQr()) {
+                  <div class="qr-preview">
+                    <img [src]="previewYapeQr()" alt="QR Yape">
+                    <div class="qr-actions">
+                      <button
+                        type="button"
+                        class="btn-cambiar"
+                        (click)="inputYapeQr?.click()"
+                        [disabled]="subiendoImagen() === 'YAPE_QR'"
+                      >
+                        Cambiar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-eliminar"
+                        (click)="onEliminarImagen('YAPE_QR')"
+                        [disabled]="subiendoImagen() === 'YAPE_QR'"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-subir-qr"
+                    (click)="inputYapeQr?.click()"
+                    [disabled]="subiendoImagen() === 'YAPE_QR'"
+                  >
+                    @if (subiendoImagen() === 'YAPE_QR') {
+                      <span>Subiendo...</span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span>Subir QR de Yape</span>
+                    }
+                  </button>
+                }
+
+                <input
+                  #inputYapeQr
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  (change)="onSubirImagen('YAPE_QR', $event)"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- PLIN -->
+          <div class="pago-card plin">
+            <div class="pago-header">
+              <span class="pago-badge plin">Plin</span>
+            </div>
+
+            <div class="pago-campos">
+              <div class="form-group">
+                <label>Número Plin</label>
+                <input
+                  type="tel"
+                  [ngModel]="form()['PLIN_NUMERO']"
+                  (ngModelChange)="updateField('PLIN_NUMERO', $event)"
+                  placeholder="902458936"
+                  maxlength="15"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>Titular</label>
+                <input
+                  type="text"
+                  [ngModel]="form()['PLIN_TITULAR']"
+                  (ngModelChange)="updateField('PLIN_TITULAR', $event)"
+                  placeholder="Yacki Perez"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>QR de Plin</label>
+
+                @if (previewPlinQr()) {
+                  <div class="qr-preview">
+                    <img [src]="previewPlinQr()" alt="QR Plin">
+                    <div class="qr-actions">
+                      <button
+                        type="button"
+                        class="btn-cambiar"
+                        (click)="inputPlinQr?.click()"
+                        [disabled]="subiendoImagen() === 'PLIN_QR'"
+                      >
+                        Cambiar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-eliminar"
+                        (click)="onEliminarImagen('PLIN_QR')"
+                        [disabled]="subiendoImagen() === 'PLIN_QR'"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-subir-qr"
+                    (click)="inputPlinQr?.click()"
+                    [disabled]="subiendoImagen() === 'PLIN_QR'"
+                  >
+                    @if (subiendoImagen() === 'PLIN_QR') {
+                      <span>Subiendo...</span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span>Subir QR de Plin</span>
+                    }
+                  </button>
+                }
+
+                <input
+                  #inputPlinQr
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  (change)="onSubirImagen('PLIN_QR', $event)"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- IZIPAY -->
+          <div class="pago-card izipay">
+            <div class="pago-header">
+              <span class="pago-badge izipay">Izipay</span>
+            </div>
+
+            <div class="pago-campos">
+              <div class="form-group">
+                <label>Nombre del comercio</label>
+                <input
+                  type="text"
+                  [ngModel]="form()['IZIPAY_COMERCIO']"
+                  (ngModelChange)="updateField('IZIPAY_COMERCIO', $event)"
+                  placeholder="Doña Yacki"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>Número de tarjeta / POS</label>
+                <input
+                  type="text"
+                  [ngModel]="form()['TARJETA_IZIPAY']"
+                  (ngModelChange)="updateField('TARJETA_IZIPAY', $event)"
+                  placeholder="**** **** **** 1234"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>QR de Izipay</label>
+
+                @if (previewIzipayQr()) {
+                  <div class="qr-preview">
+                    <img [src]="previewIzipayQr()" alt="QR Izipay">
+                    <div class="qr-actions">
+                      <button
+                        type="button"
+                        class="btn-cambiar"
+                        (click)="inputIzipayQr?.click()"
+                        [disabled]="subiendoImagen() === 'IZIPAY_QR'"
+                      >
+                        Cambiar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-eliminar"
+                        (click)="onEliminarImagen('IZIPAY_QR')"
+                        [disabled]="subiendoImagen() === 'IZIPAY_QR'"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-subir-qr"
+                    (click)="inputIzipayQr?.click()"
+                    [disabled]="subiendoImagen() === 'IZIPAY_QR'"
+                  >
+                    @if (subiendoImagen() === 'IZIPAY_QR') {
+                      <span>Subiendo...</span>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span>Subir QR de Izipay</span>
+                    }
+                  </button>
+                }
+
+                <input
+                  #inputIzipayQr
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  (change)="onSubirImagen('IZIPAY_QR', $event)"
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- EFECTIVO -->
+          <div class="pago-card efectivo">
+            <div class="pago-header">
+              <span class="pago-badge efectivo">Efectivo</span>
+            </div>
+
+            <div class="pago-campos">
+              <div class="form-group full">
+                <label>Mensaje para pagos en efectivo</label>
+                <textarea
+                  rows="3"
+                  [ngModel]="form()['EFECTIVO_MENSAJE']"
+                  (ngModelChange)="updateField('EFECTIVO_MENSAJE', $event)"
+                  placeholder="Paga en caja y el cajero confirmará tu pedido"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ============================================ -->
+      <!-- TAB HORARIOS                                 -->
+      <!-- ============================================ -->
+      @if (tabActiva() === 'horarios') {
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Horario de apertura</label>
+            <input
+              type="time"
+              [ngModel]="form()['HORARIO_APERTURA']"
+              (ngModelChange)="updateField('HORARIO_APERTURA', $event)"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Horario de cierre</label>
+            <input
+              type="time"
+              [ngModel]="form()['HORARIO_CIERRE']"
+              (ngModelChange)="updateField('HORARIO_CIERRE', $event)"
+            >
+          </div>
+
+          <div class="form-group full">
+            <label>Días laborales</label>
+            <div class="dias-grid">
+              @for (dia of diasSemana; track dia) {
+                <button
+                  type="button"
+                  class="dia-btn"
+                  [class.active]="tieneDia(dia)"
+                  (click)="toggleDia(dia)"
+                >
+                  {{ dia }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono de delivery</label>
+            <input
+              type="tel"
+              [ngModel]="form()['DELIVERY_TELEFONO']"
+              (ngModelChange)="updateField('DELIVERY_TELEFONO', $event)"
+              placeholder="902458936"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Costo de delivery (S/)</label>
+            <input
+              type="number"
+              [ngModel]="form()['DELIVERY_COSTO']"
+              (ngModelChange)="updateField('DELIVERY_COSTO', $event)"
+              min="0"
+              step="0.5"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Tiempo estimado de preparación (min)</label>
+            <input
+              type="number"
+              [ngModel]="form()['TIEMPO_ESTIMADO_PREPARACION']"
+              (ngModelChange)="updateField('TIEMPO_ESTIMADO_PREPARACION', $event)"
+              min="5"
+              max="120"
+            >
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="modal-footer">
+    <button class="btn-cancelar" (click)="cerrarModal()" [disabled]="guardando()">
+      Cancelar
+    </button>
+    <button class="btn-guardar" (click)="guardar()" [disabled]="guardando() || cargando()">
+      @if (guardando()) {
+        <span>Guardando...</span>
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <span>Guardar cambios</span>
+      }
+    </button>
+  </footer>
+</div>

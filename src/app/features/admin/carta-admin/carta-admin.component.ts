@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { ProductoService } from '../../../core/services/producto.service';
 import { CategoriaService } from '../../../core/services/categoria.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notificacion.service';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
 
@@ -27,12 +28,10 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private categoriaService = inject(CategoriaService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
 
-  // ✅ Subject para cancelar suscripciones
   private destroy$ = new Subject<void>();
-
-  // ✅ Flags para evitar cargas duplicadas
   private cargando = signal(false);
   private yaCargado = signal(false);
   private categoriasCargadas = signal(false);
@@ -60,6 +59,9 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
 
   imagenPreview = signal<string | null>(null);
   imagenFile = signal<File | null>(null);
+
+  // ✅ Cache buster para las imágenes (se actualiza tras cada operación CRUD)
+  cacheBuster = signal<number>(Date.now());
 
   nuevoProducto = signal({
     categoria_id: 0,
@@ -92,31 +94,33 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR DATOS (CATEGORÍAS SOLO UNA VEZ)
+  // CACHE BUSTING
+  // ============================================
+  /**
+   * Fuerza la recarga de TODAS las imágenes incrementando el cacheBuster.
+   * Se llama después de cada operación CRUD exitosa.
+   */
+  private actualizarCacheBuster(): void {
+    this.cacheBuster.set(Date.now());
+  }
+
+  // ============================================
+  // CARGAR DATOS
   // ============================================
   cargarDatos(): void {
-    if (this.cargando() || this.yaCargado()) {
-      console.log('⚠️ Carta admin ya cargada o cargando, evitando duplicado');
-      return;
-    }
+    if (this.cargando() || this.yaCargado()) return;
 
     this.cargando.set(true);
     this.loading.set(true);
 
-    // ✅ Si las categorías ya están cargadas, solo pedir productos
     if (this.categoriasCargadas() && this.categorias().length > 0) {
       this.soloCargarProductos();
       return;
     }
 
-    // ✅ Primera carga: categorías + productos
     forkJoin({
-      categorias: this.categoriaService
-        .obtenerCategorias()
-        .pipe(catchError(() => of([]))),
-      productos: this.productoService
-        .obtenerProductos()
-        .pipe(catchError(() => of([]))),
+      categorias: this.categoriaService.obtenerCategorias().pipe(catchError(() => of([]))),
+      productos: this.productoService.obtenerProductos().pipe(catchError(() => of([]))),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -127,67 +131,54 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
           this.productosFiltrados.set(productos || []);
 
           if (categorias?.length > 0 && this.nuevoProducto().categoria_id === 0) {
-            this.nuevoProducto.update((p) => ({
-              ...p,
-              categoria_id: categorias[0].id,
-            }));
+            this.nuevoProducto.update((p) => ({ ...p, categoria_id: categorias[0].id }));
           }
+
+          // ✅ Actualizar cache buster al cargar datos frescos
+          this.actualizarCacheBuster();
 
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Carta admin cargada correctamente');
         },
-        error: (err) => {
-          console.error('Error al cargar datos:', err);
+        error: () => {
+          this.notificationService.error('No se pudieron cargar los productos.', 'Error');
           this.loading.set(false);
           this.cargando.set(false);
         },
       });
   }
 
-  // ✅ Solo productos (sin tocar categorías)
   private soloCargarProductos(): void {
-    this.productoService
-      .obtenerProductos(true)  // forceRefresh = true para traer datos frescos
-      .pipe(
-        catchError(() => of([])),
-        takeUntil(this.destroy$)
-      )
+    this.productoService.obtenerProductos(true)
+      .pipe(catchError(() => of([])), takeUntil(this.destroy$))
       .subscribe({
         next: (productos) => {
           this.productos.set(productos || []);
           this.productosFiltrados.set(productos || []);
+
+          // ✅ Actualizar cache buster para forzar recarga de imágenes
+          this.actualizarCacheBuster();
+
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Productos recargados (categorías cacheadas)');
         },
-        error: (err) => {
-          console.error('Error al recargar productos:', err);
+        error: () => {
           this.loading.set(false);
           this.cargando.set(false);
         },
       });
   }
 
-  // ✅ RECARGAR (solo cuando se solicita explícitamente)
   recargar(): void {
-    // Limpiar caché de productos (categorías se mantienen)
-    this.productoService.limpiarCache();
-    this.yaCargado.set(false);
-    this.cargarDatos();
-  }
-
-  // ✅ RECARGAR SOLO PRODUCTOS (para operaciones CRUD)
-  private recargarProductos(): void {
     this.productoService.limpiarCache();
     this.yaCargado.set(false);
     this.cargarDatos();
   }
 
   // ============================================
-  // BÚSQUEDA Y FILTROS
+  // BÚSQUEDA
   // ============================================
   filtrarProductos(): void {
     const termino = this.terminoBusqueda().toLowerCase().trim();
@@ -198,18 +189,12 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
     }
 
     const filtrados = this.productos().filter((producto) => {
-      const nombreMatch =
-        producto.nombre?.toLowerCase().includes(termino) || false;
-      const categoria = this.categorias().find(
-        (c) => c.id === producto.categoria_id
-      );
-      const categoriaMatch =
-        categoria?.nombre?.toLowerCase().includes(termino) || false;
+      const nombreMatch = producto.nombre?.toLowerCase().includes(termino) || false;
+      const categoria = this.categorias().find((c) => c.id === producto.categoria_id);
+      const categoriaMatch = categoria?.nombre?.toLowerCase().includes(termino) || false;
 
       let precioMatch = false;
-      const precioNum = parseFloat(
-        termino.replace('s/', '').replace('s', '').trim()
-      );
+      const precioNum = parseFloat(termino.replace('s/', '').replace('s', '').trim());
       if (!isNaN(precioNum)) {
         precioMatch =
           producto.precio === precioNum ||
@@ -224,9 +209,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
           ? producto.agotado === false
           : false;
 
-      return (
-        nombreMatch || categoriaMatch || precioMatch || idMatch || estadoMatch
-      );
+      return nombreMatch || categoriaMatch || precioMatch || idMatch || estadoMatch;
     });
 
     this.productosFiltrados.set(filtrados);
@@ -246,12 +229,12 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       const file = input.files[0];
 
       if (!file.type.startsWith('image/')) {
-        alert('Por favor, selecciona una imagen válida');
+        this.notificationService.error('El archivo debe ser una imagen.', 'Formato inválido');
         return;
       }
 
       if (file.size > 20 * 1024 * 1024) {
-        alert('La imagen no debe superar los 20 MB');
+        this.notificationService.error('La imagen no debe superar los 20 MB.', 'Archivo muy grande');
         return;
       }
 
@@ -265,14 +248,26 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  getImagenUrl(imagen: string | null | undefined): string {
-    return this.productoService.getImagenUrl(imagen);
+  /**
+   * Genera la URL de la imagen usando el cacheBuster actual.
+   * Se le puede pasar opcionalmente un producto para usar su `updated_at`
+   * como versión específica.
+   */
+  getImagenUrl(imagen: string | null | undefined, producto?: any): string {
+    // Si tenemos el producto y su updated_at, usarlo como versión
+    const versionEspecifica = producto?.updated_at
+      ? new Date(producto.updated_at).getTime()
+      : undefined;
+
+    // Si no, usar el cacheBuster global (que cambia tras cada operación)
+    const version = versionEspecifica ?? this.cacheBuster();
+
+    return this.productoService.getImagenUrl(imagen, version);
   }
 
   manejarErrorImagen(event: Event): void {
     const elemento = event.target as HTMLImageElement;
-    const imagenPredeterminada =
-      this.productoService.getImagenUrl('imagen.jpg');
+    const imagenPredeterminada = this.productoService.getImagenUrl('imagen.jpg');
 
     if (
       elemento.src === imagenPredeterminada ||
@@ -290,9 +285,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
     this.imagenFile.set(null);
 
     if (this.editando()) {
-      this.imagenPreview.set(
-        this.getImagenUrl(this.productoEdit()?.imagen || null)
-      );
+      this.imagenPreview.set(this.getImagenUrl(this.productoEdit()?.imagen || null));
     } else {
       this.imagenPreview.set(null);
     }
@@ -328,13 +321,15 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          alert('Imagen por defecto restaurada correctamente');
+          this.notificationService.success(
+            `Imagen de "${producto.nombre}" restaurada.`,
+            'Imagen restaurada'
+          );
           this.cerrarModalRestaurar();
           this.recargar();
         },
-        error: (err) => {
-          console.error('Error al restaurar imagen:', err);
-          alert('Error al restaurar imagen');
+        error: () => {
+          this.notificationService.error('No se pudo restaurar la imagen.', 'Error');
           this.cerrarModalRestaurar();
         },
       });
@@ -343,52 +338,46 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   restaurarImagenDefault(): void {
     if (!this.productoEdit()) return;
 
-    if (confirm('¿Restaurar la imagen por defecto para este producto?')) {
-      this.productoService
-        .restaurarImagenDefault(this.productoEdit().id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            alert('Imagen por defecto restaurada');
-            this.imagenPreview.set(null);
-            this.imagenFile.set(null);
-            this.nuevoProducto.update((p) => ({ ...p, imagen: 'imagen.jpg' }));
-            this.recargar();
-          },
-          error: (err) => {
-            console.error('Error al restaurar imagen:', err);
-            alert('Error al restaurar imagen');
-          },
-        });
-    }
+    this.productoService
+      .restaurarImagenDefault(this.productoEdit().id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.notificationService.success('Imagen restaurada correctamente.', 'Imagen restaurada');
+          this.imagenPreview.set(null);
+          this.imagenFile.set(null);
+          this.nuevoProducto.update((p) => ({ ...p, imagen: 'imagen.jpg' }));
+          this.recargar();
+        },
+        error: () => {
+          this.notificationService.error('No se pudo restaurar la imagen.', 'Error');
+        },
+      });
   }
 
   eliminarImagen(event: Event): void {
     event.stopPropagation();
     if (!this.productoEdit()) return;
 
-    if (confirm('¿Eliminar esta imagen y restaurar la imagen por defecto?')) {
-      this.productoService
-        .eliminarImagen(this.productoEdit().id)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.imagenPreview.set(null);
-            this.imagenFile.set(null);
-            this.nuevoProducto.update((p) => ({ ...p, imagen: 'imagen.jpg' }));
-            alert('Imagen eliminada, restaurada a la imagen por defecto');
-            this.recargar();
-          },
-          error: (err) => {
-            console.error('Error al eliminar imagen:', err);
-            alert('Error al eliminar imagen');
-          },
-        });
-    }
+    this.productoService
+      .eliminarImagen(this.productoEdit().id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.imagenPreview.set(null);
+          this.imagenFile.set(null);
+          this.nuevoProducto.update((p) => ({ ...p, imagen: 'imagen.jpg' }));
+          this.notificationService.success('Imagen eliminada.', 'Imagen eliminada');
+          this.recargar();
+        },
+        error: () => {
+          this.notificationService.error('No se pudo eliminar la imagen.', 'Error');
+        },
+      });
   }
 
   // ============================================
-  // CRUD DE PRODUCTOS
+  // CRUD
   // ============================================
   toggleFormulario(): void {
     this.mostrarFormulario.set(!this.mostrarFormulario());
@@ -420,7 +409,8 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       imagen: producto.imagen || null,
     });
     if (producto.imagen && producto.imagen !== 'imagen.jpg') {
-      this.imagenPreview.set(this.getImagenUrl(producto.imagen));
+      // ✅ Pasar el producto para que use su updated_at como versión
+      this.imagenPreview.set(this.getImagenUrl(producto.imagen, producto));
     } else {
       this.imagenPreview.set(null);
     }
@@ -434,18 +424,19 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   }
 
   guardarProducto(): void {
-    if (!this.nuevoProducto().nombre || this.nuevoProducto().precio <= 0) {
-      alert('Por favor complete todos los campos correctamente');
+    const data = this.nuevoProducto();
+
+    if (!data.nombre || data.precio <= 0) {
+      this.notificationService.warning('Completa el nombre y el precio.', 'Campos incompletos');
       return;
     }
 
-    if (!this.nuevoProducto().categoria_id) {
-      alert('Por favor seleccione una categoría');
+    if (!data.categoria_id) {
+      this.notificationService.warning('Selecciona una categoría.', 'Categoría requerida');
       return;
     }
 
     const formData = new FormData();
-    const data = this.nuevoProducto();
     formData.append('nombre', data.nombre);
     formData.append('precio', data.precio.toString());
     formData.append('categoria_id', data.categoria_id.toString());
@@ -462,23 +453,20 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            alert('Producto actualizado correctamente');
+            this.notificationService.success(
+              `"${data.nombre}" se actualizó correctamente.`,
+              'Producto actualizado'
+            );
+            // ✅ Cache buster se actualiza al recargar
             this.recargar();
             this.toggleFormulario();
           },
           error: (err) => {
-            console.error('Error al actualizar producto:', err);
-            alert(
-              err?.error?.error ||
-                err?.error?.message ||
-                (err?.status === 401
-                  ? 'Tu sesión expiró. Cierra sesión e inicia nuevamente.'
-                  : err?.status === 403
-                  ? 'No tienes permisos para editar productos.'
-                  : `Error al actualizar producto (${
-                      err?.status || 'sin respuesta'
-                    })`)
-            );
+            let mensaje = 'No se pudo actualizar el producto.';
+            if (err?.status === 401) mensaje = 'Tu sesión expiró. Inicia sesión nuevamente.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para editar productos.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            this.notificationService.error(mensaje, 'Error al actualizar');
           },
         });
     } else {
@@ -487,13 +475,19 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: () => {
-            alert('Producto creado correctamente');
+            this.notificationService.success(
+              `"${data.nombre}" se creó correctamente.`,
+              'Producto creado'
+            );
             this.recargar();
             this.toggleFormulario();
           },
           error: (err) => {
-            console.error('Error al crear producto:', err);
-            alert('Error al crear producto');
+            let mensaje = 'No se pudo crear el producto.';
+            if (err?.status === 401) mensaje = 'Tu sesión expiró.';
+            else if (err?.status === 403) mensaje = 'No tienes permisos para crear productos.';
+            else if (err?.error?.error) mensaje = err.error.error;
+            this.notificationService.error(mensaje, 'Error al crear');
           },
         });
     }
@@ -506,13 +500,17 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           this.productos.update((list) =>
-            list.map((p) =>
-              p.id === producto.id ? { ...p, agotado: result.agotado } : p
-            )
+            list.map((p) => (p.id === producto.id ? { ...p, agotado: result.agotado } : p))
           );
           this.filtrarProductos();
+          this.notificationService.info(
+            `"${producto.nombre}" ahora está ${result.agotado ? 'agotado' : 'disponible'}.`,
+            'Estado actualizado'
+          );
         },
-        error: (err) => console.error('Error al cambiar estado:', err),
+        error: () => {
+          this.notificationService.error('No se pudo cambiar el estado.', 'Error');
+        },
       });
   }
 
@@ -538,13 +536,20 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          alert('Producto eliminado correctamente');
+          this.notificationService.success(
+            `"${producto.nombre}" se eliminó correctamente.`,
+            'Producto eliminado'
+          );
           this.cerrarModalEliminar();
           this.recargar();
         },
         error: (err) => {
-          console.error('Error al eliminar producto:', err);
-          alert('Error al eliminar producto');
+          let mensaje = 'No se pudo eliminar el producto.';
+          if (err?.status === 401) mensaje = 'Tu sesión expiró.';
+          else if (err?.status === 403) mensaje = 'No tienes permisos.';
+          else if (err?.status === 404) mensaje = 'El producto ya no existe.';
+          else if (err?.error?.error) mensaje = err.error.error;
+          this.notificationService.error(mensaje, 'Error al eliminar');
           this.cerrarModalEliminar();
         },
       });

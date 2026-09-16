@@ -99,22 +99,48 @@ export class ProductoService extends BaseApiService {
     this.limpiarCache(this.apiUrl);
   }
 
+  // ============================================
   // IMÁGENES
-  getImagenUrl(imagen: string | null | undefined): string {
+  // ============================================
+  /**
+   * Genera la URL de la imagen de un producto.
+   *
+   * @param imagen  Nombre del archivo (ej: "producto-xxx.jpg")
+   * @param version Opcional. Timestamp/versión para forzar recarga
+   *                cuando la imagen cambia en el servidor.
+   *                Se agrega como query param `?v=<version>`.
+   */
+  getImagenUrl(imagen: string | null | undefined, version?: number | string): string {
     const valor = String(imagen || '').trim();
+
+    let url: string;
+
     if (!valor || valor === 'imagen.jpg') {
-      return `${this.backendUrl}/uploads/productos/imagen.jpg`;
-    }
-    if (
+      url = `${this.backendUrl}/uploads/productos/imagen.jpg`;
+    } else if (
       valor.startsWith('http://') ||
       valor.startsWith('https://') ||
       valor.startsWith('data:') ||
       valor.startsWith('blob:')
-    ) return valor;
-    if (valor.startsWith('/uploads/')) return `${this.backendUrl}${valor}`;
-    if (valor.startsWith('uploads/')) return `${this.backendUrl}/${valor}`;
-    if (valor.startsWith('/assets/') || valor.startsWith('assets/')) return valor;
-    return `${this.backendUrl}/uploads/productos/${encodeURIComponent(valor)}`;
+    ) {
+      url = valor;
+    } else if (valor.startsWith('/uploads/')) {
+      url = `${this.backendUrl}${valor}`;
+    } else if (valor.startsWith('uploads/')) {
+      url = `${this.backendUrl}/${valor}`;
+    } else if (valor.startsWith('/assets/') || valor.startsWith('assets/')) {
+      url = valor;
+    } else {
+      url = `${this.backendUrl}/uploads/productos/${encodeURIComponent(valor)}`;
+    }
+
+    // ✅ Cache busting: agregar ?v=<version>
+    if (version !== undefined && version !== null && version !== '') {
+      const separador = url.includes('?') ? '&' : '?';
+      url = `${url}${separador}v=${encodeURIComponent(String(version))}`;
+    }
+
+    return url;
   }
 
   esImagenDefault(imagen: string | null | undefined): boolean {

@@ -212,8 +212,15 @@
 
         <div class="qr-container">
           <div class="qr-imagen">
-            @if (qrDataUrl()) {
-              <img [src]="qrDataUrl()" alt="QR de pago" width="220" height="220">
+            <!-- ✅ FIX: qrMostrar es getter, NO lleva paréntesis -->
+            @if (qrMostrar) {
+              <img
+                [src]="qrMostrar"
+                [alt]="'QR de ' + (esYape ? 'Yape' : 'Plin')"
+                width="220"
+                height="220"
+                (error)="manejarErrorQr($event)"
+              >
             }
           </div>
           <div class="qr-monto">
@@ -297,8 +304,15 @@
 
         <div class="qr-container">
           <div class="qr-imagen">
-            @if (qrDataUrl()) {
-              <img [src]="qrDataUrl()" alt="QR Izipay" width="220" height="220">
+            <!-- ✅ FIX: qrMostrar es getter, NO lleva paréntesis -->
+            @if (qrMostrar) {
+              <img
+                [src]="qrMostrar"
+                alt="QR Izipay"
+                width="220"
+                height="220"
+                (error)="manejarErrorQr($event)"
+              >
             }
           </div>
           <div class="qr-monto">

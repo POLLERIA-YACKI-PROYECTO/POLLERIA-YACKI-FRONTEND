@@ -321,13 +321,13 @@
               <td><span class="id-badge">#{{ producto.id }}</span></td>
               <td>
                 <div class="imagen-thumb-container">
-                  <img
-                    [src]="getImagenUrl(producto.imagen)"
-                    [alt]="producto.nombre"
-                    class="producto-thumb"
-                    loading="lazy"
-                    (error)="manejarErrorImagen($event)"
-                  >
+                 <img
+  [src]="getImagenUrl(producto.imagen, producto)"
+  [alt]="producto.nombre"
+  class="producto-thumb"
+  loading="lazy"
+  (error)="manejarErrorImagen($event)"
+>
                 </div>
               </td>
               <td><span class="producto-nombre">{{ producto.nombre }}</span></td>

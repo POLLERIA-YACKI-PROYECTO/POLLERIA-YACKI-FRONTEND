@@ -4,7 +4,8 @@ import {
   signal,
   inject,
   OnInit,
-  OnDestroy
+  OnDestroy,
+  ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet } from '@angular/router';
@@ -12,11 +13,18 @@ import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { HeaderComponent } from '../shared/components/header/header.component';
 import { SidebarComponent } from '../shared/components/sidebar/sidebar.component';
+import { ConfiguracionModalComponent } from './configuracion/configuracion-modal.component';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent, SidebarComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    HeaderComponent,
+    SidebarComponent,
+    ConfiguracionModalComponent
+  ],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss'],
   host: { 'class': 'admin-mode' }
@@ -27,14 +35,16 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  @ViewChild(ConfiguracionModalComponent) configModal!: ConfiguracionModalComponent;
+
   usuario = signal<any>(null);
   temaOscuro = signal<boolean>(false);
+  mostrarConfiguracion = signal<boolean>(false);
 
   // ============================================
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
       console.warn('🛡️ Admin: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
@@ -57,7 +67,6 @@ export class AdminComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ Cargar tema guardado
     const temaGuardado = localStorage.getItem('tema-oscuro');
     if (temaGuardado === 'true') {
       this.temaOscuro.set(true);
@@ -78,6 +87,21 @@ export class AdminComponent implements OnInit, OnDestroy {
     const nuevoTema = !this.temaOscuro();
     this.temaOscuro.set(nuevoTema);
     localStorage.setItem('tema-oscuro', String(nuevoTema));
+  }
+
+  // ============================================
+  // CONFIGURACIÓN
+  // ============================================
+  abrirConfiguracion(): void {
+    this.mostrarConfiguracion.set(true);
+    // Esperar al siguiente tick para que el modal exista
+    setTimeout(() => {
+      this.configModal?.onVisibleChange();
+    });
+  }
+
+  cerrarConfiguracion(): void {
+    this.mostrarConfiguracion.set(false);
   }
 
   // ============================================

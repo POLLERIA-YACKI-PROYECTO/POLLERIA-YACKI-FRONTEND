@@ -1,12 +1,25 @@
 <!-- src/app/features/admin/admin.component.html -->
-<div class="admin-container">
-  <app-header [usuario]="usuario()" (logout)="cerrarSesion()"></app-header>
-  
+<div class="admin-container" [class.tema-oscuro]="temaOscuro()">
+
+  <app-header
+    [usuario]="usuario()"
+    (logout)="cerrarSesion()"
+  ></app-header>
+
   <div class="admin-layout">
-    <app-sidebar></app-sidebar>
-    
+    <app-sidebar
+      (abrirConfiguracion)="abrirConfiguracion()"
+    ></app-sidebar>
+
     <main class="admin-content">
       <router-outlet></router-outlet>
     </main>
   </div>
+
+  <!-- ✅ Modal de configuración global -->
+  <app-configuracion-modal
+    [visible]="mostrarConfiguracion()"
+    (cerrar)="cerrarConfiguracion()"
+  ></app-configuracion-modal>
+
 </div>

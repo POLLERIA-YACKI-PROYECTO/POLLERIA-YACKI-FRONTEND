@@ -1,11 +1,11 @@
 // src/app/app.ts
-
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { NotificationsComponent } from './features/shared/components/notificacion/notificacion.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, NotificationsComponent],  // ✅ AGREGADO
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

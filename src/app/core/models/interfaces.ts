@@ -1,4 +1,8 @@
 // src/app/features/carta-cliente/interfaces.ts
+
+// ============================================
+// CATEGORÍA
+// ============================================
 export interface Categoria {
   id: number;
   nombre: string;
@@ -8,6 +12,9 @@ export interface Categoria {
   activo: boolean;
 }
 
+// ============================================
+// PRODUCTO
+// ============================================
 export interface Producto {
   id: number;
   categoria_id: number;
@@ -20,8 +27,22 @@ export interface Producto {
   agotado: boolean;
   destacado: boolean;
   categoria_nombre?: string;
+
+  // ✅ Campos opcionales que devuelve el backend
+  precio_compra?: number | string;
+  stock_minimo?: number;
+  unidad_medida?: string;
+  imagenUrl?: string;
+  esDefault?: boolean;
+
+  // ✅ NUEVOS: timestamps para cache busting de imágenes
+  created_at?: string;
+  updated_at?: string;
 }
 
+// ============================================
+// ITEM DEL CARRITO
+// ============================================
 export interface ItemCarrito {
   producto: Producto;
   cantidad: number;

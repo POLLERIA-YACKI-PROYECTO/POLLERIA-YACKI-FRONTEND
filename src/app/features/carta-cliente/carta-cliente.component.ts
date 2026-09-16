@@ -9,6 +9,7 @@ import { catchError, timeout, of, Subject, takeUntil } from 'rxjs';
 import { ProductoService } from '../../core/services/producto.service';
 import { PedidoClienteService } from '../../core/services/pedido-cliente.service';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notificacion.service'; // ✅ NUEVO
 
 // Interfaces
 import { Producto, ItemCarrito } from '../../core/models/interfaces';
@@ -37,16 +38,14 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   private productoService = inject(ProductoService);
   private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService); // ✅ NUEVO
   private router = inject(Router);
 
-  // ✅ Subject para limpiar suscripciones
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags anti-duplicado
   private cargando = signal(false);
   private yaCargado = signal(false);
 
-  // Signals
   loading = signal(true);
   error = signal<string | null>(null);
   productos = signal<Producto[]>([]);
@@ -62,7 +61,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
   clienteActual = signal<any>(this.authService.getUsuarioActual());
 
-  // Computed
   totalItems = computed(() =>
     this.carrito().reduce((sum, item) => sum + item.cantidad, 0)
   );
@@ -81,7 +79,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación
     if (!this.authService.isAuthenticated()) {
       console.warn('🛡️ CartaCliente: sin sesión → /login-cliente');
       this.router.navigate(['/login-cliente']);
@@ -100,6 +97,13 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ============================================
+  // TRACK BY
+  // ============================================
+  trackByProductoId(index: number, producto: any): any {
+    return producto?.id ?? index;
   }
 
   // ============================================
@@ -229,7 +233,10 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   // ============================================
   abrirModalPago(): void {
     if (this.carrito().length === 0) {
-      alert('El carrito está vacío. Agrega productos antes de continuar.');
+      this.notificationService.warning(
+        'El carrito está vacío. Agrega productos antes de continuar.',
+        'Carrito vacío'
+      );
       return;
     }
     this.pedidoCreadoId.set(null);
@@ -249,19 +256,25 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     const usuario = this.authService.getUsuarioActual();
 
     if (!token || !usuario) {
-      alert('Debes iniciar sesión como cliente para realizar un pedido.');
+      this.notificationService.error(
+        'Debes iniciar sesión como cliente para realizar un pedido.',
+        'Sesión requerida'
+      );
       this.router.navigate(['/login-cliente']);
       return;
     }
 
     if (!this.authService.isCliente()) {
-      alert('Esta sección es para clientes. Inicia sesión como cliente.');
+      this.notificationService.error(
+        'Esta sección es para clientes. Inicia sesión como cliente.',
+        'Acceso denegado'
+      );
       this.router.navigate(['/login-cliente']);
       return;
     }
 
     if (this.carrito().length === 0) {
-      alert('El carrito está vacío');
+      this.notificationService.warning('El carrito está vacío', 'Carrito vacío');
       return;
     }
 
@@ -269,15 +282,25 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
       (datosPago.tipoEntrega || 'delivery') === 'delivery' &&
       !datosPago.direccion?.trim()
     ) {
-      alert('Para delivery debes ingresar la dirección de entrega.');
+      this.notificationService.warning(
+        'Para delivery debes ingresar la dirección de entrega.',
+        'Dirección requerida'
+      );
       this.cargandoPedido.set(false);
       return;
     }
 
     this.cargandoPedido.set(true);
 
+    // ✅ Validar cliente_id
+    const clienteId = usuario?.id;
+    const clienteIdValido =
+      typeof clienteId === 'number' && Number.isFinite(clienteId) && clienteId > 0
+        ? clienteId
+        : null;
+
     const pedido = {
-      cliente_id: usuario.id,
+      cliente_id: clienteIdValido,
       cliente_nombre: datosPago.clienteNombre || usuario.nombre || 'Cliente',
       cliente_telefono: datosPago.telefono || usuario.telefono || '',
       cliente_direccion: datosPago.direccion || usuario.direccion || null,
@@ -313,9 +336,9 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
             }
           } else {
             this.cargandoPedido.set(false);
-            alert(
-              'Error al crear el pedido: ' +
-                (response?.detalle || response?.error || 'Error desconocido')
+            this.notificationService.error(
+              response?.detalle || response?.error || 'Error desconocido',
+              'Error al crear pedido'
             );
           }
         },
@@ -335,7 +358,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
             else mensaje = `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`;
           }
 
-          alert(mensaje);
+          this.notificationService.error(mensaje, 'Error al procesar pedido');
         }
       });
   }
@@ -357,7 +380,10 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
         error: (err) => {
           console.error('Error al subir comprobante:', err);
           this.cargandoPedido.set(false);
-          alert('Error al subir el comprobante. Intenta nuevamente.');
+          this.notificationService.error(
+            'Error al subir el comprobante. Intenta nuevamente.',
+            'Error'
+          );
         }
       });
   }
@@ -374,7 +400,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ÉXITO
+  // ✅ ÉXITO — Reemplaza el alert() feo
   // ============================================
   private mostrarExitoPendienteValidacion(): void {
     this.cargandoPedido.set(false);
@@ -382,7 +408,13 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.pedidoCreadoId.set(null);
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
-    alert('¡Pedido registrado! El cajero verificará tu pago y confirmará el pedido.');
+
+    // ✅ Notificación toast elegante
+    this.notificationService.success(
+      'El cajero verificará tu pago y confirmará el pedido.',
+      '¡Pedido registrado!'
+    );
+
     this.router.navigate(['/cliente/carta']);
   }
 
@@ -392,7 +424,13 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.pedidoCreadoId.set(null);
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
-    alert('¡Pedido realizado con éxito!');
+
+    // ✅ Notificación toast elegante
+    this.notificationService.success(
+      'Tu pedido ha sido procesado correctamente.',
+      '¡Pedido realizado!'
+    );
+
     this.router.navigate(['/cliente/carta']);
   }
 

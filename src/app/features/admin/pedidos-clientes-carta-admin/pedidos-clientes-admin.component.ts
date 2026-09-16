@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notificacion.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -18,6 +19,7 @@ import { environment } from '../../../../environments/environment';
 export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   private pedidoClienteService = inject(PedidoClienteService);
   private authService = inject(AuthService);
+  private notificationService = inject(NotificationService);
   private router = inject(Router);
 
   private destroy$ = new Subject<void>();
@@ -39,26 +41,25 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
 
   metodosPago = ['efectivo', 'tarjeta', 'yape', 'plin', 'transferencia'];
   estados = ['pendiente', 'preparando', 'listo', 'entregado', 'cancelado'];
-  tiposEntrega = [
-    { id: 'local', label: 'Local' },
-    { id: 'delivery', label: 'Motorizado' },
-    { id: 'paraLlevar', label: 'Para Llevar' }
-  ];
 
   mostrarModalVerificacion = signal<boolean>(false);
   pedidoSeleccionado = signal<any>(null);
   tipoEntregaSeleccionado = signal<string>('local');
   confirmando = signal<boolean>(false);
 
-  // ✅ Visor de imagen (sin abrir nueva pestaña)
+  // ✅ VISOR DE IMAGEN (dentro de la misma interfaz)
   mostrarVisorImagen = signal<boolean>(false);
   imagenVisorUrl = signal<string>('');
+  cargandoImagen = signal<boolean>(false);
+  errorImagen = signal<boolean>(false);
+
+  // ✅ Cache buster para forzar recarga de imágenes
+  private cacheBuster = signal<number>(Date.now());
 
   // ============================================
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
       console.warn('🛡️ PedidosClientesAdmin: sin sesión → /login-admin');
       this.router.navigate(['/login-admin']);
@@ -105,14 +106,19 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
           this.pedidosFiltrados.set([]);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
+          this.notificationService.error(
+            'No se pudieron cargar los pedidos.',
+            'Error'
+          );
         }
       });
   }
 
   recargar(): void {
     this.yaCargado.set(false);
+    // ✅ Actualizar cache buster para forzar recarga de imágenes
+    this.cacheBuster.set(Date.now());
     this.cargarPedidos();
   }
 
@@ -166,11 +172,11 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   // ============================================
   abrirVerificacion(pedido: any): void {
     if (pedido.pagado) {
-      alert('Este pedido ya está confirmado');
+      this.notificationService.info('Este pedido ya está confirmado.', 'Aviso');
       return;
     }
     if (pedido.estado === 'cancelado') {
-      alert('Este pedido está cancelado');
+      this.notificationService.info('Este pedido está cancelado.', 'Aviso');
       return;
     }
 
@@ -186,40 +192,63 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // VER COMPROBANTE EN MARCO (SIN ABRIR PESTAÑA)
+  // ✅ OBTENER URL DEL COMPROBANTE (con cache buster)
+  // ============================================
+  obtenerUrlComprobante(pedido: any): string {
+    if (!pedido?.comprobante_pago) return '';
+
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    const ruta = pedido.comprobante_pago.startsWith('/')
+      ? pedido.comprobante_pago
+      : `/${pedido.comprobante_pago}`;
+
+    // ✅ Cache buster: usa el ID del pedido + timestamp
+    return `${baseUrl}${ruta}?v=${this.cacheBuster()}`;
+  }
+
+  // ============================================
+  // ✅ VER COMPROBANTE EN VISOR INTERNO
   // ============================================
   verComprobante(pedido: any): void {
-    if (!pedido.comprobante_pago) {
-      alert('Este pedido no tiene comprobante adjunto');
+    if (!pedido?.comprobante_pago) {
+      this.notificationService.warning(
+        'Este pedido no tiene comprobante adjunto.',
+        'Sin comprobante'
+      );
       return;
     }
 
-    const baseUrl = environment.apiUrl.replace('/api', '');
-    const url = `${baseUrl}${pedido.comprobante_pago}`;
-
+    const url = this.obtenerUrlComprobante(pedido);
     this.imagenVisorUrl.set(url);
+    this.errorImagen.set(false);
+    this.cargandoImagen.set(true);
     this.mostrarVisorImagen.set(true);
   }
 
   cerrarVisor(): void {
     this.mostrarVisorImagen.set(false);
     this.imagenVisorUrl.set('');
+    this.cargandoImagen.set(false);
+    this.errorImagen.set(false);
   }
 
-  obtenerUrlComprobante(pedido: any): string {
-    if (!pedido.comprobante_pago) return '';
-    const baseUrl = environment.apiUrl.replace('/api', '');
-    return `${baseUrl}${pedido.comprobante_pago}`;
+  onImagenCargada(): void {
+    this.cargandoImagen.set(false);
+    this.errorImagen.set(false);
+  }
+
+  onErrorImagen(): void {
+    this.cargandoImagen.set(false);
+    this.errorImagen.set(true);
   }
 
   // ============================================
-  // CONFIRMAR PAGO (con reset de confirmando SIEMPRE)
+  // CONFIRMAR PAGO
   // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoSeleccionado();
     if (!pedido) return;
 
-    // ✅ Guarda contra doble submit
     if (this.confirmando()) return;
 
     const tipoEntrega = this.tipoEntregaSeleccionado();
@@ -241,49 +270,38 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.confirmando.set(false);
-          alert(
-            `✅ Pago confirmado\n\n` +
-            `Pedido #${pedido.id} confirmado como ${tipoLabel}.\n` +
-            `Venta #${response.venta_id} creada automáticamente.`
+          this.notificationService.success(
+            `Pedido #${pedido.id} confirmado como ${tipoLabel}. Venta #${response.venta_id} creada.`,
+            'Pago confirmado'
           );
           this.cerrarModal();
           this.recargar();
         },
         error: (err) => {
           console.error('Error al confirmar pago:', err);
-          // ✅ SIEMPRE resetear confirmando, incluso si es error de red
           this.confirmando.set(false);
 
           let mensaje = 'Error al confirmar el pago';
-          if (err?.status === 0) {
-            mensaje = 'No se pudo conectar con el servidor. Verifica tu conexión.';
-          } else if (err?.status === 401) {
-            mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
-          } else if (err?.status === 403) {
-            mensaje = 'No tienes permisos para confirmar pagos.';
-          } else if (err?.status === 409) {
-            mensaje = 'Este pedido ya fue confirmado por otro usuario.';
-          } else if (err?.status === 500) {
-            mensaje = 'Error interno del servidor. Intenta de nuevo.';
-          } else if (err?.error?.error) {
-            mensaje = err.error.error;
-          } else if (err?.error?.message) {
-            mensaje = err.error.message;
-          }
+          if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+          else if (err?.status === 401) mensaje = 'Sesión expirada.';
+          else if (err?.status === 403) mensaje = 'No tienes permisos.';
+          else if (err?.status === 409) mensaje = 'Este pedido ya fue confirmado.';
+          else if (err?.status === 500) mensaje = 'Error interno del servidor.';
+          else if (err?.error?.error) mensaje = err.error.error;
+          else if (err?.error?.message) mensaje = err.error.message;
 
-          alert(`❌ ${mensaje}`);
+          this.notificationService.error(mensaje, 'Error');
         }
       });
   }
 
   // ============================================
-  // RECHAZAR PAGO (con reset de confirmando SIEMPRE)
+  // RECHAZAR PAGO
   // ============================================
   rechazarPago(): void {
     const pedido = this.pedidoSeleccionado();
     if (!pedido) return;
 
-    // ✅ Guarda contra doble submit
     if (this.confirmando()) return;
 
     const motivo = prompt(
@@ -300,27 +318,21 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.confirmando.set(false);
-          alert('❌ Pedido rechazado');
+          this.notificationService.info('Pedido rechazado.', 'Rechazado');
           this.cerrarModal();
           this.recargar();
         },
         error: (err) => {
           console.error('Error al rechazar:', err);
-          // ✅ SIEMPRE resetear confirmando
           this.confirmando.set(false);
 
           let mensaje = 'Error al rechazar el pedido';
-          if (err?.status === 0) {
-            mensaje = 'No se pudo conectar con el servidor.';
-          } else if (err?.status === 401) {
-            mensaje = 'Sesión expirada.';
-          } else if (err?.status === 403) {
-            mensaje = 'No tienes permisos.';
-          } else if (err?.error?.error) {
-            mensaje = err.error.error;
-          }
+          if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
+          else if (err?.status === 401) mensaje = 'Sesión expirada.';
+          else if (err?.status === 403) mensaje = 'No tienes permisos.';
+          else if (err?.error?.error) mensaje = err.error.error;
 
-          alert(`❌ ${mensaje}`);
+          this.notificationService.error(mensaje, 'Error');
         }
       });
   }

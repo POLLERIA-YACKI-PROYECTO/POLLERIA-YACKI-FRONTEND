@@ -1,16 +1,15 @@
 <!-- src/app/features/shared/components/sidebar/sidebar.component.html -->
 <aside class="sidebar">
   <nav class="sidebar-menu">
-    <!-- ✅ CAMBIO: menuItems() → menuItems (sin paréntesis) -->
-    @for (item of menuItems; track item.route) {
+    @for (item of menuItems; track item.route + item.label) {
       <a
-        [routerLink]="item.route"
+        [routerLink]="item.action === 'config' ? null : item.route"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: false }"
         class="sidebar-item"
         [title]="item.label"
+        (click)="onItemClick(item, $event)"
       >
-        <!-- ✅ Usa iconSvg pre-computado, NO llama a un método -->
         <span class="sidebar-icon" [innerHTML]="item.iconSvg"></span>
         <span class="sidebar-label">{{ item.label }}</span>
       </a>

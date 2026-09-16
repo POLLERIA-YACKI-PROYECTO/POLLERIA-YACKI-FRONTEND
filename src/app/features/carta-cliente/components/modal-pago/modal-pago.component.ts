@@ -9,12 +9,15 @@ import {
   SimpleChanges,
   inject,
   OnDestroy,
+  OnInit,
   ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Subject, takeUntil, catchError, of } from 'rxjs';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ConfiguracionService } from '../../../../core/services/configuracion.service';
 
 type EstadoPago =
   | 'formulario'
@@ -36,9 +39,12 @@ type MetodoPago = 'efectivo' | 'yape' | 'plin' | 'transferencia' | 'tarjeta';
   styleUrls: ['./modal-pago.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ModalPagoComponent implements OnChanges, OnDestroy {
+export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
+  private configService = inject(ConfiguracionService); // ✅ NUEVO
+
+  private destroy$ = new Subject<void>();
 
   @Input() visible = false;
   @Input() total = 0;
@@ -69,10 +75,11 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
   comprobanteArchivo = signal<File | null>(null);
   comprobantePreview = signal<string>('');
 
-  // ✅ Cache de iconos SVG
-  private iconCache: Record<string, SafeHtml> = {};
+  // ✅ NUEVO: Configuración dinámica del backend
+  config = signal<Record<string, any>>({});
+  configCargada = signal<boolean>(false);
 
-  // ✅ Timer de reset del formulario
+  private iconCache: Record<string, SafeHtml> = {};
   private resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   metodosPago = [
@@ -82,6 +89,14 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
     { id: 'transferencia' as MetodoPago, label: 'Transferencia', sub: 'QR / POS', icon: 'transferencia' },
     { id: 'tarjeta' as MetodoPago, label: 'Tarjeta', sub: 'Izipay', icon: 'tarjeta' }
   ];
+
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
+  ngOnInit(): void {
+    // ✅ Cargar configuración del backend al iniciar
+    this.cargarConfiguracion();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['pedidoId'] && this.pedidoId) {
@@ -103,10 +118,46 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
       clearTimeout(this.resetTimer);
       this.resetTimer = null;
     }
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   // ============================================
-  // GETTERS
+  // ✅ CARGAR CONFIGURACIÓN DEL BACKEND
+  // ============================================
+  private cargarConfiguracion(): void {
+    this.configService
+      .obtenerPublicas()
+      .pipe(
+        catchError((err) => {
+          console.warn('[ModalPago] No se pudo cargar configuración:', err);
+          return of({ success: false, config: {} });
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (res: any) => {
+          const config = res?.config || {};
+          this.config.set(config);
+          this.configCargada.set(true);
+
+          // Actualizar números si vienen del backend
+          if (config.YAPE_NUMERO) this.numeroYape = String(config.YAPE_NUMERO);
+          if (config.PLIN_NUMERO) this.numeroPlin = String(config.PLIN_NUMERO);
+
+          console.log('✅ [ModalPago] Configuración cargada:', {
+            yapeNumero: config.YAPE_NUMERO,
+            plinNumero: config.PLIN_NUMERO,
+            tieneYapeQr: !!config.YAPE_QR,
+            tienePlinQr: !!config.PLIN_QR,
+            tieneIzipayQr: !!config.IZIPAY_QR
+          });
+        }
+      });
+  }
+
+  // ============================================
+  // GETTERS DE ESTADO
   // ============================================
   get mostrarFormulario(): boolean { return this.estadoPago() === 'formulario'; }
   get mostrarCreando(): boolean { return this.estadoPago() === 'creando'; }
@@ -121,6 +172,74 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
   get esPlin(): boolean { return this.metodoPago() === 'plin'; }
   get esTransferencia(): boolean { return this.metodoPago() === 'transferencia'; }
   get esEfectivo(): boolean { return this.metodoPago() === 'efectivo'; }
+
+  // ============================================
+  // ✅ GETTERS DE CONFIGURACIÓN (QR dinámico)
+  // ============================================
+  get titularYape(): string {
+    return this.config()['YAPE_TITULAR'] || '';
+  }
+
+  get titularPlin(): string {
+    return this.config()['PLIN_TITULAR'] || '';
+  }
+
+  get mensajeEfectivo(): string {
+    return this.config()['EFECTIVO_MENSAJE'] ||
+      'Paga en caja y el cajero confirmará tu pedido';
+  }
+
+  get comercioIzipay(): string {
+    return this.config()['IZIPAY_COMERCIO'] || '';
+  }
+
+  get tarjetaIzipay(): string {
+    return this.config()['TARJETA_IZIPAY'] || '';
+  }
+
+  // ✅ URL del QR de Yape subido por el admin
+  get yapeQrUrl(): string {
+    const valor = this.config()['YAPE_QR'];
+    if (!valor) return '';
+    return this.configService.getImagenConfigUrl(valor);
+  }
+
+  // ✅ URL del QR de Plin subido por el admin
+  get plinQrUrl(): string {
+    const valor = this.config()['PLIN_QR'];
+    if (!valor) return '';
+    return this.configService.getImagenConfigUrl(valor);
+  }
+
+  // ✅ URL del QR de Izipay subido por el admin
+  get izipayQrUrl(): string {
+    const valor = this.config()['IZIPAY_QR'];
+    if (!valor) return '';
+    return this.configService.getImagenConfigUrl(valor);
+  }
+
+  // ✅ Decide qué mostrar: QR subido o QR generado
+  get qrMostrar(): string {
+    const metodo = this.metodoPago();
+
+    if (metodo === 'yape' && this.yapeQrUrl) return this.yapeQrUrl;
+    if (metodo === 'plin' && this.plinQrUrl) return this.plinQrUrl;
+    if (metodo === 'transferencia' && this.izipayQrUrl) return this.izipayQrUrl;
+
+    // Fallback: el QR generado por SVG
+    return this.qrDataUrl();
+  }
+
+  // ✅ ¿El método actual tiene QR subido?
+  get tieneQrSubido(): boolean {
+    const metodo = this.metodoPago();
+
+    if (metodo === 'yape') return !!this.yapeQrUrl;
+    if (metodo === 'plin') return !!this.plinQrUrl;
+    if (metodo === 'transferencia') return !!this.izipayQrUrl;
+
+    return false;
+  }
 
   // ============================================
   // RESET
@@ -191,14 +310,23 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
 
       case 'yape':
       case 'plin':
-        this.generarQRYapePlin();
-        this.estadoPago.set('qr_yape_plin');
+        // ✅ Si hay QR subido, usarlo; si no, generar uno
+        if (this.tieneQrSubido) {
+          this.estadoPago.set('qr_yape_plin');
+        } else {
+          this.generarQRYapePlin();
+          this.estadoPago.set('qr_yape_plin');
+        }
         break;
 
       case 'transferencia':
         if (this.tipoTransferencia() === 'qr') {
-          this.generarQRIzipay();
-          this.estadoPago.set('qr_izipay');
+          if (this.izipayQrUrl) {
+            this.estadoPago.set('qr_izipay');
+          } else {
+            this.generarQRIzipay();
+            this.estadoPago.set('qr_izipay');
+          }
         } else {
           this.estadoPago.set('maquina_izipay');
         }
@@ -214,7 +342,7 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
   }
 
   // ============================================
-  // GENERAR QR
+  // GENERAR QR (fallback si no hay QR subido)
   // ============================================
   private generarQRYapePlin(): void {
     const metodo = this.metodoPago();
@@ -303,6 +431,20 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
       hash |= 0;
     }
     return Math.abs(hash);
+  }
+
+  // ============================================
+  // ✅ MANEJO DE ERROR DE QR
+  // ============================================
+  manejarErrorQr(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img.dataset['fallbackAplicado'] === 'true') return;
+    img.dataset['fallbackAplicado'] = 'true';
+    // Si falla el QR subido, usar el generado por SVG
+    const generado = this.qrDataUrl();
+    if (generado) {
+      img.src = generado;
+    }
   }
 
   // ============================================
@@ -398,7 +540,7 @@ export class ModalPagoComponent implements OnChanges, OnDestroy {
   }
 
   // ============================================
-  // SVG DE ICONOS (con cache)
+  // SVG DE ICONOS
   // ============================================
   getMetodoPagoSVG(metodo: string): SafeHtml {
     if (this.iconCache[metodo]) {

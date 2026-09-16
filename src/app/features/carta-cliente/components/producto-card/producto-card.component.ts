@@ -6,6 +6,7 @@ import {
   Input,
   Output,
   signal,
+  OnDestroy,
   ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -21,7 +22,7 @@ import { ProductoService } from '../../../../core/services/producto.service';
   // ✅ OnPush: solo re-renderiza si cambian inputs
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProductoCardComponent {
+export class ProductoCardComponent implements OnDestroy {
   private productoService = inject(ProductoService);
 
   @Input({ required: true }) producto!: Producto;
@@ -32,9 +33,24 @@ export class ProductoCardComponent {
   // ✅ Timer para limpiar el estado "agregando" si el componente se destruye
   private resetTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // ============================================
+  // IMAGEN CON CACHE BUSTING
+  // ============================================
+  /**
+   * Genera la URL de la imagen del producto.
+   *
+   * ✅ Cache busting: usa el `updated_at` del producto como versión.
+   * Cada vez que el admin cambia la imagen (o cualquier dato del producto),
+   * `updated_at` cambia, la URL cambia, y el navegador pide la imagen nueva.
+   */
   get imagenUrl(): string {
+    const version = this.producto?.updated_at
+      ? new Date(this.producto.updated_at).getTime()
+      : undefined;
+
     return this.productoService.getImagenUrl(
-      this.producto?.imagen
+      this.producto?.imagen,
+      version
     );
   }
 
@@ -111,7 +127,7 @@ export class ProductoCardComponent {
   }
 
   // ============================================
-  // IMÁGENES
+  // MANEJO DE ERRORES DE IMAGEN
   // ============================================
   onImageError(event: Event): void {
     const imagen = event.target as HTMLImageElement;

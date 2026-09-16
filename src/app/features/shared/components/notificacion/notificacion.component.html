@@ -1,0 +1,31 @@
+<!-- src/app/features/shared/components/notifications/notifications.component.html -->
+<div class="notifications-container">
+  @for (notification of notifications(); track notification.id) {
+    <div
+      class="notification"
+      [class]="'notification-' + notification.type"
+      role="alert"
+    >
+      <div class="notification-icon" [innerHTML]="getIcon(notification.type)"></div>
+
+      <div class="notification-content">
+        <div class="notification-title">{{ notification.title }}</div>
+        <div class="notification-message">{{ notification.message }}</div>
+      </div>
+
+      <button
+        class="notification-close"
+        type="button"
+        (click)="onClose(notification.id)"
+        aria-label="Cerrar notificación"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+
+      <div class="notification-progress"></div>
+    </div>
+  }
+</div>

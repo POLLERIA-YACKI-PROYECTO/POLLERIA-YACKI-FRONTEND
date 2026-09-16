@@ -2,7 +2,7 @@
 <div
   class="carrito-overlay"
   [class.active]="visible"
-  (click)="cerrar.emit()"
+  (click)="onCerrar()"
 ></div>
 
 <aside
@@ -28,7 +28,7 @@
     <button
       class="btn-cerrar"
       type="button"
-      (click)="cerrar.emit()"
+      (click)="onCerrar()"
       aria-label="Cerrar pedido"
       title="Cerrar"
     >
@@ -40,10 +40,14 @@
   </header>
 
   <div class="carrito-items" *ngIf="tieneItems; else vacio">
-    <article class="carrito-item" *ngFor="let item of items">
+    <!-- ✅ FIX: `let i = index;` y usar `i` en el click -->
+    <article
+      class="carrito-item"
+      *ngFor="let item of items; let i = index; trackBy: trackByProductoId"
+    >
       <div class="item-imagen">
         <img
-          [src]="getImagenUrl(item.producto.imagen)"
+          [src]="getImagenUrl(item)"
           [alt]="item.producto.nombre"
           loading="lazy"
           (error)="manejarErrorImagen($event)"
@@ -66,7 +70,7 @@
       <button
         class="btn-eliminar"
         type="button"
-        (click)="eliminar.emit(item.producto.id)"
+        (click)="onEliminar(i)"
         [attr.aria-label]="'Eliminar ' + item.producto.nombre"
         title="Eliminar producto"
       >
@@ -112,7 +116,7 @@
       <button
         class="btn-vaciar"
         type="button"
-        (click)="vaciar.emit()"
+        (click)="onVaciar()"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="3 6 5 6 21 6"/>
@@ -124,7 +128,7 @@
       <button
         class="btn-pagar"
         type="button"
-        (click)="pagar.emit()"
+        (click)="onPagar()"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>

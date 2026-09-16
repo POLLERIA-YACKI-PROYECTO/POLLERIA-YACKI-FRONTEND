@@ -89,14 +89,12 @@
     </div>
 
     <div class="productos-grid" *ngIf="!loading() && !error()">
-      <!-- ✅ CAMBIO: productosFiltradosPorBusqueda() → productosFiltrados() -->
       <app-producto-card
-        *ngFor="let producto of productosFiltrados()"
+        *ngFor="let producto of productosFiltrados(); trackBy: trackByProductoId"
         [producto]="producto"
         (agregar)="agregarAlCarrito($event)"
       ></app-producto-card>
 
-      <!-- ✅ CAMBIO: productosFiltradosPorBusqueda() → productosFiltrados() -->
       <div class="empty-state" *ngIf="productosFiltrados().length === 0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
