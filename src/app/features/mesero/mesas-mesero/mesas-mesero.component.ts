@@ -36,13 +36,13 @@ export class MesasMeseroComponent implements OnInit, OnDestroy {
   mesasOcupadas = signal<number>(0);
   mesasLibres = signal<number>(0);
 
-  // ✅ Modal para ocupar mesa
+  // Modal para ocupar mesa
   mostrarModalOcupar = signal<boolean>(false);
   nombreCliente = signal<string>('');
   cantidadPersonas = signal<number>(1);
   mesaAOcupar = signal<number | null>(null);
 
-  // ✅ Modal para confirmar liberación
+  // Modal para confirmar liberación
   mostrarModalLiberar = signal<boolean>(false);
   mesaALiberar = signal<number | null>(null);
   clienteALiberar = signal<string>('');
@@ -60,9 +60,9 @@ export class MesasMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ MesasMesero: sin sesión → /login-mesero');
+      console.warn('MesasMesero: sin sesión -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -70,7 +70,7 @@ export class MesasMeseroComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
-      console.warn('🛡️ MesasMesero: no es mesero → /login-mesero');
+      console.warn('MesasMesero: no es mesero -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }

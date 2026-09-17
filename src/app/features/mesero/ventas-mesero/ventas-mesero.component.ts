@@ -22,7 +22,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags anti-duplicado
+  // Flags anti-duplicado
   private cargando = signal(false);
   private yaCargado = signal(false);
 
@@ -64,9 +64,9 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ VentasMesero: sin sesión → /login-mesero');
+      console.warn('VentasMesero: sin sesión -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -74,7 +74,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
-      console.warn('🛡️ VentasMesero: no es mesero → /login-mesero');
+      console.warn('VentasMesero: no es mesero -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -142,7 +142,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Ventas mesero cargadas:', ventasFormateadas.length);
+          console.log('Ventas mesero cargadas:', ventasFormateadas.length);
         },
         error: (err: any) => {
           console.error('Error al cargar ventas:', err);
@@ -153,7 +153,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ Recargar manualmente
+  // Recargar manualmente
   recargarVentas(): void {
     this.pedidoService.limpiarCachePedidos();
     this.yaCargado.set(false);

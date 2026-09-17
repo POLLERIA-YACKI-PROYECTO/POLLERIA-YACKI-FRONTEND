@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
-  // ✅ OnPush: el header solo cambia cuando cambia `usuario`
+  //  OnPush: el header solo cambia cuando cambia `usuario`
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HeaderComponent {

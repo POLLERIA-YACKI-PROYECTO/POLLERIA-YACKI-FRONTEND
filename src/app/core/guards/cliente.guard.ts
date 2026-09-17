@@ -31,4 +31,4 @@ export const ClienteGuard: CanActivateFn = (route, state) => {
   }
 
   return true;
-};   // ⬅️ UN SOLO `};`, no dos
+};   // ⬅ UN SOLO `};`, no dos

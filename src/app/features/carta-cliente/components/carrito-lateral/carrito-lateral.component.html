@@ -40,7 +40,7 @@
   </header>
 
   <div class="carrito-items" *ngIf="tieneItems; else vacio">
-    <!-- ✅ FIX: `let i = index;` y usar `i` en el click -->
+    <!-- FIX: `let i = index;` y usar `i` en el click -->
     <article
       class="carrito-item"
       *ngFor="let item of items; let i = index; trackBy: trackByProductoId"

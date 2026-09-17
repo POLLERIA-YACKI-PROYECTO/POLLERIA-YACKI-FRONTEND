@@ -42,9 +42,9 @@ export class ComprasComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ Compras: sin sesión → /login-admin');
+      console.warn('Compras: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -52,7 +52,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (this.usuario()?.rol !== 'admin') {
-      console.warn('🛡️ Compras: no es admin → /login-admin');
+      console.warn('Compras: no es admin -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -86,13 +86,13 @@ export class ComprasComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Compras cargadas:', (compras || []).length);
+          console.log('Compras cargadas:', (compras || []).length);
         },
         error: (err) => {
           console.error('Error al cargar compras:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
+          // Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
@@ -149,14 +149,14 @@ export class ComprasComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Error al actualizar compra:', err);
-            // ✅ Mensaje específico por status
+            // Mensaje específico por status
             let mensaje = 'Error al actualizar compra';
             if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
             else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
             else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar compras.';
             else if (err?.status === 404) mensaje = 'La compra ya no existe.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     } else {
@@ -175,7 +175,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
             else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
             else if (err?.status === 403) mensaje = 'No tienes permisos para crear compras.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     }
@@ -201,7 +201,7 @@ export class ComprasComponent implements OnInit, OnDestroy {
             else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar compras.';
             else if (err?.status === 404) mensaje = 'La compra ya no existe.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     }

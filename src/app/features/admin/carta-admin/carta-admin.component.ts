@@ -60,7 +60,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
   imagenPreview = signal<string | null>(null);
   imagenFile = signal<File | null>(null);
 
-  // ✅ Cache buster para las imágenes (se actualiza tras cada operación CRUD)
+  // Cache buster para las imágenes (se actualiza tras cada operación CRUD)
   cacheBuster = signal<number>(Date.now());
 
   nuevoProducto = signal({
@@ -134,7 +134,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
             this.nuevoProducto.update((p) => ({ ...p, categoria_id: categorias[0].id }));
           }
 
-          // ✅ Actualizar cache buster al cargar datos frescos
+          //Actualizar cache buster al cargar datos frescos
           this.actualizarCacheBuster();
 
           this.loading.set(false);
@@ -157,7 +157,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
           this.productos.set(productos || []);
           this.productosFiltrados.set(productos || []);
 
-          // ✅ Actualizar cache buster para forzar recarga de imágenes
+          //Actualizar cache buster para forzar recarga de imágenes
           this.actualizarCacheBuster();
 
           this.loading.set(false);
@@ -409,7 +409,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
       imagen: producto.imagen || null,
     });
     if (producto.imagen && producto.imagen !== 'imagen.jpg') {
-      // ✅ Pasar el producto para que use su updated_at como versión
+      //  Pasar el producto para que use su updated_at como versión
       this.imagenPreview.set(this.getImagenUrl(producto.imagen, producto));
     } else {
       this.imagenPreview.set(null);
@@ -457,7 +457,7 @@ export class CartaAdminComponent implements OnInit, OnDestroy {
               `"${data.nombre}" se actualizó correctamente.`,
               'Producto actualizado'
             );
-            // ✅ Cache buster se actualiza al recargar
+            //  Cache buster se actualiza al recargar
             this.recargar();
             this.toggleFormulario();
           },

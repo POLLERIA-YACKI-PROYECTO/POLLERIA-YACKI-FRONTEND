@@ -18,7 +18,7 @@ export class LoginMeseroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // ✅ Subject para limpiar suscripciones al destruir
+  // Subject para limpiar suscripciones al destruir
   private destroy$ = new Subject<void>();
 
   loginForm!: FormGroup;
@@ -39,11 +39,11 @@ export class LoginMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Si ya está autenticado como mesero, redirigir
+    // Si ya está autenticado como mesero, redirigir
     if (this.authService.isAuthenticated()) {
       const usuario = this.authService.getUsuarioActual();
       if (usuario && usuario.rol === 'mesero') {
-        console.log('✅ Ya autenticado como mesero → /mesero/dashboard');
+        console.log('Ya autenticado como mesero -> /mesero/dashboard');
         this.router.navigate(['/mesero/dashboard']);
       }
     }
@@ -66,7 +66,7 @@ export class LoginMeseroComponent implements OnInit, OnDestroy {
   // SUBMIT LOGIN
   // ============================================
   onSubmit(): void {
-    // ✅ Guarda contra doble submit
+    // Guarda contra doble submit
     if (this.isLoading()) return;
 
     if (this.loginForm.invalid) {
@@ -84,7 +84,7 @@ export class LoginMeseroComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: any) => {
           this.isLoading.set(false);
-          // ✅ Extraer nombre del response (puede venir en diferentes formatos)
+          // Extraer nombre del response (puede venir en diferentes formatos)
           const nombre = response?.nombre || response?.usuario?.nombre || 'Mesero';
           this.nombreUsuario.set(nombre);
           this.mostrarBienvenida.set(true);

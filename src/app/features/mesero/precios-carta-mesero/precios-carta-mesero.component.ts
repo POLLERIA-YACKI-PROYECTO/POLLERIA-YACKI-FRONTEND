@@ -25,7 +25,7 @@ export class PreciosCartaMeseroComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags anti-duplicado
+  // Flags anti-duplicado
   private cargando = signal(false);
   private yaCargado = signal(false);
 
@@ -69,9 +69,9 @@ export class PreciosCartaMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ PreciosMesero: sin sesión → /login-mesero');
+      console.warn('PreciosMesero: sin sesión -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -79,7 +79,7 @@ export class PreciosCartaMeseroComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
-      console.warn('🛡️ PreciosMesero: no es mesero → /login-mesero');
+      console.warn('PreciosMesero: no es mesero -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -116,7 +116,7 @@ export class PreciosCartaMeseroComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Precios mesero cargado:', (productos || []).length, 'productos');
+          console.log('Precios mesero cargado:', (productos || []).length, 'productos');
         },
         error: (err: any) => {
           console.error('Error al cargar datos:', err);

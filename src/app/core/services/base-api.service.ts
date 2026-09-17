@@ -36,7 +36,7 @@ export abstract class BaseApiService {
     // 1. Bloqueo local por 429
     const bloqueadoHasta = this.bloqueadoHasta.get(key) || 0;
     if (Date.now() < bloqueadoHasta) {
-      console.warn(`🚫 ${url} bloqueado (rate limit local)`);
+      console.warn(`${url} bloqueado (rate limit local)`);
       return throwError(() => ({
         status: 429,
         message: 'Rate limit (bloqueado localmente)',
@@ -51,7 +51,7 @@ export abstract class BaseApiService {
       }
     }
 
-    // 3. Petición en curso → reutilizar
+    // 3. Petición en curso -> reutilizar
     const existente = this.enCurso.get(key);
     if (existente) {
       return existente as Observable<T>;
@@ -61,12 +61,12 @@ export abstract class BaseApiService {
     const req$ = this.http.get<T>(url, { params, headers }).pipe(
       timeout(15000),
 
-      // ✅ Reintento SOLO en 503, 1 vez
+      // Reintento SOLO en 503, 1 vez
       retryWhen((errors) =>
         errors.pipe(
           mergeMap((error, index) => {
             if (error?.status === 503 && index < 1) {
-              console.warn(`⏳ 503 en ${url}, reintentando...`);
+              console.warn(`503 en ${url}, reintentando...`);
               return timer(2000);
             }
             return throwError(() => error);
@@ -82,7 +82,7 @@ export abstract class BaseApiService {
       catchError((error) => {
         if (error?.status === 429) {
           this.bloqueadoHasta.set(key, Date.now() + this.BLOQUEO_429_MS);
-          console.warn(`🚫 429 en ${url}. Bloqueado 30s.`);
+          console.warn(`429 en ${url}. Bloqueado 30s.`);
         }
         return throwError(() => error);
       }),
@@ -91,7 +91,7 @@ export abstract class BaseApiService {
         this.enCurso.delete(key);
       }),
 
-      // ✅ refCount: false → NO se cancela al hacer F5
+      // refCount: false -> NO se cancela al hacer F5
       shareReplay({ bufferSize: 1, refCount: false })
     );
 

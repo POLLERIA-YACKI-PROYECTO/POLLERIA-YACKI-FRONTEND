@@ -25,10 +25,10 @@ export class CartaMeseroComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // ✅ Subject para limpiar suscripciones
+  // Subject para limpiar suscripciones
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags anti-duplicado
+  // Flags anti-duplicado
   private cargando = signal(false);
   private yaCargado = signal(false);
   private categoriasCargadas = signal(false);
@@ -61,9 +61,9 @@ export class CartaMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ CartaMesero: sin sesión → /login-mesero');
+      console.warn('CartaMesero: sin sesión -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -71,7 +71,7 @@ export class CartaMeseroComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
-      console.warn('🛡️ CartaMesero: no es mesero → /login-mesero');
+      console.warn('CartaMesero: no es mesero -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -153,13 +153,13 @@ export class CartaMeseroComponent implements OnInit, OnDestroy {
           }
 
           this.yaCargado.set(true);
-          console.log('✅ Carta mesero cargada:', (categorias || []).length, 'categorías');
+          console.log('Carta mesero cargada:', (categorias || []).length, 'categorías');
         },
         error: (err) => {
           console.error('Error al cargar datos:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear para permitir reintento
+          // Resetear para permitir reintento
           this.yaCargado.set(false);
         }
       });

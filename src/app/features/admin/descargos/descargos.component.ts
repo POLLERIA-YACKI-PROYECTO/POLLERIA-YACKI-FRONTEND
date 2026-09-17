@@ -50,9 +50,9 @@ export class DescargosComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ Descargos: sin sesión → /login-admin');
+      console.warn('Descargos: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -60,7 +60,7 @@ export class DescargosComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (this.usuario()?.rol !== 'admin') {
-      console.warn('🛡️ Descargos: no es admin → /login-admin');
+      console.warn('Descargos: no es admin -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -94,13 +94,13 @@ export class DescargosComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Descargos cargados:', (descargos || []).length);
+          console.log('Descargos cargados:', (descargos || []).length);
         },
         error: (err) => {
           console.error('Error al cargar descargos:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
+          // Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
@@ -163,7 +163,7 @@ export class DescargosComponent implements OnInit, OnDestroy {
             else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar descargos.';
             else if (err?.status === 404) mensaje = 'El descargo ya no existe.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     } else {
@@ -182,7 +182,7 @@ export class DescargosComponent implements OnInit, OnDestroy {
             else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
             else if (err?.status === 403) mensaje = 'No tienes permisos para crear descargos.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     }
@@ -208,7 +208,7 @@ export class DescargosComponent implements OnInit, OnDestroy {
             else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar descargos.';
             else if (err?.status === 404) mensaje = 'El descargo ya no existe.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     }

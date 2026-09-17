@@ -87,7 +87,7 @@ export class PedidoService extends BaseApiService {
   }
 
   // ============================================
-  // ✅ MARCAR PEDIDO COMO PAGADO (CORREGIDO)
+  //  MARCAR PEDIDO COMO PAGADO (CORREGIDO)
   // - Usa PATCH (igual que el backend)
   // - Usa /pagar (igual que el backend)
   // ============================================

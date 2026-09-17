@@ -90,7 +90,7 @@ export class CarritoLateralComponent {
   /**
    * Genera la URL de la imagen del producto en el carrito.
    *
-   * ✅ Cache busting: usa el `updated_at` del producto como versión.
+   * Cache busting: usa el `updated_at` del producto como versión.
    * Si el admin cambia la imagen del producto, `updated_at` cambia,
    * la URL cambia, y el navegador pide la imagen nueva.
    */

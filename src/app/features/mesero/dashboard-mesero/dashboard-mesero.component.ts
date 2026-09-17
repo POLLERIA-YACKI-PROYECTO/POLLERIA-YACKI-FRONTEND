@@ -39,7 +39,7 @@ export class DashboardMeseroComponent implements OnInit, OnDestroy {
   mesasOcupadas = signal<number>(0);
   mesasLibres = signal<number>(0);
 
-  // ✅ Timer de bienvenida (para limpiar al destruir)
+  // Timer de bienvenida (para limpiar al destruir)
   private welcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
@@ -55,9 +55,9 @@ export class DashboardMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ DashboardMesero: sin sesión → /login-mesero');
+      console.warn('DashboardMesero: sin sesión -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -65,7 +65,7 @@ export class DashboardMeseroComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
-      console.warn('🛡️ DashboardMesero: no es mesero → /login-mesero');
+      console.warn('DashboardMesero: no es mesero -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -78,7 +78,7 @@ export class DashboardMeseroComponent implements OnInit, OnDestroy {
     const claveVisita = `visitado_${this.usuario()?.id}`;
     const yaVisitado = localStorage.getItem(claveVisita);
 
-    // ✅ Limpiar timer anterior si existe
+    // Limpiar timer anterior si existe
     if (this.welcomeTimer) {
       clearTimeout(this.welcomeTimer);
       this.welcomeTimer = null;
@@ -107,7 +107,7 @@ export class DashboardMeseroComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // ✅ Limpiar timer al destruir
+    // Limpiar timer al destruir
     if (this.welcomeTimer) {
       clearTimeout(this.welcomeTimer);
       this.welcomeTimer = null;

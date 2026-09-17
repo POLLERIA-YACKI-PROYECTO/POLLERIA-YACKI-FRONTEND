@@ -30,7 +30,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags anti-duplicado
+  // Flags anti-duplicado
   private cargando = signal(false);
   private yaCargado = signal(false);
   private categoriasCargadas = signal(false);
@@ -44,12 +44,12 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   cargandoProductos = signal<boolean>(false);
   guardandoPedido = signal<boolean>(false);
 
-  // ✅ Modal de éxito
+  // Modal de éxito
   mostrarModalExito = signal<boolean>(false);
   mensajeExito = signal<string>('');
   pedidoCreado = signal<any>(null);
 
-  // ✅ Modal de aviso (reemplaza alert)
+  // Modal de aviso (reemplaza alert)
   mostrarModalAviso = signal<boolean>(false);
   mensajeAviso = signal<string>('');
   tituloAviso = signal<string>('Atención');
@@ -102,7 +102,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ PedidosMesero: sin sesión → /login-mesero');
+      console.warn('PedidosMesero: sin sesión -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -110,7 +110,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'mesero') {
-      console.warn('🛡️ PedidosMesero: no es mesero → /login-mesero');
+      console.warn('PedidosMesero: no es mesero -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -223,7 +223,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Pedidos mesero cargado:', pedidosParseados.length, 'pedidos');
+          console.log('Pedidos mesero cargado:', pedidosParseados.length, 'pedidos');
         },
         error: (err: any) => {
           console.error('Error al cargar datos:', err);
@@ -581,7 +581,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ Validar nuevo cliente si se está creando uno
+    // Validar nuevo cliente si se está creando uno
     if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
       const nombre = (this.nuevoCliente.nombre || '').trim();
       const dni = (this.nuevoCliente.dni || '').trim();
@@ -699,7 +699,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
-          console.log('✅ Pedido creado:', response);
+          console.log('Pedido creado:', response);
           this.loading.set(false);
           this.guardandoPedido.set(false);
           this.cerrarModal();

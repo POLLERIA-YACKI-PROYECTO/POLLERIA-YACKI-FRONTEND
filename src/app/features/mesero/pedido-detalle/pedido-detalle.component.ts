@@ -27,7 +27,7 @@ export class PedidoDetalleComponent implements OnChanges {
   @Output() cerrar = new EventEmitter<void>();
   @Output() actualizarEstado = new EventEmitter<{ id: number; estado: string }>();
 
-  // ✅ Estado interno
+  // Estado interno
   itemsInternos = signal<any[]>([]);
   clienteNombre = signal<string>('Cliente');
   usuarioNombre = signal<string>('Desconocido');
@@ -43,7 +43,7 @@ export class PedidoDetalleComponent implements OnChanges {
     { value: 'cancelado', label: 'Cancelado', class: 'estado-cancelado' }
   ];
 
-  // ✅ Computed properties
+  // Computed properties
   totalItems = computed(() => this.itemsInternos().length);
   itemsPedido = computed(() => this.itemsInternos());
 
@@ -62,7 +62,7 @@ export class PedidoDetalleComponent implements OnChanges {
   // CICLO DE VIDA
   // ============================================
   ngOnChanges(changes: SimpleChanges): void {
-    // ✅ Solo procesar si cambió el pedido o la visibilidad
+    // Solo procesar si cambió el pedido o la visibilidad
     if (changes['pedido'] && this.pedido) {
       this.procesarPedido();
     }
@@ -77,7 +77,7 @@ export class PedidoDetalleComponent implements OnChanges {
   private procesarPedido(): void {
     if (!this.pedido) return;
 
-    console.log('🔄 Procesando pedido en detalle:', this.pedido?.id);
+    console.log('Procesando pedido en detalle:', this.pedido?.id);
 
     // Extraer items
     let items = this.pedido.items || [];
@@ -163,12 +163,12 @@ export class PedidoDetalleComponent implements OnChanges {
 
   getTipoEntregaIcono(tipo: string): string {
     const iconos: any = {
-      'local': '🏠',
-      'delivery': '🛵',
-      'paraLlevar': '📦',
-      'motorizada': '🛵'
+      'local': '',
+      'delivery': '',
+      'paraLlevar': '',
+      'motorizada': ''
     };
-    return iconos[tipo] || '🏠';
+    return iconos[tipo] || '';
   }
 
   formatearFecha(fecha: string): string {

@@ -28,14 +28,14 @@ export interface Producto {
   destacado: boolean;
   categoria_nombre?: string;
 
-  // ✅ Campos opcionales que devuelve el backend
+  // Campos opcionales que devuelve el backend
   precio_compra?: number | string;
   stock_minimo?: number;
   unidad_medida?: string;
   imagenUrl?: string;
   esDefault?: boolean;
 
-  // ✅ NUEVOS: timestamps para cache busting de imágenes
+  //NUEVOS: timestamps para cache busting de imágenes
   created_at?: string;
   updated_at?: string;
 }

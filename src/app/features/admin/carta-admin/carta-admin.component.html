@@ -419,7 +419,7 @@
   </div>
 </div>
 
-<!-- ✅ MODAL DE CONFIRMACIÓN PARA ELIMINAR PRODUCTO -->
+<!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR PRODUCTO -->
 @if (mostrarModalEliminar() && productoAEliminar()) {
   <div class="modal-overlay" (click)="cerrarModalEliminar()">
     <div class="modal-eliminar" (click)="$event.stopPropagation()">
@@ -503,7 +503,7 @@
   </div>
 }
 
-<!-- ✅ MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN -->
+<!-- MODAL DE CONFIRMACIÓN PARA RESTAURAR IMAGEN -->
 @if (mostrarModalRestaurar() && productoARestaurar()) {
   <div class="modal-overlay" (click)="cerrarModalRestaurar()">
     <div class="modal-restaurar" (click)="$event.stopPropagation()">

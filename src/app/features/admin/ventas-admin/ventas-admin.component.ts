@@ -61,7 +61,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   mostrarResumen = signal<boolean>(false);
   resultadoPago = signal<any>(null);
 
-  // ✅ Modal de aviso (reemplaza alert)
+  // Modal de aviso (reemplaza alert)
   mostrarModalAviso = signal<boolean>(false);
   mensajeAviso = signal<string>('');
   tituloAviso = signal<string>('Atención');
@@ -72,7 +72,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ VentasAdmin: sin sesión → /login-admin');
+      console.warn('VentasAdmin: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -80,7 +80,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'admin') {
-      console.warn('🛡️ VentasAdmin: no es admin → /login-admin');
+      console.warn('VentasAdmin: no es admin -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -116,7 +116,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   // CARGAR DATOS (con forceRefresh opcional)
   // ============================================
   cargarDatos(forceRefresh: boolean = false): void {
-    // ✅ Si NO es forceRefresh y ya está cargado, no hacer nada
+    // Si NO es forceRefresh y ya está cargado, no hacer nada
     if (!forceRefresh && (this.cargando() || this.yaCargado())) return;
 
     this.cargando.set(true);
@@ -205,7 +205,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Ventas admin cargado:', ventasUnicas.length, 'ventas');
+          console.log('Ventas admin cargado:', ventasUnicas.length, 'ventas');
         },
         error: (error: any) => {
           console.error('Error ventas:', error);
@@ -218,27 +218,27 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ RECARGAR FORZANDO (limpia caché y vuelve a pedir al backend)
+  // RECARGAR FORZANDO (limpia caché y vuelve a pedir al backend)
   // ============================================
   recargar(): void {
-    console.log('🔄 Recargando datos (forzando caché)...');
+    console.log('Recargando datos (forzando caché)...');
 
-    // ✅ Limpiar cachés de todos los servicios
+    // Limpiar cachés de todos los servicios
     this.pedidoService.limpiarCachePedidos?.();
     this.pedidoClienteService.limpiarCachePedidos?.();
     this.ventaService.limpiarCacheVentas?.();
 
-    // ✅ Resetear flags y forzar recarga
+    // Resetear flags y forzar recarga
     this.yaCargado.set(false);
     this.cargando.set(false);
 
-    // ✅ Llamar con forceRefresh = true
+    // Llamar con forceRefresh = true
     this.cargarDatos(true);
   }
 
-  // ✅ Alias para el botón "Actualizar" del HTML
+  // Alias para el botón "Actualizar" del HTML
   recargarDatos(): void {
-    console.log('🔄 Botón Actualizar presionado');
+    console.log('Botón Actualizar presionado');
     this.recargar();
   }
 
@@ -347,13 +347,13 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.mensajePago.set('Procesando pago...');
     this.tipoPago.set('procesando');
 
-    // ✅ Detección de origen más robusta
+    // Detección de origen más robusta
     const esPedidoWeb =
       pedido.origen === 'pedido_web' ||
       String(pedido.id_unico || '').startsWith('PC-') ||
       (pedido.pedido_cliente_id !== null && pedido.pedido_cliente_id !== undefined);
 
-    console.log('💳 Procesando pago:', {
+    console.log('Procesando pago:', {
       id: pedido.id,
       origen: pedido.origen,
       id_unico: pedido.id_unico,
@@ -384,11 +384,11 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
               cliente: pedido.cliente_nombre || pedido.cliente_nombre_real || 'Cliente'
             });
 
-            // ✅ RECARGA INMEDIATA (mueve el pedido de "Pendientes" a "Ventas")
-            console.log('🔄 Recargando después del pago exitoso...');
+            // RECARGA INMEDIATA (mueve el pedido de "Pendientes" a "Ventas")
+            console.log('Recargando después del pago exitoso...');
             this.recargar();
 
-            // ✅ Cerrar el modal después de 3 segundos
+            // Cerrar el modal después de 3 segundos
             setTimeout(() => {
               this.cerrarModalPago();
             }, 3000);
@@ -399,10 +399,10 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           }
         },
         error: (err: any) => {
-          console.error('❌ Error completo:', err);
-          console.error('❌ Status:', err?.status);
-          console.error('❌ URL:', err?.url);
-          console.error('❌ Body:', err?.error);
+          console.error('Error completo:', err);
+          console.error('Status:', err?.status);
+          console.error('URL:', err?.url);
+          console.error('Body:', err?.error);
 
           this.procesandoPago.set(false);
           this.tipoPago.set('error');
@@ -444,7 +444,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ RECHAZAR PAGO (opcional)
+  // RECHAZAR PAGO (opcional)
   // ============================================
   rechazarPago(): void {
     const pedido = this.pedidoEnPago();
@@ -470,7 +470,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.mensajePago.set('Pago rechazado');
           this.tipoPago.set('info');
 
-          // ✅ RECARGA INMEDIATA
+          // RECARGA INMEDIATA
           this.recargar();
 
           setTimeout(() => {
@@ -478,7 +478,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           }, 2000);
         },
         error: (err: any) => {
-          console.error('❌ Error al rechazar:', err);
+          console.error('Error al rechazar:', err);
           this.procesandoPago.set(false);
           this.tipoPago.set('error');
           this.mensajePago.set(err?.error?.error || 'Error al rechazar el pago');
@@ -510,8 +510,8 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   getEstadoPedidoTexto(pedido: any): string {
-    if (this.estaPagado(pedido)) return '✅ Pagado';
-    if (this.estaCancelado(pedido)) return '❌ Cancelado';
+    if (this.estaPagado(pedido)) return 'Pagado';
+    if (this.estaCancelado(pedido)) return 'Cancelado';
     return this.getEstadoTexto(pedido.estado);
   }
 

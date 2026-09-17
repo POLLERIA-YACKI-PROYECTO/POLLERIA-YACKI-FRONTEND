@@ -19,7 +19,7 @@ import { ProductoService } from '../../../../core/services/producto.service';
   imports: [CommonModule],
   templateUrl: './producto-card.component.html',
   styleUrls: ['./producto-card.component.scss'],
-  // ✅ OnPush: solo re-renderiza si cambian inputs
+  // OnPush: solo re-renderiza si cambian inputs
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProductoCardComponent implements OnDestroy {
@@ -30,7 +30,7 @@ export class ProductoCardComponent implements OnDestroy {
 
   agregando = signal(false);
 
-  // ✅ Timer para limpiar el estado "agregando" si el componente se destruye
+  // Timer para limpiar el estado "agregando" si el componente se destruye
   private resetTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ============================================
@@ -39,7 +39,7 @@ export class ProductoCardComponent implements OnDestroy {
   /**
    * Genera la URL de la imagen del producto.
    *
-   * ✅ Cache busting: usa el `updated_at` del producto como versión.
+   * Cache busting: usa el `updated_at` del producto como versión.
    * Cada vez que el admin cambia la imagen (o cualquier dato del producto),
    * `updated_at` cambia, la URL cambia, y el navegador pide la imagen nueva.
    */
@@ -99,7 +99,7 @@ export class ProductoCardComponent implements OnDestroy {
       return;
     }
 
-    // ✅ Evita doble click mientras se procesa
+    // Evita doble click mientras se procesa
     if (this.agregando()) {
       return;
     }
@@ -107,7 +107,7 @@ export class ProductoCardComponent implements OnDestroy {
     this.agregando.set(true);
     this.agregar.emit(this.producto);
 
-    // ✅ Limpiar timer anterior si existe
+    // Limpiar timer anterior si existe
     if (this.resetTimer) {
       clearTimeout(this.resetTimer);
     }
@@ -118,7 +118,7 @@ export class ProductoCardComponent implements OnDestroy {
     }, 500);
   }
 
-  // ✅ Limpiar timer al destruir (evita memory leak)
+  // Limpiar timer al destruir (evita memory leak)
   ngOnDestroy(): void {
     if (this.resetTimer) {
       clearTimeout(this.resetTimer);

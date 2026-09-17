@@ -5,7 +5,7 @@ import { NotificationsComponent } from './features/shared/components/notificacio
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, NotificationsComponent],  // ✅ AGREGADO
+  imports: [RouterOutlet, NotificationsComponent],  //AGREGADO
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

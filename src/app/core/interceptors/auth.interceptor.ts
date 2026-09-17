@@ -7,7 +7,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
 
-  // ✅ Rutas que NO deben llevar token (evita errores 401 en login)
+  //  Rutas que NO deben llevar token (evita errores 401 en login)
   const publicRoutes = [
     '/api/auth/login',
     '/api/auth/login-admin',
@@ -21,7 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const isPublicRoute = publicRoutes.some((route) => req.url.includes(route));
 
-  // ✅ Si hay token, SIEMPRE agregarlo (incluso a categorías/configuración)
+  // Si hay token, SIEMPRE agregarlo (incluso a categorías/configuración)
   //    Así el backend identifica al usuario en el rate limit
   if (token && !isPublicRoute) {
     const cloned = req.clone({

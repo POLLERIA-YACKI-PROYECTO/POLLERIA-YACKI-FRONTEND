@@ -133,7 +133,7 @@ export const routes: Routes = [
           import('./features/admin/ventas-admin/ventas-admin.component')
             .then(m => m.VentasAdminComponent)
       },
-      // ✅ NUEVA RUTA: Pedidos de Clientes (Carta Web)
+      // NUEVA RUTA: Pedidos de Clientes (Carta Web)
       {
         path: 'pedidos-clientes',
         loadComponent: () =>

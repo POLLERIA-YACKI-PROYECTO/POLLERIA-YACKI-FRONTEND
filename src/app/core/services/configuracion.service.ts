@@ -56,7 +56,7 @@ export class ConfiguracionService extends BaseApiService {
     return this.mutate('PUT', this.apiUrl, cambios, this.getHeaders());
   }
 
-  // ✅ Subir imagen (QR)
+  // Subir imagen (QR)
   subirImagen(clave: string, file: File): Observable<any> {
     this.limpiarCache(this.apiUrl);
     const formData = new FormData();
@@ -70,7 +70,7 @@ export class ConfiguracionService extends BaseApiService {
     );
   }
 
-  // ✅ Eliminar imagen
+  //Eliminar imagen
   eliminarImagen(clave: string): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate(
@@ -86,7 +86,7 @@ export class ConfiguracionService extends BaseApiService {
     return this.actualizarConfiguracion({ [clave]: valor });
   }
 
-  // ✅ Helper: URL pública de la imagen de configuración
+  //Helper: URL pública de la imagen de configuración
   getImagenConfigUrl(
     valor: string | null | undefined,
     version?: number

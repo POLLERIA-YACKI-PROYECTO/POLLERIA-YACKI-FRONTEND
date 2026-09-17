@@ -74,10 +74,10 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // ✅ Usar environment en vez de hardcodear la URL
+  // Usar environment en vez de hardcodear la URL
   private apiUrl = `${environment.apiUrl}/historial`;
 
-  // ✅ Protección anti-saturación
+  // Protección anti-saturación
   private destroy$ = new Subject<void>();
   private cargando = signal(false);
   private yaCargado = signal(false);
@@ -126,15 +126,15 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ HistorialCliente: sin sesión → /login-admin');
+      console.warn('HistorialCliente: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
 
     if (!this.authService.isAdmin()) {
-      console.warn('🛡️ HistorialCliente: no es admin → /login-admin');
+      console.warn('HistorialCliente: no es admin -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -183,7 +183,7 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Historial cliente cargado:', (data.clientes || []).length, 'clientes');
+          console.log('Historial cliente cargado:', (data.clientes || []).length, 'clientes');
         },
         error: (err) => {
           console.error('Error historial:', err);
@@ -198,7 +198,7 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
           this.error.set(mensaje);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
+          // Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
@@ -213,7 +213,7 @@ export class HistorialClienteComponent implements OnInit, OnDestroy {
   // VER DETALLE DE COMPRAS
   // ============================================
   verDetalleCompras(cliente: ClienteHistorial): void {
-    if (this.cargandoCompras()) return;  // ✅ Evita doble click
+    if (this.cargandoCompras()) return;  // Evita doble click
 
     this.clienteSeleccionado.set(cliente);
     this.mostrarModalDetalle.set(true);

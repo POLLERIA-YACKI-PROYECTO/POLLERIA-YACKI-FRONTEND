@@ -46,7 +46,7 @@ export class AdminComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ Admin: sin sesión → /login-admin');
+      console.warn('Admin: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -55,14 +55,14 @@ export class AdminComponent implements OnInit, OnDestroy {
     this.usuario.set(usuario);
 
     if (!usuario) {
-      console.warn('🛡️ Admin: usuario no encontrado → /login-admin');
+      console.warn('Admin: usuario no encontrado -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
 
     const rol = usuario?.rol;
     if (rol !== 'admin' && rol !== 'cajero') {
-      console.warn('🛡️ Admin: rol no permitido → /login-admin');
+      console.warn('Admin: rol no permitido -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -72,7 +72,7 @@ export class AdminComponent implements OnInit, OnDestroy {
       this.temaOscuro.set(true);
     }
 
-    console.log('✅ Admin cargado:', usuario.nombre || usuario.email);
+    console.log('Admin cargado:', usuario.nombre || usuario.email);
   }
 
   ngOnDestroy(): void {

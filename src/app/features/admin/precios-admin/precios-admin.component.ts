@@ -56,9 +56,9 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ PreciosAdmin: sin sesión → /login-admin');
+      console.warn('PreciosAdmin: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -66,7 +66,7 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (!this.usuario() || this.usuario()?.rol !== 'admin') {
-      console.warn('🛡️ PreciosAdmin: no es admin → /login-admin');
+      console.warn('PreciosAdmin: no es admin -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -96,7 +96,7 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
     this.cargando.set(true);
     this.loading.set(true);
 
-    // ✅ Si las categorías ya están cargadas, solo recargar productos
+    // Si las categorías ya están cargadas, solo recargar productos
     if (this.categoriasCargadas() && this.categorias().length > 0) {
       const catActual = this.categoriaSeleccionada() || this.categorias()[0].id;
       this.cargarProductos(catActual);
@@ -105,7 +105,7 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ Primera carga: solo categorías
+    // Primera carga: solo categorías
     this.categoriaService.obtenerCategorias()
       .pipe(
         catchError(() => of([])),
@@ -125,13 +125,13 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
           }
 
           this.yaCargado.set(true);
-          console.log('✅ Precios admin cargado:', (categorias || []).length, 'categorías');
+          console.log('Precios admin cargado:', (categorias || []).length, 'categorías');
         },
         error: (err) => {
           console.error('Error al cargar categorías:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
+          // Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
@@ -184,7 +184,7 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
   }
 
   contarProductosPorCategoria(categoriaId: number): number {
-    // ✅ Retornar el conteo real si es la categoría seleccionada
+    // Retornar el conteo real si es la categoría seleccionada
     if (this.categoriaSeleccionada() === categoriaId) {
       return this.productos().length;
     }
@@ -217,7 +217,7 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.editando.set(null);
-          // ✅ Actualizar localmente sin recargar toda la lista
+          // Actualizar localmente sin recargar toda la lista
           this.productos.update(list =>
             list.map(p => p.id === productoId ? { ...p, precio: nuevoPrecio } : p)
           );
@@ -233,7 +233,7 @@ export class PreciosAdminComponent implements OnInit, OnDestroy {
           else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
           else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar precios.';
           else if (err?.error?.error) mensaje = err.error.error;
-          alert(`❌ ${mensaje}`);
+          alert(`${mensaje}`);
         }
       });
   }

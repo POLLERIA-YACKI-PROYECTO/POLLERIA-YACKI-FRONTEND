@@ -134,7 +134,7 @@ export class ProductoService extends BaseApiService {
       url = `${this.backendUrl}/uploads/productos/${encodeURIComponent(valor)}`;
     }
 
-    // ✅ Cache busting: agregar ?v=<version>
+    // Cache busting: agregar ?v=<version>
     if (version !== undefined && version !== null && version !== '') {
       const separador = url.includes('?') ? '&' : '?';
       url = `${url}${separador}v=${encodeURIComponent(String(version))}`;

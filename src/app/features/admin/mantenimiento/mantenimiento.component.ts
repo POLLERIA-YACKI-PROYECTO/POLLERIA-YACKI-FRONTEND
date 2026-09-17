@@ -49,9 +49,9 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Verificar autenticación primero
+    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ Mantenimiento: sin sesión → /login-admin');
+      console.warn('Mantenimiento: sin sesión -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -59,7 +59,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     if (this.usuario()?.rol !== 'admin') {
-      console.warn('🛡️ Mantenimiento: no es admin → /login-admin');
+      console.warn('Mantenimiento: no es admin -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -85,13 +85,13 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
     this.cargando.set(true);
     this.loading.set(true);
 
-    // ✅ Si las categorías ya están cargadas, solo pedir productos
+    // Si las categorías ya están cargadas, solo pedir productos
     if (this.categoriasCargadas() && this.categorias().length > 0) {
       this.soloCargarProductos();
       return;
     }
 
-    // ✅ Primera carga: categorías + productos
+    // Primera carga: categorías + productos
     forkJoin({
       categorias: this.categoriaService
         .obtenerCategorias()
@@ -115,19 +115,19 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Mantenimiento cargado:', (productos || []).length, 'productos');
+          console.log('Mantenimiento cargado:', (productos || []).length, 'productos');
         },
         error: (err) => {
           console.error('Error al cargar datos:', err);
           this.loading.set(false);
           this.cargando.set(false);
-          // ✅ Resetear yaCargado para permitir reintento
+          // Resetear yaCargado para permitir reintento
           this.yaCargado.set(false);
         }
       });
   }
 
-  // ✅ Solo productos (sin tocar categorías)
+  // Solo productos (sin tocar categorías)
   private soloCargarProductos(): void {
     this.productoService
       .obtenerProductos(true)  // forceRefresh = true
@@ -142,7 +142,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Productos recargados (categorías cacheadas)');
+          console.log('Productos recargados (categorías cacheadas)');
         },
         error: (err) => {
           console.error('Error al recargar productos:', err);
@@ -152,7 +152,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ RECARGAR (limpiando caché de productos)
+  // RECARGAR (limpiando caché de productos)
   recargar(): void {
     this.productoService.limpiarCache();
     this.yaCargado.set(false);
@@ -254,7 +254,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
             else if (err?.status === 403) mensaje = 'No tienes permisos para actualizar productos.';
             else if (err?.status === 404) mensaje = 'El producto ya no existe.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     } else {
@@ -273,7 +273,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
             else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
             else if (err?.status === 403) mensaje = 'No tienes permisos para crear productos.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     }
@@ -296,7 +296,7 @@ export class MantenimientoComponent implements OnInit, OnDestroy {
             else if (err?.status === 403) mensaje = 'No tienes permisos para eliminar productos.';
             else if (err?.status === 404) mensaje = 'El producto ya no existe.';
             else if (err?.error?.error) mensaje = err.error.error;
-            alert(`❌ ${mensaje}`);
+            alert(`${mensaje}`);
           }
         });
     }

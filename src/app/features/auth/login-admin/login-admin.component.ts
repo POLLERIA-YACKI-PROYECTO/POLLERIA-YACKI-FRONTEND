@@ -18,7 +18,7 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // ✅ Subject para limpiar en destroy
+  // Subject para limpiar en destroy
   private destroy$ = new Subject<void>();
 
   loginForm!: FormGroup;
@@ -39,11 +39,11 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Si ya está autenticado como admin/cajero, redirigir
+    // Si ya está autenticado como admin/cajero, redirigir
     if (this.authService.isAuthenticated()) {
       const usuario = this.authService.getUsuarioActual();
       if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
-        console.log('✅ Ya autenticado → /admin/dashboard-admin');
+        console.log('Ya autenticado -> /admin/dashboard-admin');
         this.router.navigate(['/admin/dashboard-admin']);
       }
     }
@@ -66,7 +66,7 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
   // SUBMIT LOGIN
   // ============================================
   onSubmit(): void {
-    if (this.isLoading()) return;  // ✅ Guarda contra doble submit
+    if (this.isLoading()) return;  // Guarda contra doble submit
 
     if (this.loginForm.invalid) {
       this.errorMessage.set('Por favor ingrese un DNI válido (8 dígitos)');
@@ -83,7 +83,7 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: any) => {
           this.isLoading.set(false);
-          // ✅ Extraer nombre del response (puede venir en response.nombre o response.usuario.nombre)
+          // Extraer nombre del response (puede venir en response.nombre o response.usuario.nombre)
           const nombre = response?.nombre || response?.usuario?.nombre || 'Admin';
           this.nombreUsuario.set(nombre);
           this.mostrarBienvenida.set(true);

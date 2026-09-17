@@ -39,7 +39,7 @@ export class PersonalComponent implements OnInit, OnDestroy {
   personalAEliminar = signal<any>(null);
   eliminando = signal(false);
 
-  // ✅ NUEVO: Modal de confirmación para admin principal
+  //NUEVO: Modal de confirmación para admin principal
   mostrarModalAviso = signal(false);
   mensajeAviso = signal('');
 
@@ -106,7 +106,7 @@ export class PersonalComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Personal cargado:', usuariosFormateados.length, 'empleados');
+          console.log('Personal cargado:', usuariosFormateados.length, 'empleados');
         },
         error: (err) => {
           console.error('Error al cargar usuarios:', err);
@@ -290,7 +290,7 @@ export class PersonalComponent implements OnInit, OnDestroy {
   // MODAL ELIMINAR
   // ============================================
   abrirModalEliminar(persona: any): void {
-    // ✅ Si es el admin principal, mostrar aviso elegante (NO alert)
+    //  Si es el admin principal, mostrar aviso elegante (NO alert)
     if (persona.rol === 'admin' && persona.id === 1) {
       this.mensajeAviso.set('No se puede eliminar al administrador principal del sistema.');
       this.mostrarModalAviso.set(true);

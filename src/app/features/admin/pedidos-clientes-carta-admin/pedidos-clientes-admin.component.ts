@@ -110,7 +110,7 @@ export class PedidosClientesAdminComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Pedidos clientes cargados:', lista.length);
+          console.log(' Pedidos clientes cargados:', lista.length);
         },
         error: (err) => {
           console.error('Error al cargar pedidos:', err);

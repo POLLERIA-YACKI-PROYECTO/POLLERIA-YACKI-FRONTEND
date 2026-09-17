@@ -15,26 +15,26 @@ export interface CategoriaNav {
   icono: string;
 }
 
-// ✅ CATEGORÍAS FIJAS EN EL FRONTEND
+// CATEGORÍAS FIJAS EN EL FRONTEND
 const CATEGORIAS_FIJAS: CategoriaNav[] = [
-  { id: 1, nombre: 'Brasas', icono: '🍗' },
-  { id: 2, nombre: 'Broasters', icono: '🍗' },
-  { id: 3, nombre: 'Mostro Brasa', icono: '🍗' },
-  { id: 4, nombre: 'Mostro Broaster', icono: '🍗' },
-  { id: 5, nombre: 'Piezas de Pollo', icono: '🍗' },
-  { id: 6, nombre: 'Alitas', icono: '🍗' },
-  { id: 7, nombre: 'Salchipapas', icono: '🌭' },
-  { id: 8, nombre: 'Hamburguesas', icono: '🍔' },
-  { id: 9, nombre: 'Don Menú', icono: '🍗' },
-  { id: 10, nombre: 'Adicionales', icono: '🍟' },
-  { id: 11, nombre: 'Chifa y Plancha', icono: '🍚' },
-  { id: 12, nombre: 'Promos Brasa', icono: '🔥' },
-  { id: 13, nombre: 'Gaseosas', icono: '🥤' },
-  { id: 14, nombre: 'Cervezas', icono: '🍺' },
-  { id: 15, nombre: 'Aguas', icono: '💧' },
-  { id: 16, nombre: 'Infusiones', icono: '☕' },
-  { id: 17, nombre: 'Pepsi', icono: '🥤' },
-  { id: 18, nombre: 'Chicha/Maracuyá', icono: '🧃' }
+  { id: 1, nombre: 'Brasas', icono: '' },
+  { id: 2, nombre: 'Broasters', icono: '' },
+  { id: 3, nombre: 'Mostro Brasa', icono: '' },
+  { id: 4, nombre: 'Mostro Broaster', icono: '' },
+  { id: 5, nombre: 'Piezas de Pollo', icono: '' },
+  { id: 6, nombre: 'Alitas', icono: '' },
+  { id: 7, nombre: 'Salchipapas', icono: '' },
+  { id: 8, nombre: 'Hamburguesas', icono: '' },
+  { id: 9, nombre: 'Don Menú', icono: '' },
+  { id: 10, nombre: 'Adicionales', icono: '' },
+  { id: 11, nombre: 'Chifa y Plancha', icono: '' },
+  { id: 12, nombre: 'Promos Brasa', icono: '' },
+  { id: 13, nombre: 'Gaseosas', icono: '' },
+  { id: 14, nombre: 'Cervezas', icono: '' },
+  { id: 15, nombre: 'Aguas', icono: '' },
+  { id: 16, nombre: 'Infusiones', icono: '' },
+  { id: 17, nombre: 'Pepsi', icono: '' },
+  { id: 18, nombre: 'Chicha/Maracuyá', icono: '' }
 ];
 
 @Component({
@@ -43,7 +43,7 @@ const CATEGORIAS_FIJAS: CategoriaNav[] = [
   imports: [CommonModule],
   templateUrl: './categorias-nav.component.html',
   styleUrls: ['./categorias-nav.component.scss'],
-  // ✅ OnPush: reduce ciclos de detección de cambios
+  // OnPush: reduce ciclos de detección de cambios
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CategoriasNavComponent {
@@ -53,7 +53,7 @@ export class CategoriasNavComponent {
   categorias = CATEGORIAS_FIJAS;
   dropdownAbierto = signal(false);
 
-  // ✅ Cache de iconos SVG (evita regenerar strings en cada render)
+  // Cache de iconos SVG (evita regenerar strings en cada render)
   private iconCache: Record<string, string> = {};
 
   get categoriaActual(): CategoriaNav | undefined {
@@ -78,7 +78,7 @@ export class CategoriasNavComponent {
     this.dropdownAbierto.set(false);
   }
 
-  // ✅ SVG Icons con cache
+  // SVG Icons con cache
   getCategoriaIcon(nombre: string): string {
     if (this.iconCache[nombre]) {
       return this.iconCache[nombre];

@@ -31,7 +31,7 @@ import { ConfirmDialogComponent } from '../shared/components/confirm-dialog/conf
     CarritoLateralComponent,
     ModalPagoComponent,
     CategoriasNavComponent,
-    ConfirmDialogComponent   // ✅ NUEVO
+    ConfirmDialogComponent   // NUEVO
   ],
   templateUrl: './carta-cliente.component.html',
   styleUrls: ['./carta-cliente.component.scss']
@@ -63,7 +63,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
   clienteActual = signal<any>(this.authService.getUsuarioActual());
 
-  // ✅ NUEVO: Signals para el modal de confirmación
+  // NUEVO: Signals para el modal de confirmación
   mostrarConfirmVaciar = signal(false);
 
   totalItems = computed(() =>
@@ -85,13 +85,13 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('🛡️ CartaCliente: sin sesión → /login-cliente');
+      console.warn('CartaCliente: sin sesión -> /login-cliente');
       this.router.navigate(['/login-cliente']);
       return;
     }
 
     if (!this.authService.isCliente()) {
-      console.warn('🛡️ CartaCliente: no es cliente → /login-cliente');
+      console.warn('CartaCliente: no es cliente -> /login-cliente');
       this.router.navigate(['/login-cliente']);
       return;
     }
@@ -141,7 +141,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Carta cliente cargada:', (productos || []).length, 'productos');
+          console.log('Carta cliente cargada:', (productos || []).length, 'productos');
         },
         error: (err) => {
           console.error('Error al cargar productos:', err);
@@ -221,13 +221,13 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ✅ NUEVO: abre el modal de confirmación
+  // NUEVO: abre el modal de confirmación
   vaciarCarrito(): void {
     if (this.carrito().length === 0) return;
     this.mostrarConfirmVaciar.set(true);
   }
 
-  // ✅ NUEVO: confirma el vaciado del carrito
+  // NUEVO: confirma el vaciado del carrito
   confirmarVaciarCarrito(): void {
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
@@ -239,7 +239,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     );
   }
 
-  // ✅ NUEVO: cancela el vaciado
+  // NUEVO: cancela el vaciado
   cancelarVaciarCarrito(): void {
     this.mostrarConfirmVaciar.set(false);
   }

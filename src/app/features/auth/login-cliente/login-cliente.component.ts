@@ -23,7 +23,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  // ✅ Subject para limpiar suscripciones
+  // Subject para limpiar suscripciones
   private destroy$ = new Subject<void>();
 
   loginForm: FormGroup;
@@ -59,7 +59,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Resetear estado al entrar
+    // Resetear estado al entrar
     this.sesionActivaEnEstaVista.set(false);
     this.currentUser.set(null);
     this.isLoginMode.set(true);
@@ -112,7 +112,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
           this.sesionActivaEnEstaVista.set(true);
           this.currentUser.set(this.authService.getUsuarioActual());
 
-          console.log('✅ Login exitoso → /cliente/carta');
+          console.log('Login exitoso -> /cliente/carta');
           this.router.navigate(['/cliente/carta']);
         },
         error: (error) => {
@@ -147,7 +147,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
           this.sesionActivaEnEstaVista.set(true);
           this.currentUser.set(this.authService.getUsuarioActual());
 
-          console.log('✅ Registro exitoso → /cliente/carta');
+          console.log('Registro exitoso -> /cliente/carta');
           this.router.navigate(['/cliente/carta']);
         },
         error: (error) => {

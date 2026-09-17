@@ -28,7 +28,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // ✅ Flags para evitar cargas duplicadas
+  // Flags para evitar cargas duplicadas
   private cargando = signal(false);
   private yaCargado = signal(false);
 
@@ -86,12 +86,12 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR DATOS EN DOS FASES (evita saturar el pool)
+  // CARGAR DATOS EN DOS FASES (evita saturar el pool)
   // ============================================
   cargarDatos(): void {
-    // ✅ Evitar cargas duplicadas
+    //  Evitar cargas duplicadas
     if (this.cargando() || this.yaCargado()) {
-      console.log('⚠️ Dashboard ya cargado o cargando, evitando duplicado');
+      console.log(' Dashboard ya cargado o cargando, evitando duplicado');
       return;
     }
 
@@ -99,7 +99,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    // ✅ FASE 1: Solo 2 peticiones (productos y usuarios)
+    // FASE 1: Solo 2 peticiones (productos y usuarios)
     // Esto reduce la presión sobre el pool de MySQL
     forkJoin({
       productos: this.productoService
@@ -120,7 +120,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
           const activos = (usuarios || []).filter((u: any) => u.activo !== false);
           this.actualizarStat('usuarios', activos.length);
 
-          // ✅ FASE 2: Cargar el resto (3 peticiones) después de que las primeras terminen
+          // FASE 2: Cargar el resto (3 peticiones) después de que las primeras terminen
           this.cargarFase2();
         },
         error: (err) => {
@@ -132,7 +132,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ FASE 2: pedidos + resumen (se ejecuta después de la fase 1)
+  // FASE 2: pedidos + resumen (se ejecuta después de la fase 1)
   private cargarFase2(): void {
     forkJoin({
       pedidosPendientes: this.pedidoService
@@ -187,11 +187,11 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
             this.ventasRecientes.set(recientesFormateados);
           }
 
-          // ✅ Marcar como completado
+          // Marcar como completado
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('✅ Dashboard cargado correctamente');
+          console.log('Dashboard cargado correctamente');
         },
         error: (err) => {
           console.error('Error en fase 2 del dashboard:', err);
@@ -201,7 +201,7 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ✅ RECARGAR (manual)
+  // RECARGAR (manual)
   recargar(): void {
     this.productoService.limpiarCache();
     this.usuarioService.limpiarCache();

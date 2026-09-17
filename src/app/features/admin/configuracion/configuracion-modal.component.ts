@@ -93,7 +93,7 @@ export class ConfiguracionModalComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ✅ Se llama cuando el padre abre/cierra el modal
+  // Se llama cuando el padre abre/cierra el modal
   onVisibleChange(): void {
     if (this.visible) {
       this.cargarConfiguracion();

@@ -97,7 +97,7 @@ export class PedidoClienteService extends BaseApiService {
     return this.mutate('PUT', `${this.apiUrl}/${id}/estado`, { estado }, this.getHeaders());
   }
 
-  // ✅ ELIMINAR PEDIDO
+  // ELIMINAR PEDIDO
   eliminarPedido(id: number): Observable<any> {
     this.limpiarCache(this.apiUrl);
     return this.mutate('DELETE', `${this.apiUrl}/${id}`, null, this.getHeaders());

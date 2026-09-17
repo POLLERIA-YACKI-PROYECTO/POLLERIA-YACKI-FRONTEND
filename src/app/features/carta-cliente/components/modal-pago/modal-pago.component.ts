@@ -42,7 +42,7 @@ type MetodoPago = 'efectivo' | 'yape' | 'plin' | 'transferencia' | 'tarjeta';
 export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
-  private configService = inject(ConfiguracionService); // ✅ NUEVO
+  private configService = inject(ConfiguracionService); 
 
   private destroy$ = new Subject<void>();
 
@@ -75,7 +75,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   comprobanteArchivo = signal<File | null>(null);
   comprobantePreview = signal<string>('');
 
-  // ✅ NUEVO: Configuración dinámica del backend
+  //  NUEVO: Configuración dinámica del backend
   config = signal<Record<string, any>>({});
   configCargada = signal<boolean>(false);
 
@@ -94,7 +94,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // ✅ Cargar configuración del backend al iniciar
+    //  Cargar configuración del backend al iniciar
     this.cargarConfiguracion();
   }
 
@@ -123,7 +123,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // ============================================
-  // ✅ CARGAR CONFIGURACIÓN DEL BACKEND
+  //  CARGAR CONFIGURACIÓN DEL BACKEND
   // ============================================
   private cargarConfiguracion(): void {
     this.configService
@@ -145,7 +145,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
           if (config.YAPE_NUMERO) this.numeroYape = String(config.YAPE_NUMERO);
           if (config.PLIN_NUMERO) this.numeroPlin = String(config.PLIN_NUMERO);
 
-          console.log('✅ [ModalPago] Configuración cargada:', {
+          console.log('[ModalPago] Configuración cargada:', {
             yapeNumero: config.YAPE_NUMERO,
             plinNumero: config.PLIN_NUMERO,
             tieneYapeQr: !!config.YAPE_QR,
@@ -174,7 +174,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   get esEfectivo(): boolean { return this.metodoPago() === 'efectivo'; }
 
   // ============================================
-  // ✅ GETTERS DE CONFIGURACIÓN (QR dinámico)
+  //  GETTERS DE CONFIGURACIÓN (QR dinámico)
   // ============================================
   get titularYape(): string {
     return this.config()['YAPE_TITULAR'] || '';
@@ -197,28 +197,28 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     return this.config()['TARJETA_IZIPAY'] || '';
   }
 
-  // ✅ URL del QR de Yape subido por el admin
+  //  URL del QR de Yape subido por el admin
   get yapeQrUrl(): string {
     const valor = this.config()['YAPE_QR'];
     if (!valor) return '';
     return this.configService.getImagenConfigUrl(valor);
   }
 
-  // ✅ URL del QR de Plin subido por el admin
+  //  URL del QR de Plin subido por el admin
   get plinQrUrl(): string {
     const valor = this.config()['PLIN_QR'];
     if (!valor) return '';
     return this.configService.getImagenConfigUrl(valor);
   }
 
-  // ✅ URL del QR de Izipay subido por el admin
+  //  URL del QR de Izipay subido por el admin
   get izipayQrUrl(): string {
     const valor = this.config()['IZIPAY_QR'];
     if (!valor) return '';
     return this.configService.getImagenConfigUrl(valor);
   }
 
-  // ✅ Decide qué mostrar: QR subido o QR generado
+  //  Decide qué mostrar: QR subido o QR generado
   get qrMostrar(): string {
     const metodo = this.metodoPago();
 
@@ -230,7 +230,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     return this.qrDataUrl();
   }
 
-  // ✅ ¿El método actual tiene QR subido?
+  //  ¿El método actual tiene QR subido?
   get tieneQrSubido(): boolean {
     const metodo = this.metodoPago();
 
@@ -310,7 +310,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
 
       case 'yape':
       case 'plin':
-        // ✅ Si hay QR subido, usarlo; si no, generar uno
+        //  Si hay QR subido, usarlo; si no, generar uno
         if (this.tieneQrSubido) {
           this.estadoPago.set('qr_yape_plin');
         } else {
@@ -434,7 +434,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // ============================================
-  // ✅ MANEJO DE ERROR DE QR
+  //  MANEJO DE ERROR DE QR
   // ============================================
   manejarErrorQr(event: Event): void {
     const img = event.target as HTMLImageElement;

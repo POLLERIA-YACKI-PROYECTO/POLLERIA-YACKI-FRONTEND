@@ -94,7 +94,7 @@ export class AuthService {
     this.setItem(this.tokenKey, token);
     this.setItem(this.usuarioKey, JSON.stringify(usuarioNormalizado));
 
-    console.log(`✅ [AuthService] Sesión guardada (${tipo}) en pestaña ${this.getTabId()}`);
+    console.log(`[AuthService] Sesión guardada (${tipo}) en pestaña ${this.getTabId()}`);
   }
 
   // ============================================
@@ -184,8 +184,8 @@ export class AuthService {
   logout(): void {
     this.removeItem(this.tokenKey);
     this.removeItem(this.usuarioKey);
-    // ⚠️ NO borramos el tabId para que la pestaña mantenga su identidad
-    console.log(`👋 [AuthService] Sesión cerrada en pestaña ${this.getTabId()}`);
+    // NO borramos el tabId para que la pestaña mantenga su identidad
+    console.log(`[AuthService] Sesión cerrada en pestaña ${this.getTabId()}`);
   }
 
   // ============================================
