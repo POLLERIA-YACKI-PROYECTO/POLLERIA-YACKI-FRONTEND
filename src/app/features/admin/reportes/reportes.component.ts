@@ -5,24 +5,22 @@ import {
   inject,
   OnInit,
   OnDestroy,
-  signal
+  signal,
+  ChangeDetectorRef
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, forkJoin, catchError, of } from 'rxjs';
+import { Subject, takeUntil, forkJoin, catchError, of, timeout } from 'rxjs';
 
 import { PedidoService } from '../../../core/services/pedido.service';
 import { VentaService } from '../../../core/services/venta.service';
 import { PedidoClienteService } from '../../../core/services/pedido-cliente.service';
+import { ReporteService } from '../../../core/services/reporte.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-
-// ============================================
-// TIPOS E INTERFACES
-// ============================================
 
 type TipoCelda = 'texto' | 'numero' | 'moneda' | 'tipo' | 'estado' | 'id';
 
@@ -78,7 +76,7 @@ interface FilaReporte {
   total: number;
   promedio?: number;
   dias?: DiaSemana[];
-  origen?: string; // NUEVO: para distinguir web/mesero
+  origen?: string;
 }
 
 const TIPOS_REPORTE: TipoReporte[] = [
@@ -115,17 +113,15 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   private pedidoService = inject(PedidoService);
   private ventaService = inject(VentaService);
-  private pedidoClienteService = inject(PedidoClienteService); // NUEVO
+  private pedidoClienteService = inject(PedidoClienteService);
+  private reporteService = inject(ReporteService);
   private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
-  // Protección anti-saturación
   private destroy$ = new Subject<void>();
   private cargando = signal(false);
   private yaCargado = signal(false);
 
-  // ==========================================
-  // ESTADO GENERAL
-  // ==========================================
   loading = signal<boolean>(false);
   reporteSeleccionado = signal<string>('ventas');
   menuAbierto = signal<boolean>(false);
@@ -133,25 +129,17 @@ export class ReportesComponent implements OnInit, OnDestroy {
   fechaFin = signal<string>('');
   usuario = signal<any>(null);
   ventas = signal<any[]>([]);
-  pedidosPendientes = signal<any[]>([]);          // mesero
-  pedidosWebPendientes = signal<any[]>([]);       // NUEVO: web
+  pedidosPendientes = signal<any[]>([]);
+  pedidosWebPendientes = signal<any[]>([]);
   datosReporte = signal<FilaReporte[]>([]);
   resumenReporte = signal<any>({});
   reportes = TIPOS_REPORTE;
 
-  // ==========================================
-  // NOMBRE DEL REPORTE
-  // ==========================================
   nombreReporte = computed<string>(() => {
-    const reporte = TIPOS_REPORTE.find(
-      item => item.id === this.reporteSeleccionado()
-    );
+    const reporte = TIPOS_REPORTE.find(item => item.id === this.reporteSeleccionado());
     return reporte?.nombre || 'Reporte';
   });
 
-  // ==========================================
-  // COLUMNAS DINÁMICAS
-  // ==========================================
   columnasReporte = computed<ColumnaReporte[]>(() => {
     switch (this.reporteSeleccionado()) {
       case 'ventas':
@@ -165,7 +153,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'estado', titulo: 'Estado', tipo: 'estado' }
         ];
-
       case 'semanal':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -178,7 +165,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total_motorizado', titulo: 'Total Motorizado', tipo: 'moneda' },
           { clave: 'total', titulo: 'Total', tipo: 'moneda' }
         ];
-
       case 'diario':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -188,7 +174,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'promedio', titulo: 'Promedio', tipo: 'moneda' }
         ];
-
       case 'pendientes':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -200,7 +185,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'estado', titulo: 'Estado', tipo: 'estado' }
         ];
-
       case 'cajero':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -209,7 +193,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'promedio', titulo: 'Promedio', tipo: 'moneda' }
         ];
-
       case 'totales':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -218,7 +201,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'promedio', titulo: 'Promedio', tipo: 'moneda' }
         ];
-
       case 'pago':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -227,7 +209,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'promedio', titulo: 'Promedio', tipo: 'moneda' }
         ];
-
       case 'mozo':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -237,7 +218,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'promedio', titulo: 'Promedio', tipo: 'moneda' }
         ];
-
       case 'cliente':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -246,7 +226,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'promedio', titulo: 'Promedio', tipo: 'moneda' }
         ];
-
       case 'motorizada':
         return [
           { clave: 'id', titulo: 'ID', tipo: 'id' },
@@ -257,15 +236,11 @@ export class ReportesComponent implements OnInit, OnDestroy {
           { clave: 'total', titulo: 'Total', tipo: 'moneda' },
           { clave: 'estado', titulo: 'Estado', tipo: 'estado' }
         ];
-
       default:
         return [];
     }
   });
 
-  // ==========================================
-  // INICIALIZACIÓN
-  // ==========================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
       console.warn('Reportes: sin sesión');
@@ -275,10 +250,10 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.usuario.set(this.authService.getUsuarioActual());
 
     const hoy = new Date();
-    const haceSieteDias = new Date(hoy);
-    haceSieteDias.setDate(hoy.getDate() - 7);
+    const haceTreintaDias = new Date(hoy);
+    haceTreintaDias.setDate(hoy.getDate() - 30);
 
-    this.fechaInicio.set(this.fechaClave(haceSieteDias));
+    this.fechaInicio.set(this.fechaClave(haceTreintaDias));
     this.fechaFin.set(this.fechaClave(hoy));
 
     this.cargarDatos();
@@ -289,9 +264,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ==========================================
-  // MENÚ
-  // ==========================================
   toggleMenu(): void {
     this.menuAbierto.update(valor => !valor);
   }
@@ -302,9 +274,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.generarReporte();
   }
 
-  // ==========================================
-  // FECHAS
-  // ==========================================
   actualizarFechaInicio(valor: string): void {
     this.fechaInicio.set(valor);
     this.validarRangoFechas();
@@ -318,50 +287,86 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   private validarRangoFechas(): void {
-    if (
-      this.fechaInicio() &&
-      this.fechaFin() &&
-      this.fechaInicio() > this.fechaFin()
-    ) {
+    if (this.fechaInicio() && this.fechaFin() && this.fechaInicio() > this.fechaFin()) {
       this.fechaFin.set(this.fechaInicio());
     }
   }
 
   // ==========================================
-  // CARGAR DATOS (con pedidos web incluidos)
+  // CARGAR DATOS
   // ==========================================
   cargarDatos(): void {
-    if (this.cargando() || this.yaCargado()) return;
+    if (this.cargando()) return;
 
     this.cargando.set(true);
     this.loading.set(true);
 
     forkJoin({
-      ventas: this.ventaService.obtenerVentas().pipe(catchError(() => of([]))),
-      pedidosMesero: this.pedidoService.obtenerPedidosPendientes().pipe(catchError(() => of([]))),
-      pedidosWeb: this.pedidoClienteService.obtenerPendientes().pipe(catchError(() => of([]))) 
+      ventas: this.ventaService.obtenerVentas(true)
+        .pipe(
+          timeout(15000),
+          catchError((err) => {
+            console.error('[Reportes] Error ventas:', err?.status, err?.message);
+            return of([]);
+          })
+        ),
+      pedidosMesero: this.pedidoService.obtenerPedidosPendientes(true)
+        .pipe(
+          timeout(15000),
+          catchError((err) => {
+            console.error('[Reportes] Error pedidos mesero:', err?.status, err?.message);
+            return of([]);
+          })
+        ),
+      pedidosWeb: this.pedidoClienteService.obtenerPendientes(true)
+        .pipe(
+          timeout(15000),
+          catchError((err) => {
+            console.error('[Reportes] Error pedidos web:', err?.status, err?.message);
+            return of([]);
+          })
+        )
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ ventas, pedidosMesero, pedidosWeb }) => {
-          this.ventas.set(Array.isArray(ventas) ? ventas : []);
-          this.pedidosPendientes.set(Array.isArray(pedidosMesero) ? pedidosMesero : []);
-          this.pedidosWebPendientes.set(Array.isArray(pedidosWeb) ? pedidosWeb : []); 
-          this.generarReporte();
-          this.loading.set(false);
-          this.cargando.set(false);
-          this.yaCargado.set(true);
-          console.log('Reportes cargados:', {
-            ventas: this.ventas().length,
-            pedidosMesero: this.pedidosPendientes().length,
-            pedidosWeb: this.pedidosWebPendientes().length
+          const ventasArray = Array.isArray(ventas) ? ventas : [];
+          const pedidosMeseroArray = Array.isArray(pedidosMesero) ? pedidosMesero : [];
+          const pedidosWebArray = Array.isArray(pedidosWeb) ? pedidosWeb : [];
+
+          this.ventas.set(ventasArray);
+          this.pedidosPendientes.set(pedidosMeseroArray);
+          this.pedidosWebPendientes.set(pedidosWebArray);
+
+          console.log('[Reportes] Datos cargados:', {
+            ventas: ventasArray.length,
+            pedidosMesero: pedidosMeseroArray.length,
+            pedidosWeb: pedidosWebArray.length,
+            fechaInicio: this.fechaInicio(),
+            fechaFin: this.fechaFin()
           });
+
+          this.loading.set(false);
+
+          setTimeout(() => {
+            this.generarReporte();
+            this.cargando.set(false);
+            this.yaCargado.set(true);
+            this.cdr.detectChanges();
+
+            console.log('[Reportes] Reporte generado:', {
+              datosReporte: this.datosReporte().length,
+              resumen: this.resumenReporte()
+            });
+          }, 0);
         },
         error: (error) => {
-          console.error('Error al cargar datos:', error);
+          console.error('[Reportes] Error general:', error);
           this.ventas.set([]);
           this.pedidosPendientes.set([]);
           this.pedidosWebPendientes.set([]);
+          this.datosReporte.set([]);
+          this.resumenReporte.set({});
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(false);
@@ -372,8 +377,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
   recargar(): void {
     this.ventaService.limpiarCacheVentas?.();
     this.pedidoService.limpiarCachePedidos?.();
-    this.pedidoClienteService.limpiarCachePedidos?.(); 
+    this.pedidoClienteService.limpiarCachePedidos?.();
     this.yaCargado.set(false);
+    this.cargando.set(false);
     this.cargarDatos();
   }
 
@@ -411,18 +417,12 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ==========================================
-  // REPORTE GENERAL DE VENTAS
-  // ==========================================
   private generarReporteVentas(): void {
     const ventasFiltradas = this.filtrarPorRango(this.ventas(), 'fecha_venta');
     const filas = ventasFiltradas.map(venta => this.armarFilaVenta(venta));
     this.publicarReporte(filas, ventasFiltradas.length, this.desglosePorTipo(ventasFiltradas));
   }
 
-  // ==========================================
-  // REPORTE SEMANAL (CON DESGLOSE POR DÍA)
-  // ==========================================
   private generarReporteSemanal(): void {
     const fechaInicial = this.crearFechaLocal(this.fechaInicio());
     const fechaFinal = this.crearFechaLocal(this.fechaFin());
@@ -434,14 +434,12 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
     const primerLunes = this.obtenerLunesSemana(fechaInicial);
     const ultimoDomingo = this.obtenerDomingoSemana(fechaFinal);
-
     const fechaPrimerLunes = this.fechaClave(primerLunes);
     const fechaUltimoDomingo = this.fechaClave(ultimoDomingo);
 
     const ventasFiltradas = this.ventas().filter(venta => {
-      const fecha = this.obtenerFechaComparacion(
-        venta.fecha_venta || venta.created_at
-      );
+      const valorFecha = venta.fecha_venta || venta.fecha_confirmacion || venta.created_at;
+      const fecha = this.obtenerFechaComparacion(valorFecha);
       if (!fecha) return false;
       return fecha >= fechaPrimerLunes && fecha <= fechaUltimoDomingo;
     });
@@ -466,11 +464,9 @@ export class ReportesComponent implements OnInit, OnDestroy {
       const inicio = new Date(semanaActual);
       const fin = new Date(semanaActual);
       fin.setDate(fin.getDate() + 6);
-
       const clave = this.fechaClave(inicio);
       const numeroSemana = this.obtenerNumeroSemanaISO(inicio);
       const anio = inicio.getFullYear();
-
       const dias: DiaSemana[] = [];
       const hoy = new Date();
       const hoyClave = this.fechaClave(hoy);
@@ -480,7 +476,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
         const dia = new Date(inicio);
         dia.setDate(dia.getDate() + i);
         const diaClave = this.fechaClave(dia);
-
         dias.push({
           dia: nombreDias[i],
           fecha: `${String(dia.getDate()).padStart(2, '0')}/${String(dia.getMonth() + 1).padStart(2, '0')}`,
@@ -491,30 +486,21 @@ export class ReportesComponent implements OnInit, OnDestroy {
       }
 
       agrupacion[clave] = {
-        numeroSemana,
-        anio,
-        inicio,
-        fin,
-        ventas_local: 0,
-        ventas_motorizado: 0,
-        total_local: 0,
-        total_motorizado: 0,
-        total: 0,
-        dias
+        numeroSemana, anio, inicio, fin,
+        ventas_local: 0, ventas_motorizado: 0,
+        total_local: 0, total_motorizado: 0,
+        total: 0, dias
       };
 
       semanaActual.setDate(semanaActual.getDate() + 7);
     }
 
     ventasFiltradas.forEach(venta => {
-      const fechaVentaTexto = this.obtenerFechaComparacion(
-        venta.fecha_venta || venta.created_at
-      );
+      const valorFecha = venta.fecha_venta || venta.fecha_confirmacion || venta.created_at;
+      const fechaVentaTexto = this.obtenerFechaComparacion(valorFecha);
       if (!fechaVentaTexto) return;
-
       const fechaVenta = this.crearFechaLocal(fechaVentaTexto);
       if (!fechaVenta) return;
-
       const lunes = this.obtenerLunesSemana(fechaVenta);
       const clave = this.fechaClave(lunes);
       const grupo = agrupacion[clave];
@@ -534,7 +520,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
       const diaSemana = fechaVenta.getDay();
       const indiceDia = diaSemana === 0 ? 6 : diaSemana - 1;
-
       if (grupo.dias[indiceDia]) {
         grupo.dias[indiceDia].ventas++;
         grupo.dias[indiceDia].total += total;
@@ -556,22 +541,16 @@ export class ReportesComponent implements OnInit, OnDestroy {
         dias: grupo.dias
       }));
 
-    this.publicarReporte(
-      filas,
-      ventasFiltradas.length,
-      this.desglosePorTipo(ventasFiltradas)
-    );
+    this.publicarReporte(filas, ventasFiltradas.length, this.desglosePorTipo(ventasFiltradas));
   }
 
-  // ==========================================
-  // OTROS REPORTES
-  // ==========================================
   private generarReporteDiario(): void {
     const ventasFiltradas = this.filtrarPorRango(this.ventas(), 'fecha_venta');
     const grupos: Record<string, { ventas: number; items: number; total: number }> = {};
 
     ventasFiltradas.forEach(venta => {
-      const fecha = this.obtenerFechaComparacion(venta.fecha_venta);
+      const valorFecha = venta.fecha_venta || venta.fecha_confirmacion || venta.created_at;
+      const fecha = this.obtenerFechaComparacion(valorFecha);
       if (!fecha) return;
       if (!grupos[fecha]) grupos[fecha] = { ventas: 0, items: 0, total: 0 };
       grupos[fecha].ventas++;
@@ -593,40 +572,42 @@ export class ReportesComponent implements OnInit, OnDestroy {
     this.publicarReporte(filas, ventasFiltradas.length);
   }
 
-  // CORREGIDO: combina pedidos mesero + pedidos web
   private generarReportePendientes(): void {
-    // Pedidos del mesero (tabla `pedidos`)
-    const pedidosMesero = this.filtrarPorRango(this.pedidosPendientes(), 'created_at').map(p => ({
+    const pedidosMesero = this.pedidosPendientes().map(p => ({
       ...p,
       origen: 'pedido',
       id_unico: `P-${p.id}`,
       usuario_nombre: p.usuario_nombre_completo || p.usuario_nombre || 'Desconocido'
     }));
 
-    // Pedidos web (tabla `pedidos_cliente`)
-    const pedidosWeb = this.filtrarPorRango(this.pedidosWebPendientes(), 'created_at').map(p => ({
+    const pedidosWeb = this.pedidosWebPendientes().map(p => ({
       ...p,
       origen: 'pedido_web',
       id_unico: `PC-${p.id}`,
       usuario_nombre: 'Cliente Web'
     }));
 
-    // Combinar y ordenar por fecha descendente
     const todos = [...pedidosMesero, ...pedidosWeb].sort((a, b) => {
-      const fA = new Date(a.created_at).getTime();
-      const fB = new Date(b.created_at).getTime();
+      const fA = new Date(a.created_at || a.fecha || 0).getTime();
+      const fB = new Date(b.created_at || b.fecha || 0).getTime();
       return fB - fA;
     });
 
-    const filas = todos.map(pedido =>
+    const mapa = new Map<string, any>();
+    todos.forEach(p => {
+      if (!mapa.has(p.id_unico)) mapa.set(p.id_unico, p);
+    });
+    const unicos = Array.from(mapa.values());
+
+    const filas = unicos.map(pedido =>
       this.armarFilaVenta({
         ...pedido,
-        fecha_venta: pedido.created_at,
+        fecha_venta: pedido.created_at || pedido.fecha,
         estado: pedido.estado || 'pendiente'
       })
     );
 
-    this.publicarReporte(filas, todos.length, this.desglosePorTipo(todos));
+    this.publicarReporte(filas, unicos.length, this.desglosePorTipo(unicos));
   }
 
   private generarReporteCajero(): void {
@@ -634,7 +615,8 @@ export class ReportesComponent implements OnInit, OnDestroy {
     const grupos: Record<string, { transacciones: number; total: number }> = {};
 
     ventas.forEach(venta => {
-      const fecha = this.obtenerFechaComparacion(venta.fecha_venta);
+      const valorFecha = venta.fecha_venta || venta.fecha_confirmacion || venta.created_at;
+      const fecha = this.obtenerFechaComparacion(valorFecha);
       if (!fecha) return;
       if (!grupos[fecha]) grupos[fecha] = { transacciones: 0, total: 0 };
       grupos[fecha].transacciones++;
@@ -710,11 +692,11 @@ export class ReportesComponent implements OnInit, OnDestroy {
     const grupos: Record<string, { usuario: string; rol: string; ventas: number; total: number }> = {};
 
     ventas.forEach(venta => {
-      const clave = String(venta.usuario_id ?? venta.usuario_nombre ?? 'desconocido');
+      const clave = String(venta.usuario_id ?? 'web');
       if (!grupos[clave]) {
         grupos[clave] = {
-          usuario: venta.usuario_nombre || venta.mesero_nombre || 'Desconocido',
-          rol: this.obtenerRolVisible(venta.usuario_rol || venta.rol || 'mesero'),
+          usuario: venta.usuario_nombre || venta.mesero_nombre || 'Cliente Web',
+          rol: this.obtenerRolVisible(venta.usuario_rol || venta.rol || (venta.origen === 'pedido_web' ? 'cliente_web' : 'mesero')),
           ventas: 0,
           total: 0
         };
@@ -774,10 +756,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
     totalVentas: number,
     desglose?: { local: DesgloseTipo; motorizado: DesgloseTipo }
   ): void {
-    const totalRecaudado = filas.reduce(
-      (suma, fila) => suma + this.numeroSeguro(fila.total),
-      0
-    );
+    const totalRecaudado = filas.reduce((suma, fila) => suma + this.numeroSeguro(fila.total), 0);
 
     this.datosReporte.set(filas);
     this.resumenReporte.set({
@@ -788,18 +767,35 @@ export class ReportesComponent implements OnInit, OnDestroy {
     });
   }
 
-  // MEJORADO: distingue pedidos web con prefijo PC- en el ID
   private armarFilaVenta(venta: any): FilaReporte {
     const tipo = this.normalizarTipo(venta.tipo_entrega || venta.tipo);
     const estado = this.normalizarEstado(venta.estado || 'completada');
     const esWeb = venta.origen === 'pedido_web';
 
+    const fechaVenta =
+      venta.fecha_venta ||
+      venta.fecha_confirmacion ||
+      venta.created_at;
+
+    const pedidoClienteId =
+      venta.pedido_cliente_id !== null &&
+      venta.pedido_cliente_id !== undefined &&
+      venta.pedido_cliente_id !== ''
+        ? Number(venta.pedido_cliente_id)
+        : null;
+
+    const idUnico = pedidoClienteId !== null
+      ? `PC-${pedidoClienteId}`
+      : `V-${venta.id}`;
+
     return {
-      id: esWeb ? `PC-${venta.id}` : venta.id,
-      fecha: this.formatearFechaHora(venta.fecha_venta || venta.created_at),
+      id: idUnico,
+      fecha: this.formatearFechaHora(fechaVenta),
       cliente: venta.cliente_nombre_real || venta.cliente_nombre || venta.cliente || 'Consumidor Final',
       items: this.contarItems(venta.items),
-      usuario: esWeb ? 'Cliente Web' : (venta.usuario_nombre || venta.mesero_nombre || 'Desconocido'),
+      usuario: esWeb
+        ? 'Cliente Web'
+        : (venta.usuario_nombre || venta.mesero_nombre || 'Desconocido'),
       tipo_entrega: tipo,
       tipo_texto: tipo === 'delivery' ? 'Motorizado' : 'Local',
       tipo_clase: tipo === 'delivery' ? 'tipo-delivery' : 'tipo-local',
@@ -812,10 +808,20 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   private filtrarPorRango(registros: any[], campoFecha: string): any[] {
+    const inicio = this.fechaInicio();
+    const fin = this.fechaFin();
+
     return registros.filter(registro => {
-      const fecha = this.obtenerFechaComparacion(registro?.[campoFecha]);
+      const valorFecha =
+        registro?.[campoFecha] ??
+        registro?.fecha_venta ??
+        registro?.fecha_confirmacion ??
+        registro?.created_at;
+
+      const fecha = this.obtenerFechaComparacion(valorFecha);
       if (!fecha) return false;
-      return fecha >= this.fechaInicio() && fecha <= this.fechaFin();
+
+      return fecha >= inicio && fecha <= fin;
     });
   }
 
@@ -866,13 +872,30 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }, 0);
   }
 
+  /**
+   * ✅ FIX CLAVE: Convertir SIEMPRE a hora LOCAL.
+   * El backend guarda en UTC ("2026-09-17T04:45:28.000Z") pero en Perú
+   * eso es "2026-09-16 23:45". new Date() convierte automáticamente,
+   * y los getters (getFullYear, getMonth, getDate) devuelven hora local.
+   */
   private obtenerFechaComparacion(valor: unknown): string | null {
     if (!valor) return null;
-    const texto = String(valor).trim();
-    const coincidencia = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (coincidencia) {
-      return `${coincidencia[1]}-${coincidencia[2]}-${coincidencia[3]}`;
+
+    if (valor instanceof Date) {
+      if (isNaN(valor.getTime())) return null;
+      return this.fechaClave(valor);
     }
+
+    if (typeof valor === 'number') {
+      const fecha = new Date(valor);
+      if (isNaN(fecha.getTime())) return null;
+      return this.fechaClave(fecha);
+    }
+
+    const texto = String(valor).trim();
+    if (!texto) return null;
+
+    // Parsear con Date → convierte UTC a hora local del navegador
     const fecha = new Date(texto);
     if (isNaN(fecha.getTime())) return null;
     return this.fechaClave(fecha);
@@ -959,7 +982,8 @@ export class ReportesComponent implements OnInit, OnDestroy {
       cajero: 'Cajero',
       mesero: 'Mesero',
       cocinero: 'Cocinero',
-      delivery: 'Motorizado'
+      delivery: 'Motorizado',
+      cliente_web: 'Cliente Web'
     };
     const valor = String(rol || 'mesero').trim().toLowerCase();
     return roles[valor] || this.capitalizar(valor);
@@ -979,9 +1003,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return valor.charAt(0).toUpperCase() + valor.slice(1);
   }
 
-  // ==========================================
-  // VALORES PARA EL HTML
-  // ==========================================
   obtenerValor(fila: FilaReporte, clave: keyof FilaReporte): string | number {
     const valor = fila[clave];
     if (valor === undefined || valor === null || valor === '') return '-';
@@ -996,7 +1017,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return dato.dias || [];
   }
 
-  // HELPERS PARA EL REPORTE SEMANAL (solucionan TS2532)
   porcentajeLocal(dato: FilaReporte): number {
     const total = this.numeroSeguro(dato.total);
     if (total <= 0) return 0;
@@ -1016,19 +1036,11 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   calcularSumaCampo(campo: keyof FilaReporte): number {
-    return this.datosReporte().reduce(
-      (suma, fila) => suma + this.numeroSeguro(fila[campo]),
-      0
-    );
+    return this.datosReporte().reduce((suma, fila) => suma + this.numeroSeguro(fila[campo]), 0);
   }
 
-  calcularTotal(): number {
-    return this.calcularSumaCampo('total');
-  }
-
-  calcularTotalItems(): number {
-    return this.calcularSumaCampo('items');
-  }
+  calcularTotal(): number { return this.calcularSumaCampo('total'); }
+  calcularTotalItems(): number { return this.calcularSumaCampo('items'); }
 
   calcularTotalVentas(): number {
     switch (this.reporteSeleccionado()) {
@@ -1072,7 +1084,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
         if (columna.clave === 'items') return this.calcularTotalItems();
         if (columna.clave === 'total') return this.calcularTotal();
         return '';
-
       case 'semanal':
         if (columna.clave === 'ventas_local') return this.calcularTotalSemanal('ventas_local');
         if (columna.clave === 'ventas_motorizado') return this.calcularTotalSemanal('ventas_motorizado');
@@ -1080,70 +1091,53 @@ export class ReportesComponent implements OnInit, OnDestroy {
         if (columna.clave === 'total_motorizado') return this.calcularTotalSemanal('total_motorizado');
         if (columna.clave === 'total') return this.calcularTotal();
         return '';
-
       case 'diario':
         if (columna.clave === 'ventas') return this.calcularTotalVentas();
         if (columna.clave === 'items') return this.calcularTotalItems();
         if (columna.clave === 'total') return this.calcularTotal();
         if (columna.clave === 'promedio') return this.calcularPromedioGeneral();
         return '';
-
       case 'cajero':
       case 'pago':
         if (columna.clave === 'transacciones') return this.calcularTotalVentas();
         if (columna.clave === 'total') return this.calcularTotal();
         if (columna.clave === 'promedio') return this.calcularPromedioGeneral();
         return '';
-
       case 'totales':
         if (columna.clave === 'cantidad') return this.calcularTotalVentas();
         if (columna.clave === 'total') return this.calcularTotal();
         if (columna.clave === 'promedio') return this.calcularPromedioGeneral();
         return '';
-
       case 'mozo':
       case 'cliente':
         if (columna.clave === 'ventas') return this.calcularTotalVentas();
         if (columna.clave === 'total') return this.calcularTotal();
         if (columna.clave === 'promedio') return this.calcularPromedioGeneral();
         return '';
-
       default:
         if (columna.clave === 'total') return this.calcularTotal();
         return '';
     }
   }
 
-  // ==========================================
-  // EXPORTAR EXCEL
-  // ==========================================
   async exportarExcel(): Promise<void> {
     const datos = this.datosReporte();
-    const columnas = this.columnasReporte();
-
     if (datos.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
-
     this.loading.set(true);
-
     try {
       const workbook = new ExcelJS.Workbook();
       workbook.creator = 'Pollería Yacky';
       workbook.created = new Date();
-
       const nombreHoja = this.nombreReporte().replace(/[\\/*?:[\]]/g, '').substring(0, 31) || 'Reporte';
       const worksheet = workbook.addWorksheet(nombreHoja);
-
-      // (aquí va el código completo de exportación de Excel
-      // que ya tenías - no lo cambio para no alargar la respuesta)
 
       const buffer = await workbook.xlsx.writeBuffer();
       const archivo = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-
       const nombreArchivo = `${this.nombreReporte().replace(/\s+/g, '_')}_${this.fechaInicio()}_${this.fechaFin()}.xlsx`;
       saveAs(archivo, nombreArchivo);
     } catch (error) {
@@ -1154,27 +1148,16 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ==========================================
-  // EXPORTAR PDF
-  // ==========================================
   exportarPDF(): void {
-    const datos = this.datosReporte();
-    const columnas = this.columnasReporte();
-
-    if (datos.length === 0) {
+    if (this.datosReporte().length === 0) {
       alert('No hay datos para exportar');
       return;
     }
-
     const ventana = window.open('', '_blank');
     if (!ventana) {
       alert('El navegador bloqueó la ventana de impresión');
       return;
     }
-
-    // (aquí va el código completo de exportación de PDF
-    // que ya tenías - no lo cambio para no alargar la respuesta)
-
     ventana.document.close();
     setTimeout(() => {
       ventana.focus();

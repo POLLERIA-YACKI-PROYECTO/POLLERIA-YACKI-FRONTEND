@@ -1,7 +1,7 @@
 // src/app/core/services/venta.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
 import { BaseApiService } from './base-api.service';
@@ -27,23 +27,28 @@ export class VentaService extends BaseApiService {
   // GET
   // ============================================
   obtenerVentas(forceRefresh = false): Observable<any[]> {
+    console.log(`[VentaService] obtenerVentas(forceRefresh=${forceRefresh})`);
     return this.getCached<any[]>(this.apiUrl, {
-      ttl: 30 * 1000,
+      ttl: 15 * 1000,
       forceRefresh,
       headers: this.getHeaders(),
-    });
+    }).pipe(
+      tap((data) => {
+        console.log(`[VentaService] obtenerVentas devolvió ${Array.isArray(data) ? data.length : 0} registros`);
+      })
+    );
   }
 
   obtenerVenta(id: number): Observable<any> {
     return this.getCached<any>(`${this.apiUrl}/${id}`, {
-      ttl: 30 * 1000,
+      ttl: 15 * 1000,
       headers: this.getHeaders(),
     });
   }
 
   obtenerVentasHoy(forceRefresh = false): Observable<any[]> {
     return this.getCached<any[]>(`${this.apiUrl}/hoy`, {
-      ttl: 30 * 1000,
+      ttl: 15 * 1000,
       forceRefresh,
       headers: this.getHeaders(),
     });
@@ -71,6 +76,7 @@ export class VentaService extends BaseApiService {
   // CACHÉ
   // ============================================
   limpiarCacheVentas(): void {
+    console.log('[VentaService] limpiarCacheVentas()');
     this.limpiarCache(this.apiUrl);
   }
 }

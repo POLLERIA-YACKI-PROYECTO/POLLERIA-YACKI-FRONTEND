@@ -28,7 +28,6 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  // Flags para evitar cargas duplicadas
   private cargando = signal(false);
   private yaCargado = signal(false);
 
@@ -85,22 +84,13 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ============================================
-  // CARGAR DATOS EN DOS FASES (evita saturar el pool)
-  // ============================================
   cargarDatos(): void {
-    //  Evitar cargas duplicadas
-    if (this.cargando() || this.yaCargado()) {
-      console.log(' Dashboard ya cargado o cargando, evitando duplicado');
-      return;
-    }
+    if (this.cargando() || this.yaCargado()) return;
 
     this.cargando.set(true);
     this.loading.set(true);
     this.errorMessage.set('');
 
-    // FASE 1: Solo 2 peticiones (productos y usuarios)
-    // Esto reduce la presión sobre el pool de MySQL
     forkJoin({
       productos: this.productoService
         .obtenerProductos()
@@ -112,15 +102,12 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ productos, usuarios }) => {
-          // Procesar productos
           const totalProductos = Array.isArray(productos) ? productos.length : 0;
           this.actualizarStat('productos', totalProductos);
 
-          // Procesar usuarios
           const activos = (usuarios || []).filter((u: any) => u.activo !== false);
           this.actualizarStat('usuarios', activos.length);
 
-          // FASE 2: Cargar el resto (3 peticiones) después de que las primeras terminen
           this.cargarFase2();
         },
         error: (err) => {
@@ -132,7 +119,6 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // FASE 2: pedidos + resumen (se ejecuta después de la fase 1)
   private cargarFase2(): void {
     forkJoin({
       pedidosPendientes: this.pedidoService
@@ -148,15 +134,30 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ pedidosPendientes, pedidosWeb, resumen }) => {
-          // Pedidos pendientes
-          const pendientesMesero = pedidosPendientes || [];
-          this.pedidosPendientes.set(pendientesMesero);
+          // ==========================================
+          // PEDIDOS PENDIENTES
+          // ==========================================
+          const pendientesMesero = (pedidosPendientes || []).map((p: any) => ({
+            ...p,
+            id_unico: `P-${p.id}`,
+            origen: 'pedido',
+          }));
 
-          const pendientesWeb = pedidosWeb || [];
-          const totalPendientes = pendientesMesero.length + pendientesWeb.length;
-          this.actualizarStat('pendientes', totalPendientes);
+          const pendientesWeb = (pedidosWeb || []).map((p: any) => ({
+            ...p,
+            id_unico: `PC-${p.id}`,
+            origen: 'pedido_web',
+          }));
 
-          // Resumen unificado
+          const todosPendientes = [...pendientesMesero, ...pendientesWeb];
+          const pendientesUnicos = this.deduplicarPorIdUnico(todosPendientes);
+
+          this.pedidosPendientes.set(pendientesUnicos);
+          this.actualizarStat('pendientes', pendientesUnicos.length);
+
+          // ==========================================
+          // RESUMEN UNIFICADO
+          // ==========================================
           if (resumen?.success) {
             const { resumen: r, ventasRecientes: recientes } = resumen;
 
@@ -175,23 +176,57 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
               recaudadoHoy: r.recaudadoHoy || 0,
             });
 
-            const recientesFormateados = (recientes || []).map((v: any) => ({
-              id: v.id,
-              cliente: v.cliente_nombre || 'Consumidor Final',
-              total: parseFloat(v.total) || 0,
-              fecha: v.fecha ? this.formatearFecha(v.fecha) : '--',
-              estado: v.estado || 'completada',
-              tipo: v.tipo_entrega || 'local',
-              origen: v.origen || 'venta',
-            }));
-            this.ventasRecientes.set(recientesFormateados);
+            // ==========================================
+            // VENTAS RECIENTES: deduplicar
+            // ==========================================
+            const recientesFormateados = (recientes || []).map((v: any) => {
+              const pedidoClienteId =
+                v.pedido_cliente_id !== null &&
+                v.pedido_cliente_id !== undefined &&
+                v.pedido_cliente_id !== ''
+                  ? Number(v.pedido_cliente_id)
+                  : null;
+
+              const esWeb = v.origen === 'pedido_web' || pedidoClienteId !== null;
+
+              return {
+                id: v.id,
+                id_unico: pedidoClienteId !== null
+                  ? `PC-${pedidoClienteId}`
+                  : `V-${v.id}`,
+                cliente: v.cliente_nombre || 'Consumidor Final',
+                total: parseFloat(v.total) || 0,
+                fecha: (v.fecha || v.fecha_venta || v.created_at)
+                  ? this.formatearFecha(v.fecha || v.fecha_venta || v.created_at)
+                  : '--',
+                estado: v.estado || 'completada',
+                tipo: v.tipo_entrega || 'local',
+                origen: esWeb ? 'pedido_web' : 'venta',
+              };
+            });
+
+            // Regla de oro: agrupar por pedido_cliente_id; si hay venta real,
+            // descartar el pedido web duplicado.
+            const mapaRecientes = new Map<string, any>();
+            recientesFormateados.forEach((r: any) => {
+              if (!mapaRecientes.has(r.id_unico)) {
+                mapaRecientes.set(r.id_unico, r);
+                return;
+              }
+              const existente = mapaRecientes.get(r.id_unico)!;
+              const existenteEsVenta = String(existente.id_unico).startsWith('V-');
+              const nuevoEsVenta = String(r.id_unico).startsWith('V-');
+              if (nuevoEsVenta && !existenteEsVenta) {
+                mapaRecientes.set(r.id_unico, r);
+              }
+            });
+
+            this.ventasRecientes.set(Array.from(mapaRecientes.values()));
           }
 
-          // Marcar como completado
           this.loading.set(false);
           this.cargando.set(false);
           this.yaCargado.set(true);
-          console.log('Dashboard cargado correctamente');
         },
         error: (err) => {
           console.error('Error en fase 2 del dashboard:', err);
@@ -201,18 +236,40 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // RECARGAR (manual)
+  private deduplicarPorIdUnico<T extends { id_unico?: string | number }>(lista: T[]): T[] {
+    const mapa = new Map<string | number, T>();
+
+    lista.forEach(item => {
+      const key = item.id_unico ?? '';
+      if (key === '') return;
+
+      if (!mapa.has(key)) {
+        mapa.set(key, item);
+        return;
+      }
+
+      const existente = mapa.get(key)!;
+      const esVentaExistente = String(existente.id_unico).startsWith('V-');
+      const esVentaNueva = String(item.id_unico).startsWith('V-');
+
+      if (esVentaNueva && !esVentaExistente) {
+        mapa.set(key, item);
+      }
+    });
+
+    return Array.from(mapa.values());
+  }
+
   recargar(): void {
     this.productoService.limpiarCache();
     this.usuarioService.limpiarCache();
     this.pedidoService.limpiarCachePedidos();
+    this.pedidoClienteService.limpiarCachePedidos();
     this.yaCargado.set(false);
+    this.cargando.set(false);
     this.cargarDatos();
   }
 
-  // ============================================
-  // UTILIDADES
-  // ============================================
   formatearFecha(fecha: string): string {
     try {
       const d = new Date(fecha);

@@ -43,17 +43,27 @@ export abstract class BaseApiService {
       }));
     }
 
-    // 2. Caché
+    // 2. Caché (solo si NO es forceRefresh y no ha expirado el TTL)
     if (!forceRefresh) {
       const cached = this.cache.get(key);
       if (cached && Date.now() - cached.timestamp < ttl) {
+        console.log(`[BaseApiService] CACHE HIT: ${url}`);
         return of(cached.data as T);
       }
+      // Si expiró, lo eliminamos para no devolver datos viejos
+      if (cached) {
+        this.cache.delete(key);
+      }
+    } else {
+      // forceRefresh: eliminar el cache actual
+      this.cache.delete(key);
+      console.log(`[BaseApiService] FORCE REFRESH: ${url}`);
     }
 
     // 3. Petición en curso -> reutilizar
     const existente = this.enCurso.get(key);
     if (existente) {
+      console.log(`[BaseApiService] REUSANDO petición en curso: ${url}`);
       return existente as Observable<T>;
     }
 
@@ -77,6 +87,8 @@ export abstract class BaseApiService {
       tap((data) => {
         this.cache.set(key, { data, timestamp: Date.now() });
         this.bloqueadoHasta.delete(key);
+        console.log(`[BaseApiService] CACHE SET: ${url}`, 
+          Array.isArray(data) ? `(${data.length} items)` : '');
       }),
 
       catchError((error) => {
@@ -91,8 +103,10 @@ export abstract class BaseApiService {
         this.enCurso.delete(key);
       }),
 
-      // refCount: false -> NO se cancela al hacer F5
-      shareReplay({ bufferSize: 1, refCount: false })
+      // ✅ CAMBIO CLAVE: refCount: true
+      // Esto permite que el Observable se limpie cuando nadie lo escucha.
+      // Antes con false, la respuesta quedaba "pegada" para siempre en memoria.
+      shareReplay({ bufferSize: 1, refCount: true })
     );
 
     this.enCurso.set(key, req$);
