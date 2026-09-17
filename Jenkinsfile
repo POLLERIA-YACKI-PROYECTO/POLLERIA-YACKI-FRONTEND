@@ -10,32 +10,22 @@ pipeline {
         // ============================================
         // PATH - Agregar rutas necesarias
         // ============================================
-        // Agregamos Git al PATH para poder usar comandos git
-        // Si Git está instalado en otra ruta, modificar aquí
         PATH = "C:\\Program Files\\Git\\bin;C:\\Program Files\\Git\\cmd;${env.PATH}"
-        
+
         // ============================================
         // VARIABLES DEL PROYECTO FRONTEND
         // ============================================
-        // Nombre del proyecto
         PROJECT_NAME = 'polleria-yacky-frontend'
-        
-        // URL del repositorio Git
         REPO_URL = 'https://github.com/POLLERIA-YACKI-PROYECTO/POLLERIA-YACKI-FRONTEND.git'
-        
-        // Rama a construir
         BRANCH = 'main'
-        
-        // Puerto donde corre el frontend (Angular por defecto)
         PORT = '4200'
-        
-        // Directorio de salida del build
-        DIST_DIR = 'dist/polleria-yacky'
-        
+
+        // CORREGIDO: nombre real del directorio generado por Angular
+        DIST_DIR = 'dist/polleria-yaki-frontend'
+
         // ============================================
         // CREDENCIALES
         // ============================================
-        // Credencial para acceder al repositorio
         GIT_CREDENTIALS = credentials('Ardamins')
     }
 
@@ -43,55 +33,44 @@ pipeline {
         // ============================================
         // STAGE 1: CHECKOUT - Clonar el código
         // ============================================
-        // Propósito: Obtener el código fuente del repositorio
         stage('Checkout') {
             steps {
-                // Limpiar el workspace para evitar conflictos
                 cleanWs()
-                
-                // Clonar el repositorio
-                git branch: "${env.BRANCH}", 
+
+                git branch: "${env.BRANCH}",
                     url: "${env.REPO_URL}",
                     credentialsId: 'Ardamins'
-                
-                echo "✅ Código clonado exitosamente"
+
+                echo "Código clonado exitosamente"
             }
         }
 
         // ============================================
         // STAGE 2: INSTALAR DEPENDENCIAS
         // ============================================
-        // Propósito: Instalar todas las dependencias del proyecto Angular
         stage('Instalar Dependencias') {
             steps {
-                // Instalar dependencias
                 bat 'npm install --no-fund --no-audit'
-                
-                echo "✅ Dependencias instaladas"
+                echo "Dependencias instaladas"
             }
         }
 
         // ============================================
         // STAGE 3: CONSTRUIR EL PROYECTO
         // ============================================
-        // Propósito: Compilar el proyecto Angular para producción
-        // Qué hace: Genera los archivos estáticos en la carpeta dist/
         stage('Construir Frontend') {
             steps {
-                echo "📦 Construyendo el frontend..."
-                
-                // Construir para producción
-                // --configuration production: Usa configuración de producción
-                // --output-path: Directorio de salida (opcional)
+                echo "Construyendo el frontend..."
+
                 bat 'npm run build -- --configuration production'
-                
+
                 // Verificar que el build se generó correctamente
                 script {
                     def distPath = "${env.DIST_DIR}"
                     if (fileExists(distPath)) {
-                        echo "✅ Build generado correctamente en: ${distPath}"
+                        echo "Build generado correctamente en: ${distPath}"
                     } else {
-                        error "❌ No se encontró el directorio de build: ${distPath}"
+                        error "No se encontró el directorio de build: ${distPath}"
                     }
                 }
             }
@@ -100,36 +79,27 @@ pipeline {
         // ============================================
         // STAGE 4: EJECUTAR PRUEBAS (Opcional)
         // ============================================
-        // Propósito: Ejecutar pruebas unitarias
         stage('Ejecutar Pruebas') {
             steps {
-                echo "🧪 Ejecutando pruebas unitarias..."
-                
-                // Ejecutar pruebas en modo headless
-                // --watch=false: No esperar cambios
-                // --browsers=ChromeHeadless: Usar Chrome sin interfaz gráfica
+                echo "Ejecutando pruebas unitarias..."
+
                 bat 'npm run test -- --watch=false --browsers=ChromeHeadless'
-                
-                echo "✅ Pruebas ejecutadas correctamente"
+
+                echo "Pruebas ejecutadas correctamente"
             }
         }
 
         // ============================================
         // STAGE 5: INICIAR SERVIDOR DE DESARROLLO
         // ============================================
-        // Propósito: Iniciar el servidor de Angular para pruebas
         stage('Iniciar Servidor') {
             steps {
-                echo "🚀 Iniciando servidor de desarrollo..."
-                
-                // Iniciar servidor en segundo plano
-                // --port: Puerto donde correrá el servidor
-                // --open: No abrir navegador automáticamente
+                echo "Iniciando servidor de desarrollo..."
+
                 bat 'start /B npm run start -- --port=4200 --open=false > server.log 2>&1'
-                
-                echo "✅ Servidor iniciado"
-                
-                // Esperar a que el servidor se inicialice
+
+                echo "Servidor iniciado"
+
                 sleep(time: 10, unit: 'SECONDS')
             }
         }
@@ -137,14 +107,12 @@ pipeline {
         // ============================================
         // STAGE 6: VERIFICAR HEALTH CHECK
         // ============================================
-        // Propósito: Verificar que el frontend esté funcionando
         stage('Health Check') {
             steps {
-                echo "🔍 Verificando Health Check..."
-                
+                echo "Verificando Health Check..."
+
                 script {
                     try {
-                        // Usar PowerShell para verificar que el servidor responde
                         def healthCheck = powershell(returnStdout: true, script: '''
                             try {
                                 $response = Invoke-WebRequest -Uri "http://localhost:4200" -UseBasicParsing
@@ -153,20 +121,20 @@ pipeline {
                                 Write-Output "000"
                             }
                         ''').trim()
-                        
-                        echo "📊 Estado del servidor: ${healthCheck}"
-                        
+
+                        echo "Estado del servidor: ${healthCheck}"
+
                         if (healthCheck == '200') {
-                            echo "✅ Frontend funcionando correctamente"
+                            echo "Frontend funcionando correctamente"
                         } else {
-                            echo "⚠️ El servidor respondió con código: ${healthCheck}"
+                            echo "El servidor respondió con código: ${healthCheck}"
                             bat 'type server.log'
-                            error "❌ Health Check falló"
+                            error "Health Check falló"
                         }
                     } catch (e) {
-                        echo "❌ Error al verificar Health Check"
+                        echo "Error al verificar Health Check"
                         bat 'type server.log'
-                        error "❌ Health Check falló"
+                        error "Health Check falló"
                     }
                 }
             }
@@ -175,11 +143,9 @@ pipeline {
         // ============================================
         // STAGE 7: GENERAR REPORTE
         // ============================================
-        // Propósito: Generar un reporte HTML con los datos del build
         stage('Generar Reporte') {
             steps {
                 script {
-                    // Obtener el hash del commit
                     def commitHash = powershell(returnStdout: true, script: '''
                         $commit = git rev-parse --short HEAD 2>$null
                         if ($commit) {
@@ -188,10 +154,9 @@ pipeline {
                             Write-Output "unknown"
                         }
                     ''').trim()
-                    
+
                     def buildDate = new Date().format("yyyy-MM-dd HH:mm:ss")
-                    
-                    // Obtener el tamaño del build
+
                     def buildSize = powershell(returnStdout: true, script: '''
                         $path = "${env:DIST_DIR}"
                         if (Test-Path $path) {
@@ -205,8 +170,7 @@ pipeline {
                             Write-Output "N/A"
                         }
                     ''').trim()
-                    
-                    // Generar reporte HTML
+
                     def report = """
                     <!DOCTYPE html>
                     <html>
@@ -220,10 +184,10 @@ pipeline {
                             .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; }
                             .info { background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0; }
                             .info p { margin: 5px 0; }
-                            .endpoint { 
-                                background: #e9ecef; 
-                                padding: 10px; 
-                                border-radius: 4px; 
+                            .endpoint {
+                                background: #e9ecef;
+                                padding: 10px;
+                                border-radius: 4px;
                                 margin: 5px 0;
                                 font-family: monospace;
                             }
@@ -263,7 +227,7 @@ pipeline {
                         <div class="container">
                             <h1>Reporte de Construccion - Frontend</h1>
                             <div class="success">Construccion exitosa</div>
-                            
+
                             <div class="info">
                                 <p><strong>Proyecto:</strong> ${env.PROJECT_NAME}</p>
                                 <p><strong>Fecha Build:</strong> ${buildDate}</p>
@@ -271,7 +235,7 @@ pipeline {
                                 <p><strong>Rama:</strong> ${env.BRANCH}</p>
                                 <p><strong>Build Number:</strong> ${env.BUILD_NUMBER}</p>
                             </div>
-                            
+
                             <h2>Estadisticas del Build</h2>
                             <div class="stats">
                                 <div class="stat-card">
@@ -287,11 +251,11 @@ pipeline {
                                     <div class="stat-label">Commit Hash</div>
                                 </div>
                             </div>
-                            
+
                             <h2>Endpoints</h2>
                             <div class="endpoint">Frontend: http://localhost:${env.PORT}</div>
                             <div class="endpoint">Build Directory: ${env.DIST_DIR}</div>
-                            
+
                             <div class="footer">
                                 Generado por Jenkins Pipeline - ${buildDate}
                             </div>
@@ -299,11 +263,8 @@ pipeline {
                     </body>
                     </html>
                     """
-                    
-                    // Guardar el reporte
+
                     writeFile file: 'build-report-frontend.html', text: report
-                    
-                    // Archivar el reporte
                     archiveArtifacts artifacts: 'build-report-frontend.html'
                 }
             }
@@ -314,42 +275,38 @@ pipeline {
     // POST - ACCIONES DESPUÉS DEL PIPELINE
     // ============================================
     post {
-        // Si el pipeline fue exitoso
         success {
             echo """
-            ═══════════════════════════════════════════════════
+            ===================================================
             PIPELINE COMPLETADO EXITOSAMENTE
-            ═══════════════════════════════════════════════════
-            
+            ===================================================
+
             Proyecto: ${env.PROJECT_NAME}
             Frontend: http://localhost:${env.PORT}
             Build Directory: ${env.DIST_DIR}
             Build Number: ${env.BUILD_NUMBER}
-            
-            ═══════════════════════════════════════════════════
+
+            ===================================================
             """
         }
-        
-        // Si el pipeline falló
+
         failure {
             echo """
-            ═══════════════════════════════════════════════════
+            ===================================================
             PIPELINE FALLÓ
-            ═══════════════════════════════════════════════════
-            
+            ===================================================
+
             Proyecto: ${env.PROJECT_NAME}
             Build Number: ${env.BUILD_NUMBER}
-            
+
             Revisa los logs para más detalles.
-            
-            ═══════════════════════════════════════════════════
+
+            ===================================================
             """
-            
-            // Mostrar los logs del servidor para depuración
+
             bat 'type server.log 2>nul || echo "No se encontró el log"'
         }
-        
-        // Siempre se ejecuta
+
         always {
             echo "Limpieza completada"
         }
