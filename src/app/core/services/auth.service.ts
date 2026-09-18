@@ -23,6 +23,19 @@ export interface ClienteResponse {
   token: string;
 }
 
+export interface RegisterClienteResponse {
+  success: boolean;
+  requiereVerificacion: boolean;
+  message: string;
+}
+
+export interface VerificarCodigoResponse {
+  success: boolean;
+  cliente: any;
+  token: string;
+  message: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
@@ -32,13 +45,9 @@ export class AuthService {
   private readonly usuarioKey = 'usuario_actual';
   private readonly tabIdKey = 'tab_id';
 
-  // ============================================
-  // TAB ID ÚNICO POR PESTAÑA
-  // ============================================
   private getTabId(): string {
     let tabId = sessionStorage.getItem(this.tabIdKey);
     if (!tabId) {
-      // Genera un ID único para esta pestaña
       tabId = `tab_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
       sessionStorage.setItem(this.tabIdKey, tabId);
     }
@@ -49,9 +58,6 @@ export class AuthService {
     return `${baseKey}_${this.getTabId()}`;
   }
 
-  // ============================================
-  // HELPERS DE STORAGE (con try/catch)
-  // ============================================
   private setItem(key: string, value: string): void {
     try {
       localStorage.setItem(this.getStorageKey(key), value);
@@ -77,9 +83,6 @@ export class AuthService {
     }
   }
 
-  // ============================================
-  // GUARDAR SESIÓN
-  // ============================================
   private guardarSesion(
     usuario: any,
     token: string,
@@ -94,12 +97,9 @@ export class AuthService {
     this.setItem(this.tokenKey, token);
     this.setItem(this.usuarioKey, JSON.stringify(usuarioNormalizado));
 
-    console.log(`[AuthService] Sesión guardada (${tipo}) en pestaña ${this.getTabId()}`);
+    console.log(`[AuthService] Sesion guardada (${tipo}) en pestana ${this.getTabId()}`);
   }
 
-  // ============================================
-  // LOGIN ADMIN
-  // ============================================
   loginAdmin(dni: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/login-admin`, { dni }).pipe(
       tap((response: any) => {
@@ -110,9 +110,6 @@ export class AuthService {
     );
   }
 
-  // ============================================
-  // LOGIN MESERO
-  // ============================================
   loginMesero(dni: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/login-mesero`, { dni }).pipe(
       tap((response: any) => {
@@ -123,9 +120,6 @@ export class AuthService {
     );
   }
 
-  // ============================================
-  // LOGIN CLIENTE
-  // ============================================
   loginCliente(payload: LoginClienteRequest): Observable<ClienteResponse> {
     return this.http.post<ClienteResponse>(`${this.apiUrl}/cliente/login`, payload).pipe(
       tap((response) => {
@@ -136,38 +130,34 @@ export class AuthService {
     );
   }
 
-  // ============================================
-  // REGISTRO CLIENTE
-  // ============================================
-  registerCliente(payload: RegisterClienteRequest): Observable<ClienteResponse> {
-    return this.http.post<ClienteResponse>(`${this.apiUrl}/cliente/register`, payload).pipe(
+  registerCliente(payload: RegisterClienteRequest): Observable<RegisterClienteResponse> {
+    return this.http.post<RegisterClienteResponse>(
+      `${this.apiUrl}/cliente/register`,
+      payload
+    );
+  }
+
+  verificarCodigo(email: string, codigo: string): Observable<VerificarCodigoResponse> {
+    return this.http.post<VerificarCodigoResponse>(
+      `${this.apiUrl}/cliente/verificar-codigo`,
+      { email, codigo }
+    ).pipe(
       tap((response) => {
         if (response?.token && response?.cliente) {
-          this.guardarSesion(
-            {
-              ...response.cliente,
-              nombre: payload.nombre,
-              telefono: payload.telefono,
-              direccion: payload.direccion,
-            },
-            response.token,
-            'cliente'
-          );
+          this.guardarSesion(response.cliente, response.token, 'cliente');
         }
       })
     );
   }
 
-  // ============================================
-  // OBTENER TOKEN
-  // ============================================
+  reenviarCodigo(email: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/cliente/reenviar-codigo`, { email });
+  }
+
   getToken(): string | null {
     return this.getItem(this.tokenKey);
   }
 
-  // ============================================
-  // OBTENER USUARIO ACTUAL
-  // ============================================
   getUsuarioActual(): any {
     const raw = this.getItem(this.usuarioKey);
     if (!raw) return null;
@@ -178,19 +168,12 @@ export class AuthService {
     }
   }
 
-  // ============================================
-  // LOGOUT (solo afecta a ESTA pestaña)
-  // ============================================
   logout(): void {
     this.removeItem(this.tokenKey);
     this.removeItem(this.usuarioKey);
-    // NO borramos el tabId para que la pestaña mantenga su identidad
-    console.log(`[AuthService] Sesión cerrada en pestaña ${this.getTabId()}`);
+    console.log(`[AuthService] Sesion cerrada en pestana ${this.getTabId()}`);
   }
 
-  // ============================================
-  // VERIFICACIONES
-  // ============================================
   isAuthenticated(): boolean {
     return !!this.getToken() && !!this.getUsuarioActual();
   }
@@ -212,9 +195,6 @@ export class AuthService {
     return !!u && u.rol === 'mesero';
   }
 
-  // ============================================
-  // HELPERS
-  // ============================================
   getClienteId(): number | null {
     return this.getUsuarioActual()?.id ?? null;
   }
