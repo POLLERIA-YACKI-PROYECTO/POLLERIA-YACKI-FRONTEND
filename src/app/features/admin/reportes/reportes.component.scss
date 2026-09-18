@@ -1425,3 +1425,21 @@
     margin-left: 4px;
   }
 }
+/* ============================================
+   BOTONES EXCEL / PDF CON ICONO
+   ============================================ */
+.btn-excel svg,
+.btn-pdf svg {
+  stroke: #ffffff;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.btn-excel,
+.btn-pdf {
+  min-height: 38px;
+  font-size: 12.5px;
+}
+
+/* Ya no existe .btn-generar, pero por si acaso lo dejas aqui eliminado */

@@ -19,7 +19,7 @@
     </div>
 
     <div class="header-actions">
-      <button class="btn-refresh" type="button" (click)="cargarDatos()" [disabled]="loading()" title="Actualizar datos">
+      <button class="btn-refresh" type="button" (click)="recargar()" [disabled]="loading()" title="Actualizar datos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="23 4 23 10 17 10"/>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -30,7 +30,7 @@
 
   <div class="reportes-grid">
 
-    <!-- PANEL DE CONFIGURACIÓN -->
+    <!-- PANEL DE CONFIGURACION -->
     <div class="config-panel">
       <h3>Configurar Reporte</h3>
 
@@ -97,20 +97,25 @@
         </div>
       </div>
 
-      <button class="btn-generar" type="button" (click)="generarReporte()" [disabled]="loading()">
-        @if (loading()) {
-          <span class="spinner-small"></span>
-        }
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-        Generar
-      </button>
-
       <div class="btn-group">
-        <button class="btn-excel" type="button" (click)="exportarExcel()" [disabled]="datosReporte().length === 0">Excel</button>
-        <button class="btn-pdf" type="button" (click)="exportarPDF()" [disabled]="datosReporte().length === 0">PDF</button>
+        <button class="btn-excel" type="button" (click)="exportarExcel()" [disabled]="datosReporte().length === 0 || loading()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          Excel
+        </button>
+        <button class="btn-pdf" type="button" (click)="exportarPDF()" [disabled]="datosReporte().length === 0 || loading()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          PDF
+        </button>
       </div>
     </div>
 
@@ -174,17 +179,16 @@
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <p>No hay datos disponibles para el período seleccionado</p>
+            <p>No hay datos disponibles para el periodo seleccionado</p>
           </div>
         }
 
-        <!-- ✅ VISTA ESPECIAL PARA REPORTE SEMANAL -->
+        <!-- VISTA ESPECIAL PARA REPORTE SEMANAL -->
         @else if (reporteSeleccionado() === 'semanal') {
           <div class="semanas-lista">
             @for (dato of datosReporte(); track dato.id) {
               <div class="semana-card">
 
-                <!-- CABECERA DE LA SEMANA -->
                 <div class="semana-header">
                   <div class="semana-info">
                     <div class="semana-numero">
@@ -197,7 +201,7 @@
                       <span class="semana-titulo">{{ dato.semana }}</span>
                     </div>
                     <div class="semana-rango">
-                      📅 Del {{ dato.fecha_desde }} al {{ dato.fecha_hasta }}
+                      Del {{ dato.fecha_desde }} al {{ dato.fecha_hasta }}
                     </div>
                   </div>
 
@@ -207,24 +211,22 @@
                   </div>
                 </div>
 
-                <!-- BARRA DE PROGRESO: LOCAL vs MOTORIZADO -->
                 @if (dato.total > 0) {
                   <div class="semana-barra">
                     <div class="semana-barra-local"
                          [style.width.%]="porcentajeLocal(dato)">
                       @if (porcentajeLocal(dato) > 15) {
-                        <span>Local · {{ porcentajeLocal(dato) | number:'1.0-0' }}%</span>
+                        <span>Local - {{ porcentajeLocal(dato) | number:'1.0-0' }}%</span>
                       }
                     </div>
                     <div class="semana-barra-motorizado"
                          [style.width.%]="porcentajeMotorizado(dato)">
                       @if (porcentajeMotorizado(dato) > 15) {
-                        <span>Motorizado · {{ porcentajeMotorizado(dato) | number:'1.0-0' }}%</span>
+                        <span>Motorizado - {{ porcentajeMotorizado(dato) | number:'1.0-0' }}%</span>
                       }
                     </div>
                   </div>
 
-                  <!-- LEYENDA Y MONTOS -->
                   <div class="semana-leyenda">
                     <div class="leyenda-item leyenda-local">
                       <span class="leyenda-color"></span>
@@ -241,8 +243,7 @@
                   </div>
                 }
 
-                <!-- DÍAS DE LA SEMANA -->
-                <div class="dias-titulo">Ventas por día</div>
+                <div class="dias-titulo">Ventas por dia</div>
                 <div class="dias-semana">
                   @for (dia of obtenerDiasSemana(dato); track dia.dia) {
                     <div class="dia-card"
@@ -278,7 +279,7 @@
           </div>
         }
 
-        <!-- ✅ VISTA ESTÁNDAR PARA OTROS REPORTES -->
+        <!-- VISTA ESTANDAR PARA OTROS REPORTES -->
         @else {
           <div class="tabla-container">
             <table class="tabla-reportes">

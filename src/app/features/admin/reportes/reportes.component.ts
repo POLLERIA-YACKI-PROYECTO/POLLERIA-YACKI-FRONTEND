@@ -243,7 +243,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('Reportes: sin sesión');
+      console.warn('Reportes: sin sesion');
       return;
     }
 
@@ -353,11 +353,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
             this.cargando.set(false);
             this.yaCargado.set(true);
             this.cdr.detectChanges();
-
-            console.log('[Reportes] Reporte generado:', {
-              datosReporte: this.datosReporte().length,
-              resumen: this.resumenReporte()
-            });
           }, 0);
         },
         error: (error) => {
@@ -384,7 +379,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   // ==========================================
-  // GENERACIÓN DEL REPORTE
+  // GENERACION DEL REPORTE
   // ==========================================
   generarReporte(): void {
     if (!this.fechaInicio() || !this.fechaFin()) {
@@ -470,7 +465,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
       const dias: DiaSemana[] = [];
       const hoy = new Date();
       const hoyClave = this.fechaClave(hoy);
-      const nombreDias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      const nombreDias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
 
       for (let i = 0; i < 7; i++) {
         const dia = new Date(inicio);
@@ -872,12 +867,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }, 0);
   }
 
-  /**
-   * ✅ FIX CLAVE: Convertir SIEMPRE a hora LOCAL.
-   * El backend guarda en UTC ("2026-09-17T04:45:28.000Z") pero en Perú
-   * eso es "2026-09-16 23:45". new Date() convierte automáticamente,
-   * y los getters (getFullYear, getMonth, getDate) devuelven hora local.
-   */
   private obtenerFechaComparacion(valor: unknown): string | null {
     if (!valor) return null;
 
@@ -895,7 +884,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     const texto = String(valor).trim();
     if (!texto) return null;
 
-    // Parsear con Date → convierte UTC a hora local del navegador
     const fecha = new Date(texto);
     if (isNaN(fecha.getTime())) return null;
     return this.fechaClave(fecha);
@@ -1120,26 +1108,176 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ==========================================
+  // EXPORTAR EXCEL (AHORA SI ESCRIBE LOS DATOS)
+  // ==========================================
   async exportarExcel(): Promise<void> {
     const datos = this.datosReporte();
     if (datos.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
+
     this.loading.set(true);
+
     try {
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'Pollería Yacky';
+      workbook.creator = 'Polleria Yacky';
       workbook.created = new Date();
+
       const nombreHoja = this.nombreReporte().replace(/[\\/*?:[\]]/g, '').substring(0, 31) || 'Reporte';
       const worksheet = workbook.addWorksheet(nombreHoja);
 
+      const columnas = this.columnasReporte();
+
+      // ================================
+      // TITULO Y PERIODO
+      // ================================
+      worksheet.mergeCells(1, 1, 1, Math.max(columnas.length, 2));
+      const celdaTitulo = worksheet.getCell(1, 1);
+      celdaTitulo.value = this.nombreReporte();
+      celdaTitulo.font = { bold: true, size: 16, color: { argb: 'FF5E412F' } };
+      celdaTitulo.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.getRow(1).height = 26;
+
+      worksheet.mergeCells(2, 1, 2, Math.max(columnas.length, 2));
+      const celdaPeriodo = worksheet.getCell(2, 1);
+      celdaPeriodo.value = `Periodo: ${this.formatearFechaSoloDia(this.fechaInicio())} al ${this.formatearFechaSoloDia(this.fechaFin())}`;
+      celdaPeriodo.font = { italic: true, size: 11, color: { argb: 'FF888888' } };
+      celdaPeriodo.alignment = { horizontal: 'center' };
+      worksheet.getRow(2).height = 20;
+
+      // ================================
+      // CABECERA
+      // ================================
+      const filaCabecera = worksheet.getRow(4);
+      columnas.forEach((col, i) => {
+        const celda = filaCabecera.getCell(i + 1);
+        celda.value = col.titulo;
+        celda.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+        celda.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF5E412F' }
+        };
+        celda.alignment = { horizontal: 'center', vertical: 'middle' };
+        celda.border = {
+          top: { style: 'thin', color: { argb: 'FF3A281A' } },
+          left: { style: 'thin', color: { argb: 'FF3A281A' } },
+          bottom: { style: 'thin', color: { argb: 'FF3A281A' } },
+          right: { style: 'thin', color: { argb: 'FF3A281A' } }
+        };
+      });
+      filaCabecera.height = 24;
+
+      // ================================
+      // FILAS DE DATOS
+      // ================================
+      datos.forEach((fila, idx) => {
+        const numeroFila = 5 + idx;
+        const filaExcel = worksheet.getRow(numeroFila);
+
+        columnas.forEach((col, i) => {
+          const celda = filaExcel.getCell(i + 1);
+          let valor: any = fila[col.clave];
+
+          // Convertir segun el tipo
+          if (col.tipo === 'moneda' || col.tipo === 'numero') {
+            valor = this.numeroSeguro(valor);
+            celda.numFmt = col.tipo === 'moneda' ? '"S/ "#,##0.00' : '#,##0';
+          } else if (valor === undefined || valor === null || valor === '') {
+            valor = '-';
+          } else {
+            valor = String(valor);
+          }
+
+          celda.value = valor;
+          celda.alignment = {
+            horizontal: col.tipo === 'moneda' || col.tipo === 'numero' ? 'right' : 'left',
+            vertical: 'middle'
+          };
+          celda.border = {
+            top: { style: 'thin', color: { argb: 'FFE8E0D6' } },
+            left: { style: 'thin', color: { argb: 'FFE8E0D6' } },
+            bottom: { style: 'thin', color: { argb: 'FFE8E0D6' } },
+            right: { style: 'thin', color: { argb: 'FFE8E0D6' } }
+          };
+
+          // Pintar filas alternas
+          if (idx % 2 === 1) {
+            celda.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFAF8F5' }
+            };
+          }
+        });
+
+        filaExcel.height = 20;
+      });
+
+      // ================================
+      // FILA DE TOTALES
+      // ================================
+      const numeroFilaTotal = 5 + datos.length;
+      const filaTotal = worksheet.getRow(numeroFilaTotal);
+
+      columnas.forEach((col, i) => {
+        const celda = filaTotal.getCell(i + 1);
+        const valorTotal = this.obtenerValorTotalColumna(col, i);
+
+        if (col.tipo === 'moneda' && valorTotal !== '' && valorTotal !== undefined) {
+          celda.value = this.numeroSeguro(valorTotal);
+          celda.numFmt = '"S/ "#,##0.00';
+        } else if (col.tipo === 'numero' && valorTotal !== '' && valorTotal !== undefined) {
+          celda.value = this.numeroSeguro(valorTotal);
+          celda.numFmt = '#,##0';
+        } else {
+          celda.value = valorTotal === '' ? '' : String(valorTotal);
+        }
+
+        celda.font = { bold: true, color: { argb: 'FF2E7D32' }, size: 11 };
+        celda.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF5F0E8' }
+        };
+        celda.alignment = {
+          horizontal: col.tipo === 'moneda' || col.tipo === 'numero' ? 'right' : 'left',
+          vertical: 'middle'
+        };
+        celda.border = {
+          top: { style: 'medium', color: { argb: 'FF5E412F' } },
+          left: { style: 'thin', color: { argb: 'FFE8E0D6' } },
+          bottom: { style: 'thin', color: { argb: 'FFE8E0D6' } },
+          right: { style: 'thin', color: { argb: 'FFE8E0D6' } }
+        };
+      });
+      filaTotal.height = 24;
+
+      // ================================
+      // ANCHO DE COLUMNAS
+      // ================================
+      columnas.forEach((col, i) => {
+        const letra = worksheet.getColumn(i + 1);
+        let ancho = 15;
+        if (col.tipo === 'id') ancho = 10;
+        else if (col.tipo === 'moneda') ancho = 16;
+        else if (col.clave === 'cliente' || col.clave === 'usuario') ancho = 22;
+        else if (col.clave === 'semana' || col.clave === 'fecha') ancho = 20;
+        letra.width = ancho;
+      });
+
+      // ================================
+      // GUARDAR
+      // ================================
       const buffer = await workbook.xlsx.writeBuffer();
       const archivo = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       const nombreArchivo = `${this.nombreReporte().replace(/\s+/g, '_')}_${this.fechaInicio()}_${this.fechaFin()}.xlsx`;
       saveAs(archivo, nombreArchivo);
+
     } catch (error) {
       console.error('Error al exportar Excel:', error);
       alert('No se pudo generar el archivo Excel');
@@ -1148,21 +1286,279 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ==========================================
+  // EXPORTAR PDF (AHORA SI GENERA CONTENIDO)
+  // ==========================================
   exportarPDF(): void {
-    if (this.datosReporte().length === 0) {
+    const datos = this.datosReporte();
+    if (datos.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
+
+    const columnas = this.columnasReporte();
+    const titulo = this.nombreReporte();
+    const periodo = `${this.formatearFechaSoloDia(this.fechaInicio())} al ${this.formatearFechaSoloDia(this.fechaFin())}`;
+    const resumen = this.resumenReporte();
+
+    // Construir filas HTML
+    const filasHTML = datos.map((fila, idx) => {
+      const celdas = columnas.map(col => {
+        let valor: any = fila[col.clave];
+        let clase = '';
+
+        if (col.tipo === 'moneda') {
+          valor = `S/ ${this.numeroSeguro(valor).toFixed(2)}`;
+          clase = 'moneda';
+        } else if (col.tipo === 'numero') {
+          valor = this.numeroSeguro(valor);
+          clase = 'numero';
+        } else if (col.tipo === 'id') {
+          valor = `#${valor}`;
+          clase = 'id';
+        } else if (valor === undefined || valor === null || valor === '') {
+          valor = '-';
+        } else {
+          valor = this.escaparHTML(String(valor));
+        }
+
+        return `<td class="${clase}">${valor}</td>`;
+      }).join('');
+
+      return `<tr class="${idx % 2 === 1 ? 'alt' : ''}">${celdas}</tr>`;
+    }).join('');
+
+    // Fila de totales
+    const totalesHTML = columnas.map((col, i) => {
+      const valorTotal = this.obtenerValorTotalColumna(col, i);
+      let contenido = '';
+      let clase = '';
+
+      if (col.tipo === 'moneda' && valorTotal !== '' && valorTotal !== undefined) {
+        contenido = `S/ ${this.numeroSeguro(valorTotal).toFixed(2)}`;
+        clase = 'moneda';
+      } else if (col.tipo === 'numero' && valorTotal !== '' && valorTotal !== undefined) {
+        contenido = String(this.numeroSeguro(valorTotal));
+        clase = 'numero';
+      } else {
+        contenido = valorTotal === '' ? '' : this.escaparHTML(String(valorTotal));
+      }
+
+      return `<td class="${clase}">${contenido}</td>`;
+    }).join('');
+
+    // Encabezados
+    const encabezadosHTML = columnas
+      .map(col => `<th>${this.escaparHTML(col.titulo)}</th>`)
+      .join('');
+
+    // Bloques de resumen
+    const bloquesResumen: string[] = [];
+    bloquesResumen.push(`<div class="resumen-item"><span class="label">Total Ventas</span><span class="valor">${resumen.totalVentas || 0}</span></div>`);
+    bloquesResumen.push(`<div class="resumen-item"><span class="label">Total Recaudado</span><span class="valor">S/ ${this.numeroSeguro(resumen.totalRecaudado).toFixed(2)}</span></div>`);
+    bloquesResumen.push(`<div class="resumen-item"><span class="label">Promedio</span><span class="valor">S/ ${this.numeroSeguro(resumen.promedio).toFixed(2)}</span></div>`);
+    if (resumen.local && resumen.local.cantidad > 0) {
+      bloquesResumen.push(`<div class="resumen-item"><span class="label">Local</span><span class="valor">S/ ${this.numeroSeguro(resumen.local.total).toFixed(2)}</span><span class="sub">${resumen.local.cantidad} pedido(s)</span></div>`);
+    }
+    if (resumen.motorizado && resumen.motorizado.cantidad > 0) {
+      bloquesResumen.push(`<div class="resumen-item"><span class="label">Motorizado</span><span class="valor">S/ ${this.numeroSeguro(resumen.motorizado.total).toFixed(2)}</span><span class="sub">${resumen.motorizado.cantidad} pedido(s)</span></div>`);
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${titulo}</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    color: #2e2e2e;
+    background: #ffffff;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 3px solid #5e412f;
+  }
+  .empresa {
+    font-size: 22px;
+    font-weight: 800;
+    color: #5e412f;
+    margin: 0 0 4px 0;
+  }
+  .reporte-titulo {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ce8329;
+    margin: 0 0 4px 0;
+  }
+  .periodo {
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+  }
+  .fecha-emision {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 4px;
+  }
+  .resumen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 12px;
+    background: #faf8f5;
+    border-radius: 8px;
+    border: 1px solid #e8e0d6;
+  }
+  .resumen-item {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 10px;
+    background: #ffffff;
+    border-radius: 6px;
+    border: 1px solid #e8e0d6;
+  }
+  .resumen-item .label {
+    font-size: 9px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .resumen-item .valor {
+    font-size: 14px;
+    font-weight: 800;
+    color: #5e412f;
+    margin-top: 2px;
+  }
+  .resumen-item .sub {
+    font-size: 9px;
+    color: #888;
+    margin-top: 1px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 10px;
+  }
+  thead th {
+    background: #5e412f;
+    color: #ffffff;
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: 1px solid #3a281a;
+  }
+  tbody td {
+    padding: 6px;
+    border: 1px solid #e8e0d6;
+    vertical-align: middle;
+  }
+  tbody tr.alt td {
+    background: #faf8f5;
+  }
+  td.moneda, td.numero {
+    text-align: right;
+    font-weight: 600;
+  }
+  td.moneda {
+    color: #2e7d32;
+    font-weight: 700;
+  }
+  td.id {
+    font-weight: 700;
+    color: #5e412f;
+    text-align: center;
+  }
+  tfoot td {
+    background: #f5f0e8;
+    font-weight: 800;
+    color: #2e7d32;
+    padding: 8px 6px;
+    border-top: 2px solid #5e412f;
+    font-size: 11px;
+  }
+  tfoot td.moneda, tfoot td.numero {
+    text-align: right;
+  }
+  .footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 9px;
+    color: #aaa;
+    padding-top: 10px;
+    border-top: 1px solid #e8e0d6;
+  }
+  @media print {
+    body { padding: 10px; }
+    .header { border-bottom-width: 2px; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1 class="empresa">Polleria Dona Yacki</h1>
+    <h2 class="reporte-titulo">${titulo}</h2>
+    <p class="periodo">Periodo: ${periodo}</p>
+    <p class="fecha-emision">Emitido: ${new Date().toLocaleString('es-PE')}</p>
+  </div>
+
+  <div class="resumen">
+    ${bloquesResumen.join('')}
+  </div>
+
+  <table>
+    <thead>
+      <tr>${encabezadosHTML}</tr>
+    </thead>
+    <tbody>
+      ${filasHTML}
+    </tbody>
+    <tfoot>
+      <tr>${totalesHTML}</tr>
+    </tfoot>
+  </table>
+
+  <div class="footer">
+    Reporte generado automaticamente - Polleria Dona Yacki &copy; ${new Date().getFullYear()}
+  </div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        window.focus();
+        window.print();
+      }, 300);
+    };
+  </script>
+</body>
+</html>`;
+
     const ventana = window.open('', '_blank');
     if (!ventana) {
-      alert('El navegador bloqueó la ventana de impresión');
+      alert('El navegador bloqueo la ventana de impresion. Permite las ventanas emergentes para este sitio.');
       return;
     }
+
+    ventana.document.open();
+    ventana.document.write(html);
     ventana.document.close();
-    setTimeout(() => {
-      ventana.focus();
-      ventana.print();
-    }, 350);
   }
 
   private escaparHTML(valor: unknown): string {

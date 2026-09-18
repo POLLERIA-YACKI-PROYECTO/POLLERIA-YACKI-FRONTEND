@@ -3,7 +3,7 @@ import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -20,6 +20,9 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
 
   // Subject para limpiar en destroy
   private destroy$ = new Subject<void>();
+
+  // Guardar el timer de bienvenida para poder cancelarlo
+  private bienvenidaTimer: any = null;
 
   loginForm!: FormGroup;
   errorMessage = signal<string>('');
@@ -39,7 +42,13 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // Si ya está autenticado como admin/cajero, redirigir
+    // Resetear estado al entrar (por si la pestaña reutiliza el componente)
+    this.mostrarBienvenida.set(false);
+    this.nombreUsuario.set('');
+    this.errorMessage.set('');
+    this.isLoading.set(false);
+
+    // Si ya esta autenticado como admin/cajero, redirigir
     if (this.authService.isAuthenticated()) {
       const usuario = this.authService.getUsuarioActual();
       if (usuario && (usuario.rol === 'admin' || usuario.rol === 'cajero')) {
@@ -52,6 +61,12 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+
+    // Cancelar timer de bienvenida si sigue activo
+    if (this.bienvenidaTimer) {
+      clearTimeout(this.bienvenidaTimer);
+      this.bienvenidaTimer = null;
+    }
   }
 
   // ============================================
@@ -66,10 +81,10 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
   // SUBMIT LOGIN
   // ============================================
   onSubmit(): void {
-    if (this.isLoading()) return;  // Guarda contra doble submit
+    if (this.isLoading()) return; // Guarda contra doble submit
 
     if (this.loginForm.invalid) {
-      this.errorMessage.set('Por favor ingrese un DNI válido (8 dígitos)');
+      this.errorMessage.set('Por favor ingrese un DNI valido (8 digitos)');
       return;
     }
 
@@ -79,21 +94,24 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
     const dni = this.loginForm.get('dni')?.value;
 
     this.authService.loginAdmin(dni)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading.set(false))
+      )
       .subscribe({
         next: (response: any) => {
-          this.isLoading.set(false);
-          // Extraer nombre del response (puede venir en response.nombre o response.usuario.nombre)
+          // Extraer nombre del response
           const nombre = response?.nombre || response?.usuario?.nombre || 'Admin';
           this.nombreUsuario.set(nombre);
           this.mostrarBienvenida.set(true);
 
-          setTimeout(() => {
+          // Guardar el timer para poder cancelarlo en ngOnDestroy
+          this.bienvenidaTimer = setTimeout(() => {
+            this.bienvenidaTimer = null;
             this.router.navigate(['/admin/dashboard-admin']);
           }, 1500);
         },
         error: (error) => {
-          this.isLoading.set(false);
           this.errorMessage.set(this.obtenerMensajeError(error));
         }
       });
@@ -114,20 +132,20 @@ export class LoginAdminComponent implements OnInit, OnDestroy {
 
     switch (error?.status) {
       case 0: return 'No se pudo conectar con el servidor';
-      case 400: return 'DNI inválido o incorrecto';
-      case 401: return 'DNI inválido o incorrecto';
+      case 400: return 'DNI invalido o incorrecto';
+      case 401: return 'DNI invalido o incorrecto';
       case 403: return 'Acceso denegado. Se requiere rol de administrador o cajero';
-      case 404: return 'DNI inválido o incorrecto';
+      case 404: return 'DNI invalido o incorrecto';
       case 429: return 'Demasiados intentos. Espera un momento antes de reintentar.';
       case 500:
       case 502:
-      case 503: return 'Error del servidor, intente más tarde';
-      default: return 'DNI inválido o incorrecto';
+      case 503: return 'Error del servidor, intente mas tarde';
+      default: return 'DNI invalido o incorrecto';
     }
   }
 
   // ============================================
-  // NAVEGACIÓN
+  // NAVEGACION
   // ============================================
   irLoginMesero(): void {
     this.router.navigate(['/login-mesero']);
