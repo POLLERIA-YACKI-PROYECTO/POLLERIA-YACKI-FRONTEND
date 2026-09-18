@@ -8,8 +8,11 @@ import {
   Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil, finalize } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+
+// sessionStorage: es POR PESTANA, no se comparte entre usuarios
+const EMAIL_PENDIENTE_KEY = 'email_pendiente_verificacion';
 
 @Component({
   selector: 'app-login-cliente',
@@ -37,7 +40,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
 
   currentUser = signal<any>(null);
 
-  // Estado de verificacion por correo
+  // Verificacion
   mostrarVerificacion = signal(false);
   emailPendiente = signal('');
   codigoVerificacion = signal('');
@@ -61,15 +64,56 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ============================================
+  // HELPERS DE sessionStorage (POR PESTANA)
+  // ============================================
+  private guardarEmailPendiente(email: string): void {
+    try {
+      sessionStorage.setItem(EMAIL_PENDIENTE_KEY, email);
+    } catch (e) {
+      console.error('[LoginCliente] Error guardando email pendiente:', e);
+    }
+  }
+
+  private leerEmailPendiente(): string | null {
+    try {
+      return sessionStorage.getItem(EMAIL_PENDIENTE_KEY);
+    } catch (e) {
+      console.error('[LoginCliente] Error leyendo email pendiente:', e);
+      return null;
+    }
+  }
+
+  private limpiarEmailPendiente(): void {
+    try {
+      sessionStorage.removeItem(EMAIL_PENDIENTE_KEY);
+    } catch (e) {
+      console.error('[LoginCliente] Error limpiando email pendiente:', e);
+    }
+  }
+
+  // ============================================
+  // CICLO DE VIDA
+  // ============================================
   ngOnInit(): void {
+    // Resetear estado base
     this.sesionActivaEnEstaVista.set(false);
     this.currentUser.set(null);
-    this.isLoginMode.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
-    this.mostrarVerificacion.set(false);
-    this.emailPendiente.set('');
-    this.codigoVerificacion.set('');
+
+    // Restaurar verificacion pendiente SOLO de esta pestana
+    const emailGuardado = this.leerEmailPendiente();
+    if (emailGuardado) {
+      this.emailPendiente.set(emailGuardado);
+      this.mostrarVerificacion.set(true);
+      this.isLoginMode.set(false);
+      this.successMessage.set('Te enviamos un codigo. Revisa tu correo (y la carpeta de spam).');
+    } else {
+      this.isLoginMode.set(true);
+      this.mostrarVerificacion.set(false);
+    }
+
     this.loginForm.reset();
     this.registerForm.reset();
   }
@@ -90,6 +134,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
     this.mostrarVerificacion.set(false);
     this.emailPendiente.set('');
     this.codigoVerificacion.set('');
+    this.limpiarEmailPendiente();
   }
 
   togglePassword(): void {
@@ -115,22 +160,24 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
     const { email, password } = this.loginForm.value;
 
     this.authService.loginCliente({ email, password })
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading.set(false))
+      )
       .subscribe({
         next: () => {
-          this.isLoading.set(false);
           this.sesionActivaEnEstaVista.set(true);
           this.currentUser.set(this.authService.getUsuarioActual());
           this.router.navigate(['/cliente/carta']);
         },
         error: (error) => {
-          this.isLoading.set(false);
-
-          // Si el backend pide verificar correo
           if (error?.error?.requiereVerificacion) {
             this.emailPendiente.set(email);
             this.mostrarVerificacion.set(true);
-            this.errorMessage.set(error?.error?.message || 'Debes verificar tu correo.');
+            this.guardarEmailPendiente(email);
+            this.errorMessage.set(
+              'Debes verificar tu correo. Revisa tu bandeja o la carpeta de spam.'
+            );
             return;
           }
 
@@ -158,19 +205,23 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
     const payload = this.registerForm.value;
 
     this.authService.registerCliente(payload)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading.set(false))
+      )
       .subscribe({
         next: (res) => {
-          this.isLoading.set(false);
-
           if (res?.requiereVerificacion) {
             this.emailPendiente.set(payload.email);
             this.mostrarVerificacion.set(true);
-            this.successMessage.set(res.message || 'Codigo enviado. Revisa tu correo.');
+            this.guardarEmailPendiente(payload.email);
+            this.codigoVerificacion.set('');
+            this.successMessage.set(
+              'Codigo enviado. Revisa tu correo y la carpeta de SPAM.'
+            );
           }
         },
         error: (error) => {
-          this.isLoading.set(false);
           this.errorMessage.set(this.obtenerMensajeError(error, 'register'));
         }
       });
@@ -180,6 +231,8 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
   // VERIFICAR CODIGO
   // ============================================
   onVerificarCodigo(): void {
+    if (this.isLoading()) return;
+
     const codigo = this.codigoVerificacion().trim();
 
     if (!codigo || codigo.length !== 6) {
@@ -192,16 +245,18 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
     this.successMessage.set('');
 
     this.authService.verificarCodigo(this.emailPendiente(), codigo)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isLoading.set(false))
+      )
       .subscribe({
         next: () => {
-          this.isLoading.set(false);
+          this.limpiarEmailPendiente();
           this.sesionActivaEnEstaVista.set(true);
           this.currentUser.set(this.authService.getUsuarioActual());
           this.router.navigate(['/cliente/carta']);
         },
         error: (error) => {
-          this.isLoading.set(false);
           this.errorMessage.set(error?.error?.message || 'Codigo invalido.');
         }
       });
@@ -218,14 +273,15 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
     this.successMessage.set('');
 
     this.authService.reenviarCodigo(this.emailPendiente())
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.reenviando.set(false))
+      )
       .subscribe({
         next: () => {
-          this.reenviando.set(false);
-          this.successMessage.set('Te enviamos un nuevo codigo.');
+          this.successMessage.set('Te enviamos un nuevo codigo. Revisa tambien SPAM.');
         },
         error: (error) => {
-          this.reenviando.set(false);
           this.errorMessage.set(error?.error?.message || 'No se pudo reenviar el codigo.');
         }
       });
@@ -235,6 +291,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
   // VOLVER AL REGISTRO
   // ============================================
   volverAlRegistro(): void {
+    this.limpiarEmailPendiente();
     this.mostrarVerificacion.set(false);
     this.emailPendiente.set('');
     this.codigoVerificacion.set('');
@@ -289,6 +346,7 @@ export class LoginClienteComponent implements OnInit, OnDestroy {
 
   cerrarSesion(): void {
     this.authService.logout();
+    this.limpiarEmailPendiente();
     this.sesionActivaEnEstaVista.set(false);
     this.currentUser.set(null);
     this.isLoginMode.set(true);
