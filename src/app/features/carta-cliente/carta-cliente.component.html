@@ -7,12 +7,12 @@
       <div class="logo">
         <img
           src="assets/images/logocarta.jpeg"
-          alt="Doña Yacki"
+          alt="Dona Yacki"
           class="logo-img"
           (error)="onImageError($event)"
         >
         <div class="logo-text">
-          <h1>Doña Yacki</h1>
+          <h1>Dona Yacki</h1>
           <span class="slogan">Sabor que enamora</span>
         </div>
       </div>
@@ -27,7 +27,7 @@
           </svg>
         </button>
 
-        <button class="btn-logout" (click)="cerrarSesion()" title="Cerrar sesión" aria-label="Cerrar sesión">
+        <button class="btn-logout" (click)="cerrarSesion()" title="Cerrar sesion" aria-label="Cerrar sesion">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
@@ -65,7 +65,7 @@
     </div>
   </div>
 
-  <!-- CATEGORÍAS NAV -->
+  <!-- CATEGORIAS NAV -->
   <app-categorias-nav
     [categoriaSeleccionada]="categoriaSeleccionada()"
     (categoriaChange)="onCategoriaChange($event)"
@@ -102,17 +102,16 @@
           <line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
         <p>No hay productos disponibles</p>
-        <span>Prueba con otra categoría o búsqueda</span>
+        <span>Prueba con otra categoria o busqueda</span>
       </div>
     </div>
   </main>
 
-  <!-- CARRITO LATERAL -->
+  <!-- CARRITO LATERAL (SIN IGV) -->
   <app-carrito-lateral
     [visible]="mostrarCarrito()"
     [items]="carrito()"
     [subtotal]="subtotal()"
-    [igv]="igv()"
     [total]="total()"
     (cerrar)="mostrarCarrito.set(false)"
     (vaciar)="vaciarCarrito()"
@@ -151,13 +150,13 @@
     <span class="floating-total">{{ formatearPrecio(total()) }}</span>
   </button>
 
-  <!--MODAL DE CONFIRMACIÓN PARA VACIAR EL CARRITO -->
+  <!-- MODAL DE CONFIRMACION PARA VACIAR EL CARRITO -->
   <app-confirm-dialog
     [visible]="mostrarConfirmVaciar()"
-    titulo="¿Vaciar el carrito?"
-    mensaje="Se eliminarán todos los productos que agregaste."
-    subMensaje="Esta acción no se puede deshacer."
-    textoConfirmar="Sí, vaciar"
+    titulo="Vaciar el carrito?"
+    mensaje="Se eliminaran todos los productos que agregaste."
+    subMensaje="Esta accion no se puede deshacer."
+    textoConfirmar="Si, vaciar"
     textoCancelar="Cancelar"
     tipo="warning"
     (confirmar)="confirmarVaciarCarrito()"

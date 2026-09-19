@@ -25,7 +25,6 @@ export class CarritoLateralComponent {
   @Input() visible = false;
   @Input() items: ItemCarrito[] = [];
   @Input() subtotal = 0;
-  @Input() igv = 0;
   @Input() total = 0;
 
   @Output() cerrar = new EventEmitter<void>();
@@ -49,13 +48,8 @@ export class CarritoLateralComponent {
   }
 
   // ============================================
-  // TRACK BY (optimización *ngFor)
+  // TRACK BY
   // ============================================
-  /**
-   * Le dice a Angular cómo identificar cada item del *ngFor.
-   * Sin esto, Angular destruye y recrea todos los <article> al cambiar el carrito.
-   * Con esto, solo actualiza los que cambiaron.
-   */
   trackByProductoId(index: number, item: ItemCarrito): any {
     return item?.producto?.id ?? index;
   }
@@ -85,15 +79,8 @@ export class CarritoLateralComponent {
   }
 
   // ============================================
-  // IMÁGENES CON CACHE BUSTING
+  // IMAGENES CON CACHE BUSTING
   // ============================================
-  /**
-   * Genera la URL de la imagen del producto en el carrito.
-   *
-   * Cache busting: usa el `updated_at` del producto como versión.
-   * Si el admin cambia la imagen del producto, `updated_at` cambia,
-   * la URL cambia, y el navegador pide la imagen nueva.
-   */
   getImagenUrl(item: ItemCarrito): string {
     const producto: any = item?.producto;
     const version = producto?.updated_at

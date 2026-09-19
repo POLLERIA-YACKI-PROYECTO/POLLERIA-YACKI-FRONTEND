@@ -36,7 +36,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   ticketSeleccionado = signal<any>(null);
   mostrarDetalleTicket = signal<boolean>(false);
 
-  // Estadísticas
+  // Estadisticas
   totalTickets = computed(() => this.tickets().length);
   totalRecaudado = computed(() => {
     return this.tickets().reduce((sum, t) => sum + (parseFloat(t.total) || 0), 0);
@@ -48,9 +48,8 @@ export class TicketComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('Ticket: sin sesión -> /login-mesero');
+      console.warn('Ticket: sin sesion -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -72,7 +71,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CARGAR TICKETS
+  // CARGAR TICKETS (SIN IGV)
   // ============================================
   cargarTickets(): void {
     if (this.cargando() || this.yaCargado()) return;
@@ -104,8 +103,7 @@ export class TicketComponent implements OnInit, OnDestroy {
               items: items,
               totalItems: items.length,
               total: parseFloat(p.total) || 0,
-              subtotal: parseFloat(p.subtotal) || 0,
-              igv: parseFloat(p.igv) || 0,
+              subtotal: parseFloat(p.total) || 0,
               fecha: p.fecha_pago || p.created_at,
               tipo_entrega: p.tipo_entrega || 'local',
               metodo_pago: p.metodo_pago || 'efectivo',
@@ -117,7 +115,6 @@ export class TicketComponent implements OnInit, OnDestroy {
             };
           });
 
-          // Ordenar por fecha descendente
           ticketsFormateados.sort((a: any, b: any) => {
             return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
           });
@@ -137,7 +134,6 @@ export class TicketComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Recargar manualmente
   recargarTickets(): void {
     this.pedidoService.limpiarCachePedidos();
     this.yaCargado.set(false);
@@ -158,7 +154,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // IMPRIMIR TICKET
+  // IMPRIMIR TICKET (SIN IGV)
   // ============================================
   imprimirTicket(): void {
     const ticket = this.ticketSeleccionado();
@@ -287,8 +283,8 @@ export class TicketComponent implements OnInit, OnDestroy {
           <body>
             ${contenido}
             <div class="footer">
-              <p>¡Gracias por tu preferencia!</p>
-              <p style="font-size:10px;color:#999;">Doña Yacki - Sabor que enamora</p>
+              <p>Gracias por tu preferencia</p>
+              <p style="font-size:10px;color:#999;">Dona Yacki - Sabor que enamora</p>
               <p style="font-size:9px;color:#bbb;">Ticket generado el ${new Date().toLocaleString()}</p>
             </div>
             <div style="text-align:center;margin-top:12px;" class="no-print">
@@ -307,7 +303,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // GENERAR CONTENIDO DEL TICKET
+  // GENERAR CONTENIDO DEL TICKET (SIN IGV)
   // ============================================
   generarContenidoTicket(ticket: any): string {
     const itemsHtml = (ticket.items || []).map((item: any, index: number) => {
@@ -341,11 +337,12 @@ export class TicketComponent implements OnInit, OnDestroy {
 
     const fechaFormateada = ticket.fecha ? new Date(ticket.fecha).toLocaleString() : '--';
 
+    // SIN IGV: solo se muestra el TOTAL
     return `
       <div class="header">
-        <h1>Doña Yacki</h1>
+        <h1>Dona Yacki</h1>
         <p class="slogan">Sabor que enamora</p>
-        <p class="info-empresa">Mz M2 Lt 33, Jardines de Chillón</p>
+        <p class="info-empresa">Mz M2 Lt 33, Jardines de Chillon</p>
         <p class="info-empresa">Tel: 902 458 936</p>
       </div>
 
@@ -363,7 +360,7 @@ export class TicketComponent implements OnInit, OnDestroy {
           <span><strong>Tipo:</strong> ${tipoEntregaLabel}</span>
         </div>
         <div class="info-line">
-          <span><strong>Método:</strong> <span class="metodo-pago">${metodoPagoLabel}</span></span>
+          <span><strong>Metodo:</strong> <span class="metodo-pago">${metodoPagoLabel}</span></span>
         </div>
         ${ticket.observaciones ? `
           <div class="observaciones">
@@ -372,7 +369,7 @@ export class TicketComponent implements OnInit, OnDestroy {
         ` : ''}
       </div>
 
-      <div class="separador">─────────────────</div>
+      <div class="separador">-----------------</div>
 
       <table>
         <thead>
@@ -389,17 +386,9 @@ export class TicketComponent implements OnInit, OnDestroy {
         </tbody>
       </table>
 
-      <div class="separador">─────────────────</div>
+      <div class="separador">-----------------</div>
 
       <div style="text-align:right;">
-        <div class="total-line">
-          <span>Subtotal</span>
-          <span>S/ ${ticket.subtotal.toFixed(2)}</span>
-        </div>
-        <div class="total-line">
-          <span>IGV (18%)</span>
-          <span>S/ ${ticket.igv.toFixed(2)}</span>
-        </div>
         <div class="total-line total-final">
           <span><strong>TOTAL</strong></span>
           <span><strong>S/ ${ticket.total.toFixed(2)}</strong></span>
@@ -412,7 +401,7 @@ export class TicketComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // MENÚ Y NAVEGACIÓN
+  // MENU Y NAVEGACION
   // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());

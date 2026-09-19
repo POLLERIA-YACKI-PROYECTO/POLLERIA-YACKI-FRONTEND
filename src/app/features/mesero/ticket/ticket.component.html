@@ -231,7 +231,7 @@
               <path d="M20 20L16 16"/>
             </svg>
             <p>No hay tickets generados</p>
-            <span>Los pedidos pagados aparecerán aquí</span>
+            <span>Los pedidos pagados apareceran aqui</span>
           </div>
         }
       </div>
@@ -270,15 +270,15 @@
         <!-- Header del Ticket -->
         <div class="ticket-print-header">
           <div class="ticket-empresa">
-            <h3>Doña Yacki</h3>
+            <h3>Dona Yacki</h3>
             <p>Sabor que enamora</p>
-            <p class="ticket-direccion">Mz M2 Lt 33, Jardines de Chillón</p>
+            <p class="ticket-direccion">Mz M2 Lt 33, Jardines de Chillon</p>
             <p class="ticket-telefono">Tel: 902 458 936</p>
           </div>
-          <div class="ticket-separador">─────────────────</div>
+          <div class="ticket-separador">-----------------</div>
         </div>
 
-        <!-- Información del Ticket -->
+        <!-- Informacion del Ticket -->
         <div class="ticket-info">
           <div class="info-line">
             <span><strong>Ticket #{{ ticketSeleccionado()?.id }}</strong></span>
@@ -293,7 +293,7 @@
             <span><strong>Tipo:</strong> {{ ticketSeleccionado()?.tipo_entrega === 'delivery' || ticketSeleccionado()?.tipo_entrega === 'motorizada' ? 'Motorizado' : 'Local' }}</span>
           </div>
           <div class="info-line">
-            <span><strong>Método:</strong> <span class="metodo-pago">{{ ticketSeleccionado()?.metodo_pago | titlecase }}</span></span>
+            <span><strong>Metodo:</strong> <span class="metodo-pago">{{ ticketSeleccionado()?.metodo_pago | titlecase }}</span></span>
           </div>
           @if (ticketSeleccionado()?.observaciones) {
             <div class="observaciones">
@@ -302,7 +302,7 @@
           }
         </div>
 
-        <div class="ticket-separador">─────────────────</div>
+        <div class="ticket-separador">-----------------</div>
 
         <!-- Tabla de Productos -->
         <div class="ticket-productos">
@@ -330,18 +330,10 @@
           </table>
         </div>
 
-        <div class="ticket-separador">─────────────────</div>
+        <div class="ticket-separador">-----------------</div>
 
-        <!-- Totales -->
+        <!-- Totales (SIN IGV) -->
         <div class="ticket-totales">
-          <div class="total-line">
-            <span>Subtotal</span>
-            <span>S/ {{ ticketSeleccionado()?.subtotal | number:'1.2-2' }}</span>
-          </div>
-          <div class="total-line">
-            <span>IGV (18%)</span>
-            <span>S/ {{ ticketSeleccionado()?.igv | number:'1.2-2' }}</span>
-          </div>
           <div class="total-line total-final">
             <span><strong>TOTAL</strong></span>
             <span><strong>S/ {{ ticketSeleccionado()?.total | number:'1.2-2' }}</strong></span>
@@ -351,11 +343,11 @@
           </div>
         </div>
 
-        <div class="ticket-separador">─────────────────</div>
+        <div class="ticket-separador">-----------------</div>
 
         <!-- Footer -->
         <div class="ticket-footer-print">
-          <p>¡Gracias por tu preferencia!</p>
+          <p>Gracias por tu preferencia</p>
           <p style="font-size:12px;color:#888;">Ticket generado el {{ fechaActual }}</p>
         </div>
       </div>

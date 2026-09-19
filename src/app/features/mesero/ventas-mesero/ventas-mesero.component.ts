@@ -64,9 +64,8 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    // Verificar autenticación primero
     if (!this.authService.isAuthenticated()) {
-      console.warn('VentasMesero: sin sesión -> /login-mesero');
+      console.warn('VentasMesero: sin sesion -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -88,7 +87,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CARGAR VENTAS
+  // CARGAR VENTAS (SIN IGV)
   // ============================================
   cargarVentas(): void {
     if (this.cargando() || this.yaCargado()) return;
@@ -114,13 +113,14 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
             }
             if (!Array.isArray(items)) items = [];
 
+            const total = parseFloat(p.total) || 0;
+
             return {
               id: p.id,
               cliente_nombre: p.cliente_nombre_real || p.cliente_nombre || 'Consumidor Final',
               items: items,
-              total: parseFloat(p.total) || 0,
-              subtotal: parseFloat(p.subtotal) || 0,
-              igv: parseFloat(p.igv) || 0,
+              total: total,
+              subtotal: total,
               tipo_entrega: p.tipo_entrega || 'local',
               metodo_pago: p.metodo_pago || 'efectivo',
               estado: p.estado || 'completada',
@@ -132,7 +132,6 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
             };
           });
 
-          // Ordenar por fecha descendente
           ventasFormateadas.sort((a: any, b: any) => {
             return new Date(b.fecha_venta).getTime() - new Date(a.fecha_venta).getTime();
           });
@@ -153,7 +152,6 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Recargar manualmente
   recargarVentas(): void {
     this.pedidoService.limpiarCachePedidos();
     this.yaCargado.set(false);
@@ -199,7 +197,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // MÉTODO PAGO
+  // METODO PAGO
   // ============================================
   getMetodoPagoLabel(metodo: string): string {
     const labels: Record<string, string> = {
@@ -254,7 +252,7 @@ export class VentasMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // NAVEGACIÓN
+  // NAVEGACION
   // ============================================
   nuevaVenta(): void {
     this.router.navigate(['/mesero/pedidos']);

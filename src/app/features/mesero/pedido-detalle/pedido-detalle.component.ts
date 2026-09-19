@@ -43,10 +43,11 @@ export class PedidoDetalleComponent implements OnChanges {
     { value: 'cancelado', label: 'Cancelado', class: 'estado-cancelado' }
   ];
 
-  // Computed properties
+  // Computed
   totalItems = computed(() => this.itemsInternos().length);
   itemsPedido = computed(() => this.itemsInternos());
 
+  // SIN IGV: subtotal = total, igv = 0
   subtotal = computed(() => {
     return this.itemsInternos().reduce((sum: number, item: any) => {
       const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : (item.precio || 0);
@@ -55,14 +56,13 @@ export class PedidoDetalleComponent implements OnChanges {
     }, 0);
   });
 
-  igv = computed(() => this.subtotal() * 0.18);
-  total = computed(() => this.subtotal() + this.igv());
+  igv = computed(() => 0);
+  total = computed(() => this.subtotal());
 
   // ============================================
   // CICLO DE VIDA
   // ============================================
   ngOnChanges(changes: SimpleChanges): void {
-    // Solo procesar si cambió el pedido o la visibilidad
     if (changes['pedido'] && this.pedido) {
       this.procesarPedido();
     }
@@ -79,7 +79,6 @@ export class PedidoDetalleComponent implements OnChanges {
 
     console.log('Procesando pedido en detalle:', this.pedido?.id);
 
-    // Extraer items
     let items = this.pedido.items || [];
     if (typeof items === 'string') {
       try {
@@ -96,20 +95,17 @@ export class PedidoDetalleComponent implements OnChanges {
     this.itemsInternos.set(items);
     this.totalItemsCount.set(items.length);
 
-    // Cliente
     this.clienteNombre.set(
       this.pedido.cliente_nombre_real ||
       this.pedido.cliente_nombre ||
       'Cliente'
     );
 
-    // Usuario
     this.usuarioNombre.set(
       this.pedido.usuario_nombre ||
       'Desconocido'
     );
 
-    // Fecha
     this.fechaPedido.set(
       this.pedido.created_at || new Date().toISOString()
     );
@@ -198,7 +194,7 @@ export class PedidoDetalleComponent implements OnChanges {
   // ============================================
   cambiarEstado(estado: string): void {
     if (!this.pedido) return;
-    if (confirm(`¿Cambiar estado a "${this.getEstadoTexto(estado)}"?`)) {
+    if (confirm(`Cambiar estado a "${this.getEstadoTexto(estado)}"?`)) {
       this.actualizarEstado.emit({ id: this.pedido.id, estado });
     }
   }

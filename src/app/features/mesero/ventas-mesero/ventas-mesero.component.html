@@ -19,7 +19,6 @@
         <p class="subtitle">Historial de ventas realizadas</p>
       </div>
       <div class="header-buttons">
-        <!-- Menú -->
         <div class="menu-container">
           <button class="menu-toggle" (click)="toggleMenu()">
             <span class="menu-toggle-text">
@@ -286,7 +285,7 @@
     @if (!loading() && ventasRecientes().length > 0) {
       <div class="tabla-container">
         <div class="tabla-header">
-          <h3>Últimas Ventas</h3>
+          <h3>Ultimas Ventas</h3>
           <span class="total-items">{{ ventasRecientes().length }} ventas recientes</span>
         </div>
         <div class="tabla-scroll">
@@ -297,7 +296,7 @@
                 <th>Cliente</th>
                 <th>Items</th>
                 <th>Tipo</th>
-                <th>Método</th>
+                <th>Metodo</th>
                 <th>Total</th>
                 <th>Fecha</th>
                 <th>Estado</th>
@@ -354,7 +353,7 @@
           <circle cx="8" cy="18" r="1"/>
         </svg>
         <p>No hay ventas registradas</p>
-        <span>Realiza pedidos para ver tus ventas aquí</span>
+        <span>Realiza pedidos para ver tus ventas aqui</span>
       </div>
     }
   </div>

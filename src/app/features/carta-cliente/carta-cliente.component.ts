@@ -31,7 +31,7 @@ import { ConfirmDialogComponent } from '../shared/components/confirm-dialog/conf
     CarritoLateralComponent,
     ModalPagoComponent,
     CategoriasNavComponent,
-    ConfirmDialogComponent   // NUEVO
+    ConfirmDialogComponent
   ],
   templateUrl: './carta-cliente.component.html',
   styleUrls: ['./carta-cliente.component.scss']
@@ -63,7 +63,6 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
   clienteActual = signal<any>(this.authService.getUsuarioActual());
 
-  // NUEVO: Signals para el modal de confirmación
   mostrarConfirmVaciar = signal(false);
 
   totalItems = computed(() =>
@@ -77,15 +76,15 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }, 0)
   );
 
-  igv = computed(() => this.subtotal() * 0.18);
-  total = computed(() => this.subtotal() + this.igv());
+  // SIN IGV: el total es igual al subtotal
+  total = computed(() => this.subtotal());
 
   // ============================================
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('CartaCliente: sin sesión -> /login-cliente');
+      console.warn('CartaCliente: sin sesion -> /login-cliente');
       this.router.navigate(['/login-cliente']);
       return;
     }
@@ -221,25 +220,22 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }
   }
 
-  // NUEVO: abre el modal de confirmación
   vaciarCarrito(): void {
     if (this.carrito().length === 0) return;
     this.mostrarConfirmVaciar.set(true);
   }
 
-  // NUEVO: confirma el vaciado del carrito
   confirmarVaciarCarrito(): void {
     this.carrito.set([]);
     this.mostrarCarrito.set(false);
     this.mostrarConfirmVaciar.set(false);
 
     this.notificationService.success(
-      'El carrito se vació correctamente.',
+      'El carrito se vacio correctamente.',
       'Carrito vaciado'
     );
   }
 
-  // NUEVO: cancela el vaciado
   cancelarVaciarCarrito(): void {
     this.mostrarConfirmVaciar.set(false);
   }
@@ -254,8 +250,8 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   abrirModalPago(): void {
     if (this.carrito().length === 0) {
       this.notificationService.warning(
-        'El carrito está vacío. Agrega productos antes de continuar.',
-        'Carrito vacío'
+        'El carrito esta vacio. Agrega productos antes de continuar.',
+        'Carrito vacio'
       );
       return;
     }
@@ -269,7 +265,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // PROCESAR PEDIDO
+  // PROCESAR PEDIDO (SIN IGV)
   // ============================================
   procesarPedido(datosPago: any): void {
     const token = this.authService.getToken();
@@ -277,8 +273,8 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     if (!token || !usuario) {
       this.notificationService.error(
-        'Debes iniciar sesión como cliente para realizar un pedido.',
-        'Sesión requerida'
+        'Debes iniciar sesion como cliente para realizar un pedido.',
+        'Sesion requerida'
       );
       this.router.navigate(['/login-cliente']);
       return;
@@ -286,7 +282,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     if (!this.authService.isCliente()) {
       this.notificationService.error(
-        'Esta sección es para clientes. Inicia sesión como cliente.',
+        'Esta seccion es para clientes. Inicia sesion como cliente.',
         'Acceso denegado'
       );
       this.router.navigate(['/login-cliente']);
@@ -294,7 +290,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     }
 
     if (this.carrito().length === 0) {
-      this.notificationService.warning('El carrito está vacío', 'Carrito vacío');
+      this.notificationService.warning('El carrito esta vacio', 'Carrito vacio');
       return;
     }
 
@@ -303,8 +299,8 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
       !datosPago.direccion?.trim()
     ) {
       this.notificationService.warning(
-        'Para delivery debes ingresar la dirección de entrega.',
-        'Dirección requerida'
+        'Para delivery debes ingresar la direccion de entrega.',
+        'Direccion requerida'
       );
       this.cargandoPedido.set(false);
       return;
@@ -317,6 +313,8 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
       typeof clienteId === 'number' && Number.isFinite(clienteId) && clienteId > 0
         ? clienteId
         : null;
+
+    const totalPedido = this.total();
 
     const pedido = {
       cliente_id: clienteIdValido,
@@ -331,9 +329,9 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
         cantidad: item.cantidad,
         subtotal: this.obtenerPrecioNumerico(item.producto.precio) * item.cantidad
       })),
-      subtotal: this.subtotal(),
-      igv: this.igv(),
-      total: this.total(),
+      subtotal: totalPedido,
+      igv: 0,
+      total: totalPedido,
       tipo_entrega: datosPago.tipoEntrega || 'delivery',
       metodo_pago: datosPago.metodo || 'efectivo',
       tipo_transferencia: datosPago.tipoTransferencia || null,
@@ -371,7 +369,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
           if (!mensaje) {
             if (err?.status === 0) mensaje = 'No se pudo conectar con el servidor.';
-            else if (err?.status === 401) mensaje = 'Sesión expirada. Vuelve a iniciar sesión.';
+            else if (err?.status === 401) mensaje = 'Sesion expirada. Vuelve a iniciar sesion.';
             else if (err?.status === 403) mensaje = 'No tienes permisos para crear pedidos.';
             else if (err?.status === 429) mensaje = 'Demasiadas peticiones. Espera un momento.';
             else mensaje = `Error al procesar el pedido (${err?.status || 'sin respuesta'}).`;
@@ -408,7 +406,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CONFIRMAR EFECTIVO / MÁQUINA
+  // CONFIRMAR EFECTIVO / MAQUINA
   // ============================================
   confirmarEfectivo(evento: { pedidoId: number }): void {
     this.mostrarExitoPendienteValidacion();
@@ -419,7 +417,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // ÉXITO
+  // EXITO
   // ============================================
   private mostrarExitoPendienteValidacion(): void {
     this.cargandoPedido.set(false);
@@ -429,8 +427,8 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
     this.mostrarCarrito.set(false);
 
     this.notificationService.success(
-      'El cajero verificará tu pago y confirmará el pedido.',
-      '¡Pedido registrado!'
+      'El cajero verificara tu pago y confirmara el pedido.',
+      'Pedido registrado'
     );
 
     this.router.navigate(['/cliente/carta']);
@@ -445,7 +443,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
 
     this.notificationService.success(
       'Tu pedido ha sido procesado correctamente.',
-      '¡Pedido realizado!'
+      'Pedido realizado'
     );
 
     this.router.navigate(['/cliente/carta']);
@@ -471,7 +469,7 @@ export class CartaClienteComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // NAVEGACIÓN
+  // NAVEGACION
   // ============================================
   irAdmin(): void {
     this.router.navigate(['/login-admin']);

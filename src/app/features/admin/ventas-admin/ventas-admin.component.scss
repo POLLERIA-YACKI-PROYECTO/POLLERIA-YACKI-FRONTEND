@@ -1,5 +1,8 @@
 /* src/app/features/admin/ventas-admin/ventas-admin.component.scss */
 
+/* ============================================
+   BASE
+   ============================================ */
 .ventas-admin-container {
   animation: fadeIn 0.3s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -108,7 +111,7 @@
 }
 
 /* ============================================
-   RESUMEN RECAUDACIÓN
+   RESUMEN RECAUDACION
    ============================================ */
 .resumen-recaudacion {
   display: grid;
@@ -233,7 +236,7 @@
 }
 
 /* ============================================
-   ORIGEN BADGE (NUEVO)
+   ORIGEN BADGE
    ============================================ */
 .origen-badge {
   display: inline-block;
@@ -283,6 +286,7 @@
 .tipo-badge.local { background: #e4cbad; color: #5e412f; }
 .tipo-badge.delivery { background: #dbeafe; color: #1e40af; }
 .tipo-badge.paraLlevar { background: #dcfce7; color: #166534; }
+.tipo-badge.motorizada { background: #dbeafe; color: #1e40af; }
 
 .tipo-icon {
   display: inline-flex;
@@ -294,7 +298,7 @@
 }
 
 /* ============================================
-   MÉTODO PAGO
+   METODO PAGO
    ============================================ */
 .metodo-badge {
   display: inline-flex;
@@ -317,10 +321,46 @@
 .metodo-badge.transferencia { background: #fce4ec; color: #c62828; }
 
 /* ============================================
-   ACCIONES
+   ACCIONES (boton Ver + boton Pagar)
    ============================================ */
-.btn-pagar {
+.acciones-col {
   display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-ver-detalle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: transparent;
+  color: #5e412f;
+  border: 1.5px solid #d4c8b8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.btn-ver-detalle:hover {
+  background: #f5f0e8;
+  border-color: #c5302a;
+  color: #c5302a;
+  transform: translateY(-1px);
+}
+
+.btn-ver-detalle svg {
+  stroke: currentColor;
+  width: 15px;
+  height: 15px;
+}
+
+.btn-pagar {
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 6px 14px;
@@ -332,6 +372,7 @@
   font-size: 12px;
   font-weight: 600;
   transition: all 0.3s ease;
+  font-family: inherit;
 }
 
 .btn-pagar:hover {
@@ -346,8 +387,8 @@
 
 .btn-pagar svg {
   stroke: #ffffff;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 .estado-final {
@@ -357,7 +398,7 @@
 }
 
 /* ============================================
-   LOADING
+   LOADING / TEXT CENTER
    ============================================ */
 .loading-container {
   text-align: center;
@@ -389,7 +430,7 @@
 }
 
 /* ============================================
-   MODAL DE PAGO
+   MODAL OVERLAY (compartido por pago y detalle)
    ============================================ */
 .modal-overlay {
   position: fixed;
@@ -412,6 +453,9 @@
   to { opacity: 1; }
 }
 
+/* ============================================
+   MODAL DE PAGO
+   ============================================ */
 .modal-pago {
   background: #ffffff;
   border-radius: 16px;
@@ -493,6 +537,14 @@
   stroke: #e74c3c;
 }
 
+.modal-icon.detalle-icon {
+  background: rgba(94, 65, 47, 0.10);
+}
+
+.modal-icon.detalle-icon svg {
+  stroke: #5e412f;
+}
+
 .spinner-modal {
   width: 24px;
   height: 24px;
@@ -514,6 +566,18 @@
   font-size: 13px;
   color: #888;
   margin: 2px 0 0;
+}
+
+.badge-origen {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
 .modal-close {
@@ -553,7 +617,93 @@
 }
 
 /* ============================================
-   MENSAJE DE ESTADO
+   MODAL DE DETALLE
+   ============================================ */
+.modal-detalle {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUpModal 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.detalle-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.detalle-info {
+  background: #faf8f5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.detalle-valor.observaciones {
+  font-weight: 500;
+  color: #666;
+  font-style: italic;
+  max-width: 60%;
+  text-align: right;
+}
+
+.item-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f5f0e8;
+  color: #5e412f;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.items-empty {
+  text-align: center;
+  padding: 20px;
+  color: #aaa;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.detalle-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
+  border: 2px solid #e4cbad;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.detalle-total .total-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #5e412f;
+  letter-spacing: 1px;
+}
+
+.detalle-total .total-valor {
+  font-size: 24px;
+  font-weight: 800;
+  color: #c5302a;
+  letter-spacing: -0.5px;
+}
+
+/* ============================================
+   MENSAJE DE ESTADO (dentro del modal de pago)
    ============================================ */
 .mensaje-estado {
   display: flex;
@@ -602,7 +752,7 @@
 }
 
 /* ============================================
-   DETALLE DEL PEDIDO
+   DETALLE DEL PEDIDO (dentro del modal de pago)
    ============================================ */
 .detalle-pedido {
   background: #faf8f5;
@@ -681,7 +831,7 @@
 }
 
 /* ============================================
-   MÉTODO DE PAGO
+   METODO DE PAGO (dentro del modal de pago)
    ============================================ */
 .metodo-pago-section h4 {
   font-size: 14px;
@@ -816,7 +966,7 @@
 }
 
 /* ============================================
-   BOTÓN CERRAR ÉXITO
+   BOTON CERRAR EXITO
    ============================================ */
 .btn-cerrar-exito {
   display: flex;
@@ -849,7 +999,7 @@
 }
 
 /* ============================================
-   RESUMEN DE ÉXITO
+   RESUMEN DE EXITO
    ============================================ */
 .resumen-pago-exito {
   background: linear-gradient(135deg, #f0faf0 0%, #e8f5e8 100%);
@@ -968,7 +1118,7 @@
 }
 
 /* ============================================
-   SPINNER PEQUEÑO
+   SPINNER PEQUENO
    ============================================ */
 .spinner-small {
   display: inline-block;
@@ -1023,7 +1173,8 @@
     padding: 8px 10px;
   }
 
-  .modal-pago {
+  .modal-pago,
+  .modal-detalle {
     max-width: 98%;
     border-radius: 12px;
   }
@@ -1148,6 +1299,19 @@
     font-size: 12px;
   }
 
+  .acciones-col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .btn-ver-detalle,
+  .btn-pagar {
+    justify-content: center;
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
   .exito-header {
     flex-direction: column;
     text-align: center;
@@ -1172,5 +1336,15 @@
 
   .error-detalle p {
     font-size: 13px;
+  }
+
+  .detalle-total {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .detalle-total .total-valor {
+    font-size: 20px;
   }
 }

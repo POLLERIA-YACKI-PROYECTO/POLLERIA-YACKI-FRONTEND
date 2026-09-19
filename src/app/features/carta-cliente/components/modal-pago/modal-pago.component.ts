@@ -42,7 +42,7 @@ type MetodoPago = 'efectivo' | 'yape' | 'plin' | 'transferencia' | 'tarjeta';
 export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   private authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
-  private configService = inject(ConfiguracionService); 
+  private configService = inject(ConfiguracionService);
 
   private destroy$ = new Subject<void>();
 
@@ -75,7 +75,6 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   comprobanteArchivo = signal<File | null>(null);
   comprobantePreview = signal<string>('');
 
-  //  NUEVO: Configuración dinámica del backend
   config = signal<Record<string, any>>({});
   configCargada = signal<boolean>(false);
 
@@ -94,7 +93,6 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   // CICLO DE VIDA
   // ============================================
   ngOnInit(): void {
-    //  Cargar configuración del backend al iniciar
     this.cargarConfiguracion();
   }
 
@@ -123,14 +121,14 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // ============================================
-  //  CARGAR CONFIGURACIÓN DEL BACKEND
+  // CARGAR CONFIGURACION DEL BACKEND
   // ============================================
   private cargarConfiguracion(): void {
     this.configService
       .obtenerPublicas()
       .pipe(
         catchError((err) => {
-          console.warn('[ModalPago] No se pudo cargar configuración:', err);
+          console.warn('[ModalPago] No se pudo cargar configuracion:', err);
           return of({ success: false, config: {} });
         }),
         takeUntil(this.destroy$)
@@ -141,11 +139,10 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
           this.config.set(config);
           this.configCargada.set(true);
 
-          // Actualizar números si vienen del backend
           if (config.YAPE_NUMERO) this.numeroYape = String(config.YAPE_NUMERO);
           if (config.PLIN_NUMERO) this.numeroPlin = String(config.PLIN_NUMERO);
 
-          console.log('[ModalPago] Configuración cargada:', {
+          console.log('[ModalPago] Configuracion cargada:', {
             yapeNumero: config.YAPE_NUMERO,
             plinNumero: config.PLIN_NUMERO,
             tieneYapeQr: !!config.YAPE_QR,
@@ -174,7 +171,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   get esEfectivo(): boolean { return this.metodoPago() === 'efectivo'; }
 
   // ============================================
-  //  GETTERS DE CONFIGURACIÓN (QR dinámico)
+  // GETTERS DE CONFIGURACION
   // ============================================
   get titularYape(): string {
     return this.config()['YAPE_TITULAR'] || '';
@@ -186,7 +183,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
 
   get mensajeEfectivo(): string {
     return this.config()['EFECTIVO_MENSAJE'] ||
-      'Paga en caja y el cajero confirmará tu pedido';
+      'Paga en caja y el cajero confirmara tu pedido';
   }
 
   get comercioIzipay(): string {
@@ -197,28 +194,24 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     return this.config()['TARJETA_IZIPAY'] || '';
   }
 
-  //  URL del QR de Yape subido por el admin
   get yapeQrUrl(): string {
     const valor = this.config()['YAPE_QR'];
     if (!valor) return '';
     return this.configService.getImagenConfigUrl(valor);
   }
 
-  //  URL del QR de Plin subido por el admin
   get plinQrUrl(): string {
     const valor = this.config()['PLIN_QR'];
     if (!valor) return '';
     return this.configService.getImagenConfigUrl(valor);
   }
 
-  //  URL del QR de Izipay subido por el admin
   get izipayQrUrl(): string {
     const valor = this.config()['IZIPAY_QR'];
     if (!valor) return '';
     return this.configService.getImagenConfigUrl(valor);
   }
 
-  //  Decide qué mostrar: QR subido o QR generado
   get qrMostrar(): string {
     const metodo = this.metodoPago();
 
@@ -226,11 +219,9 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     if (metodo === 'plin' && this.plinQrUrl) return this.plinQrUrl;
     if (metodo === 'transferencia' && this.izipayQrUrl) return this.izipayQrUrl;
 
-    // Fallback: el QR generado por SVG
     return this.qrDataUrl();
   }
 
-  //  ¿El método actual tiene QR subido?
   get tieneQrSubido(): boolean {
     const metodo = this.metodoPago();
 
@@ -273,12 +264,12 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     if (this.cargando) return;
 
     if (!this.metodoPago()) {
-      alert('Por favor selecciona un método de pago');
+      alert('Por favor selecciona un metodo de pago');
       return;
     }
 
     if (this.tipoEntrega() === 'delivery' && !this.direccion().trim()) {
-      alert('Debes ingresar la dirección para delivery.');
+      alert('Debes ingresar la direccion para delivery.');
       return;
     }
 
@@ -310,7 +301,6 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
 
       case 'yape':
       case 'plin':
-        //  Si hay QR subido, usarlo; si no, generar uno
         if (this.tieneQrSubido) {
           this.estadoPago.set('qr_yape_plin');
         } else {
@@ -342,7 +332,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // ============================================
-  // GENERAR QR (fallback si no hay QR subido)
+  // GENERAR QR (fallback)
   // ============================================
   private generarQRYapePlin(): void {
     const metodo = this.metodoPago();
@@ -398,14 +388,14 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     const logoSize = 100;
 
     const logo = `
-      <rect x="${centroX - logoSize / 2 - 8}" y="${centroY - logoSize / 2 - 8}" 
-            width="${logoSize + 16}" height="${logoSize + 16}" 
+      <rect x="${centroX - logoSize / 2 - 8}" y="${centroY - logoSize / 2 - 8}"
+            width="${logoSize + 16}" height="${logoSize + 16}"
             fill="#ffffff" rx="12"/>
-      <rect x="${centroX - logoSize / 2}" y="${centroY - logoSize / 2}" 
-            width="${logoSize}" height="${logoSize}" 
+      <rect x="${centroX - logoSize / 2}" y="${centroY - logoSize / 2}"
+            width="${logoSize}" height="${logoSize}"
             fill="${color}" rx="10"/>
-      <text x="${centroX}" y="${centroY + 8}" 
-            font-family="Arial, sans-serif" font-size="20" font-weight="bold" 
+      <text x="${centroX}" y="${centroY + 8}"
+            font-family="Arial, sans-serif" font-size="20" font-weight="bold"
             fill="#ffffff" text-anchor="middle">${nombre}</text>
     `;
 
@@ -415,9 +405,9 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
         <rect x="20" y="20" width="${dimension - 40}" height="${dimension - 40}" fill="#ffffff" rx="20" stroke="${color}" stroke-width="2"/>
         ${celdas}
         ${logo}
-        <text x="${dimension / 2}" y="${dimension + 25}" 
-              font-family="Arial, sans-serif" font-size="15" font-weight="bold" 
-              fill="${color}" text-anchor="middle">${nombre} · ${numero}</text>
+        <text x="${dimension / 2}" y="${dimension + 25}"
+              font-family="Arial, sans-serif" font-size="15" font-weight="bold"
+              fill="${color}" text-anchor="middle">${nombre} - ${numero}</text>
       </svg>
     `;
 
@@ -434,13 +424,12 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   // ============================================
-  //  MANEJO DE ERROR DE QR
+  // MANEJO DE ERROR DE QR
   // ============================================
   manejarErrorQr(event: Event): void {
     const img = event.target as HTMLImageElement;
     if (img.dataset['fallbackAplicado'] === 'true') return;
     img.dataset['fallbackAplicado'] = 'true';
-    // Si falla el QR subido, usar el generado por SVG
     const generado = this.qrDataUrl();
     if (generado) {
       img.src = generado;
@@ -462,7 +451,7 @@ export class ModalPagoComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     if (!/image\/(jpeg|jpg|png|webp)|application\/pdf/.test(archivo.type)) {
-      alert('Solo se permiten imágenes o PDF');
+      alert('Solo se permiten imagenes o PDF');
       return;
     }
 

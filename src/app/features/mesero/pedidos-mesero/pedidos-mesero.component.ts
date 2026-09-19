@@ -44,7 +44,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   cargandoProductos = signal<boolean>(false);
   guardandoPedido = signal<boolean>(false);
 
-  // Modal de éxito
+  // Modal de exito
   mostrarModalExito = signal<boolean>(false);
   mensajeExito = signal<string>('');
   pedidoCreado = signal<any>(null);
@@ -52,7 +52,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   // Modal de aviso (reemplaza alert)
   mostrarModalAviso = signal<boolean>(false);
   mensajeAviso = signal<string>('');
-  tituloAviso = signal<string>('Atención');
+  tituloAviso = signal<string>('Atencion');
   tipoAviso = signal<'warning' | 'error' | 'info'>('warning');
 
   // Datos
@@ -102,7 +102,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('PedidosMesero: sin sesión -> /login-mesero');
+      console.warn('PedidosMesero: sin sesion -> /login-mesero');
       this.router.navigate(['/login-mesero']);
       return;
     }
@@ -124,11 +124,11 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // MODAL DE AVISO (reemplaza alert)
+  // MODAL DE AVISO
   // ============================================
   mostrarAviso(
     mensaje: string,
-    titulo: string = 'Atención',
+    titulo: string = 'Atencion',
     tipo: 'warning' | 'error' | 'info' = 'warning'
   ): void {
     this.mensajeAviso.set(mensaje);
@@ -143,7 +143,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // VALIDACIÓN DE CAMPOS NUMÉRICOS
+  // VALIDACION DE CAMPOS NUMERICOS
   // ============================================
   private soloDigitos(valor: any, maxLength: number): string {
     const soloNumeros = String(valor ?? '').replace(/\D/g, '');
@@ -425,7 +425,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // MENÚ Y NAVEGACIÓN
+  // MENU Y NAVEGACION
   // ============================================
   toggleTema(): void {
     this.temaOscuro.set(!this.temaOscuro());
@@ -567,7 +567,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // GUARDAR PEDIDO
+  // GUARDAR PEDIDO (SIN IGV)
   // ============================================
   guardarPedido(): void {
     if (this.guardandoPedido()) return;
@@ -575,13 +575,13 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
     if (this.itemsPedido().length === 0) {
       this.mostrarAviso(
         'Agregue al menos un producto al pedido',
-        'Pedido vacío',
+        'Pedido vacio',
         'warning'
       );
       return;
     }
 
-    // Validar nuevo cliente si se está creando uno
+    // Validar nuevo cliente si se esta creando uno
     if (!this.clienteSeleccionado() && this.nuevoCliente.nombre) {
       const nombre = (this.nuevoCliente.nombre || '').trim();
       const dni = (this.nuevoCliente.dni || '').trim();
@@ -589,26 +589,25 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       const email = (this.nuevoCliente.email || '').trim();
 
       if (nombre.length < 2) {
-        this.mostrarAviso('El nombre debe tener al menos 2 caracteres', 'Nombre inválido', 'warning');
+        this.mostrarAviso('El nombre debe tener al menos 2 caracteres', 'Nombre invalido', 'warning');
         return;
       }
 
       if (dni && dni.length !== 8) {
-        this.mostrarAviso('El DNI debe tener exactamente 8 dígitos', 'DNI inválido', 'warning');
+        this.mostrarAviso('El DNI debe tener exactamente 8 digitos', 'DNI invalido', 'warning');
         return;
       }
 
       if (telefono && (telefono.length < 7 || telefono.length > 9)) {
-        this.mostrarAviso('El teléfono debe tener entre 7 y 9 dígitos', 'Teléfono inválido', 'warning');
+        this.mostrarAviso('El telefono debe tener entre 7 y 9 digitos', 'Telefono invalido', 'warning');
         return;
       }
 
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        this.mostrarAviso('El correo electrónico no es válido', 'Email inválido', 'warning');
+        this.mostrarAviso('El correo electronico no es valido', 'Email invalido', 'warning');
         return;
       }
 
-      // Asignar valores limpios
       this.nuevoCliente.nombre = nombre;
       this.nuevoCliente.dni = dni;
       this.nuevoCliente.telefono = telefono;
@@ -625,12 +624,13 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       return;
     }
 
-    let subtotal = 0;
+    // SIN IGV: total = suma de items
+    let total = 0;
     const itemsConPrecio = this.itemsPedido().map((item: any) => {
       const precio = typeof item.precio === 'string' ? parseFloat(item.precio) : Number(item.precio);
       const cantidad = typeof item.cantidad === 'string' ? parseInt(item.cantidad) : Number(item.cantidad);
       const subtotalItem = precio * cantidad;
-      subtotal += subtotalItem;
+      total += subtotalItem;
 
       return {
         id: Number(item.id),
@@ -641,16 +641,13 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
       };
     });
 
-    const igv = subtotal * 0.18;
-    const total = subtotal + igv;
-
     const pedidoData: any = {
       usuario_id: this.usuario().id,
       cliente_id: this.clienteSeleccionado()?.id || null,
       cliente_nombre: nombreCliente,
       items: itemsConPrecio,
-      subtotal: subtotal,
-      igv: igv,
+      subtotal: total,
+      igv: 0,
       total: total,
       tipo: 'local',
       tipo_entrega: this.tipoEntrega(),
@@ -732,7 +729,7 @@ export class PedidosMeseroComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // NAVEGACIÓN POR RUTAS
+  // NAVEGACION POR RUTAS
   // ============================================
   irCarta(): void {
     this.router.navigate(['/mesero/carta']);

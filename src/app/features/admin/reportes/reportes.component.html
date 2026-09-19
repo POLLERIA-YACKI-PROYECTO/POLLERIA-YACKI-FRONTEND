@@ -183,7 +183,6 @@
           </div>
         }
 
-        <!-- VISTA ESPECIAL PARA REPORTE SEMANAL -->
         @else if (reporteSeleccionado() === 'semanal') {
           <div class="semanas-lista">
             @for (dato of datosReporte(); track dato.id) {
@@ -279,7 +278,6 @@
           </div>
         }
 
-        <!-- VISTA ESTANDAR PARA OTROS REPORTES -->
         @else {
           <div class="tabla-container">
             <table class="tabla-reportes">

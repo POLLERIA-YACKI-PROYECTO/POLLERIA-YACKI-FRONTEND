@@ -10,7 +10,7 @@
           <circle cx="16" cy="13" r="1"/>
           <circle cx="8" cy="18" r="1"/>
         </svg>
-        Gestión de Ventas
+        Gestion de Ventas
       </h2>
       <p class="subtitle">Administra los pedidos y confirma pagos</p>
     </div>
@@ -35,7 +35,7 @@
     </div>
   </div>
 
-  <!-- Estadísticas -->
+  <!-- Estadisticas -->
   <div class="stats-grid">
     <div class="stat-card pendientes">
       <span class="stat-value">{{ totalPendientes() }}</span>
@@ -55,7 +55,7 @@
     </div>
   </div>
 
-  <!-- Resumen de Recaudación -->
+  <!-- Resumen de Recaudacion -->
   <div class="resumen-recaudacion">
     <div class="resumen-item">
       <span class="resumen-label">Total Recaudado</span>
@@ -128,7 +128,14 @@
                     {{ getEstadoPedidoTexto(pedido) }}
                   </span>
                 </td>
-                <td>
+                <td class="acciones-col">
+                  <button class="btn-ver-detalle" (click)="verDetalle(pedido)" title="Ver detalle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Ver
+                  </button>
                   @if (mostrarBotonPago(pedido)) {
                     <button class="btn-pagar" (click)="abrirModalPago(pedido)" [disabled]="loading()">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -140,9 +147,9 @@
                   } @else {
                     <span class="estado-final">
                       @if (estaPagado(pedido)) {
-                        ✅ Pagado
+                        Pagado
                       } @else if (estaCancelado(pedido)) {
-                        ❌ Cancelado
+                        Cancelado
                       } @else {
                         {{ getEstadoPedidoTexto(pedido) }}
                       }
@@ -186,7 +193,8 @@
               <th>Items</th>
               <th>Total</th>
               <th>Fecha</th>
-              <th>Método</th>
+              <th>Metodo</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -212,11 +220,20 @@
                     {{ getMetodoPagoLabel(venta.metodo_pago) }}
                   </span>
                 </td>
+                <td class="acciones-col">
+                  <button class="btn-ver-detalle" (click)="verDetalle(venta)" title="Ver detalle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Ver
+                  </button>
+                </td>
               </tr>
             }
             @empty {
               <tr>
-                <td colspan="7" class="text-center">
+                <td colspan="8" class="text-center">
                   <p>No hay ventas en local</p>
                 </td>
               </tr>
@@ -225,7 +242,7 @@
           <tfoot>
             <tr class="total-row">
               <td colspan="4"><strong>Total Local</strong></td>
-              <td colspan="3"><strong>S/ {{ totalPorTipo(ventasLocal()) | number:'1.2-2' }}</strong></td>
+              <td colspan="4"><strong>S/ {{ totalPorTipo(ventasLocal()) | number:'1.2-2' }}</strong></td>
             </tr>
           </tfoot>
         </table>
@@ -250,7 +267,8 @@
               <th>Items</th>
               <th>Total</th>
               <th>Fecha</th>
-              <th>Método</th>
+              <th>Metodo</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -276,11 +294,20 @@
                     {{ getMetodoPagoLabel(venta.metodo_pago) }}
                   </span>
                 </td>
+                <td class="acciones-col">
+                  <button class="btn-ver-detalle" (click)="verDetalle(venta)" title="Ver detalle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Ver
+                  </button>
+                </td>
               </tr>
             }
             @empty {
               <tr>
-                <td colspan="7" class="text-center">
+                <td colspan="8" class="text-center">
                   <p>No hay ventas motorizadas</p>
                 </td>
               </tr>
@@ -289,7 +316,7 @@
           <tfoot>
             <tr class="total-row">
               <td colspan="4"><strong>Total Motorizado</strong></td>
-              <td colspan="3"><strong>S/ {{ totalPorTipo(ventasDelivery()) | number:'1.2-2' }}</strong></td>
+              <td colspan="4"><strong>S/ {{ totalPorTipo(ventasDelivery()) | number:'1.2-2' }}</strong></td>
             </tr>
           </tfoot>
         </table>
@@ -297,6 +324,132 @@
     </div>
   }
 </div>
+
+<!-- ============================================ -->
+<!-- MODAL DE DETALLE (SIN BOTON PAGAR)           -->
+<!-- ============================================ -->
+@if (mostrarModalDetalle() && pedidoEnDetalle()) {
+  <div class="modal-overlay" (click)="cerrarModalDetalle()">
+    <div class="modal-detalle" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-header-content">
+          <div class="modal-icon detalle-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Detalle del Pedido</h2>
+            <p class="modal-subtitle">
+              #{{ pedidoEnDetalle()?.id }}
+              @if (esDetallePedidoWeb()) {
+                <span class="badge-origen">Pedido Web</span>
+              }
+            </p>
+          </div>
+        </div>
+        <button class="modal-close" (click)="cerrarModalDetalle()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Estado y origen -->
+        <div class="detalle-badges">
+          <span class="estado-badge {{ getEstadoPedidoClass(pedidoEnDetalle()) }}">
+            {{ getEstadoPedidoTexto(pedidoEnDetalle()) }}
+          </span>
+          <span class="tipo-badge {{ pedidoEnDetalle()?.tipo_entrega }}">
+            <span [innerHTML]="getTipoEntregaSvg(pedidoEnDetalle()?.tipo_entrega)"></span>
+            {{ getTipoEntregaLabel(pedidoEnDetalle()?.tipo_entrega) }}
+          </span>
+          @if (pedidoEnDetalle()?.metodo_pago) {
+            <span class="metodo-badge {{ pedidoEnDetalle()?.metodo_pago }}">
+              <span [innerHTML]="getMetodoPagoSvg(pedidoEnDetalle()?.metodo_pago)"></span>
+              {{ getMetodoPagoLabel(pedidoEnDetalle()?.metodo_pago) }}
+            </span>
+          }
+        </div>
+
+        <!-- Informacion general -->
+        <div class="detalle-info">
+          <div class="detalle-row">
+            <span class="detalle-label">Cliente</span>
+            <span class="detalle-valor">
+              {{ pedidoEnDetalle()?.cliente_nombre || pedidoEnDetalle()?.cliente_nombre_real || 'Consumidor Final' }}
+            </span>
+          </div>
+          <div class="detalle-row">
+            <span class="detalle-label">Atendido por</span>
+            <span class="detalle-valor">
+              {{ esDetallePedidoWeb() ? 'Cliente Web' : (pedidoEnDetalle()?.usuario_nombre || 'Desconocido') }}
+            </span>
+          </div>
+          @if (pedidoEnDetalle()?.cliente_telefono) {
+            <div class="detalle-row">
+              <span class="detalle-label">Telefono</span>
+              <span class="detalle-valor">{{ pedidoEnDetalle()?.cliente_telefono }}</span>
+            </div>
+          }
+          @if (pedidoEnDetalle()?.cliente_direccion) {
+            <div class="detalle-row">
+              <span class="detalle-label">Direccion</span>
+              <span class="detalle-valor">{{ pedidoEnDetalle()?.cliente_direccion }}</span>
+            </div>
+          }
+          <div class="detalle-row">
+            <span class="detalle-label">Fecha</span>
+            <span class="detalle-valor">
+              {{ formatearFecha(pedidoEnDetalle()?.created_at || pedidoEnDetalle()?.fecha_venta) }}
+            </span>
+          </div>
+          @if (pedidoEnDetalle()?.observaciones) {
+            <div class="detalle-row">
+              <span class="detalle-label">Observaciones</span>
+              <span class="detalle-valor observaciones">{{ pedidoEnDetalle()?.observaciones }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Productos -->
+        <div class="items-pedido">
+          <h4>Productos ({{ itemsDetalle().length }})</h4>
+          <div class="items-lista">
+            @for (item of itemsDetalle(); track $index) {
+              <div class="item-row">
+                <span class="item-numero">{{ $index + 1 }}</span>
+                <span class="item-nombre">{{ item.nombre || 'Producto' }}</span>
+                <span class="item-cantidad">x{{ item.cantidad || 1 }}</span>
+                <span class="item-precio">S/ {{ ((item.precio || 0) * (item.cantidad || 1)) | number:'1.2-2' }}</span>
+              </div>
+            }
+            @empty {
+              <div class="items-empty">
+                No hay productos registrados
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="detalle-total">
+          <span class="total-label">TOTAL</span>
+          <span class="total-valor">S/ {{ pedidoEnDetalle()?.total | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModalDetalle()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- ============================================ -->
 <!-- MODAL DE PAGO                                -->
@@ -333,7 +486,7 @@
               @if (tipoPago() === 'procesando') {
                 Procesando Pago
               } @else if (tipoPago() === 'exito') {
-                ¡Pago Completado!
+                Pago Completado
               } @else if (tipoPago() === 'error') {
                 Error en el Pago
               } @else {
@@ -346,7 +499,7 @@
               } @else if (tipoPago() === 'exito') {
                 Pedido #{{ pedidoEnPago()?.id }} pagado correctamente
               } @else if (tipoPago() === 'error') {
-                Ocurrió un problema
+                Ocurrio un problema
               } @else {
                 Pedido #{{ pedidoEnPago()?.id }}
               }
@@ -362,7 +515,6 @@
       </div>
 
       <div class="modal-body">
-        <!-- Mensaje de estado -->
         @if (mensajePago()) {
           <div class="mensaje-estado"
                [class.exito]="tipoPago() === 'exito'"
@@ -384,7 +536,6 @@
           </div>
         }
 
-        <!-- Detalles del pedido -->
         @if (tipoPago() !== 'procesando' && tipoPago() !== 'exito') {
           <div class="detalle-pedido">
             <div class="detalle-row">
@@ -422,7 +573,6 @@
             </div>
           </div>
 
-          <!-- Items del pedido -->
           <div class="items-pedido">
             <h4>Productos</h4>
             <div class="items-lista">
@@ -436,9 +586,8 @@
             </div>
           </div>
 
-          <!-- Selección de método de pago -->
           <div class="metodo-pago-section">
-            <h4>Método de Pago</h4>
+            <h4>Metodo de Pago</h4>
             <div class="metodos-grid">
               @for (metodo of metodosPago; track metodo) {
                 <button
@@ -455,18 +604,17 @@
           </div>
         }
 
-        <!-- Estado de éxito -->
         @if (tipoPago() === 'exito' && resultadoPago()) {
           <div class="resumen-pago-exito">
             <div class="exito-header">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 6L9 17l-5-5"/>
               </svg>
-              <span>¡Pago confirmado!</span>
+              <span>Pago confirmado</span>
             </div>
             <div class="exito-detalles">
               <div class="exito-item">
-                <span class="exito-label">N° Pedido</span>
+                <span class="exito-label">N Pedido</span>
                 <span class="exito-valor">#{{ resultadoPago()?.pedidoId }}</span>
               </div>
               <div class="exito-item">
@@ -478,7 +626,7 @@
                 <span class="exito-valor total-monto">S/ {{ resultadoPago()?.total | number:'1.2-2' }}</span>
               </div>
               <div class="exito-item">
-                <span class="exito-label">Método</span>
+                <span class="exito-label">Metodo</span>
                 <span class="exito-valor">
                   <span class="metodo-badge {{ metodoSeleccionado() }}">
                     <span [innerHTML]="getMetodoPagoSvg(metodoSeleccionado())"></span>
@@ -494,7 +642,6 @@
           </div>
         }
 
-        <!-- Estado de error -->
         @if (tipoPago() === 'error') {
           <div class="error-detalle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

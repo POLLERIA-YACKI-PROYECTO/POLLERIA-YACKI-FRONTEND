@@ -39,14 +39,14 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   ventasLocal = signal<any[]>([]);
   ventasDelivery = signal<any[]>([]);
 
-  // Estadísticas
+  // Estadisticas
   totalPendientes = signal<number>(0);
   totalPagados = signal<number>(0);
   totalVentasLocal = signal<number>(0);
   totalVentasDelivery = signal<number>(0);
   totalRecaudado = signal<number>(0);
 
-  // Métodos de pago
+  // Metodos de pago
   metodosPago = ['efectivo', 'tarjeta', 'yape', 'plin', 'transferencia'];
   metodoSeleccionado = signal<string>('efectivo');
 
@@ -61,10 +61,16 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   mostrarResumen = signal<boolean>(false);
   resultadoPago = signal<any>(null);
 
-  // Modal de aviso (reemplaza alert)
+  // Modal de detalle (NUEVO)
+  mostrarModalDetalle = signal<boolean>(false);
+  pedidoEnDetalle = signal<any>(null);
+  itemsDetalle = signal<any[]>([]);
+  origenDetalle = signal<string>('');
+
+  // Modal de aviso
   mostrarModalAviso = signal<boolean>(false);
   mensajeAviso = signal<string>('');
-  tituloAviso = signal<string>('Atención');
+  tituloAviso = signal<string>('Atencion');
   tipoAviso = signal<'warning' | 'error' | 'info'>('warning');
 
   // ============================================
@@ -72,7 +78,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   // ============================================
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
-      console.warn('VentasAdmin: sin sesión -> /login-admin');
+      console.warn('VentasAdmin: sin sesion -> /login-admin');
       this.router.navigate(['/login-admin']);
       return;
     }
@@ -94,11 +100,11 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // MODAL DE AVISO (reemplaza alert)
+  // MODAL DE AVISO
   // ============================================
   mostrarAviso(
     mensaje: string,
-    titulo: string = 'Atención',
+    titulo: string = 'Atencion',
     tipo: 'warning' | 'error' | 'info' = 'warning'
   ): void {
     this.mensajeAviso.set(mensaje);
@@ -113,10 +119,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // CARGAR DATOS (con forceRefresh opcional)
+  // CARGAR DATOS
   // ============================================
   cargarDatos(forceRefresh: boolean = false): void {
-    // Si NO es forceRefresh y ya está cargado, no hacer nada
     if (!forceRefresh && (this.cargando() || this.yaCargado())) return;
 
     this.cargando.set(true);
@@ -134,7 +139,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: ({ pedidosPendientes, pedidosWeb, ventas }) => {
-          // 1. Combinar pedidos pendientes (mesero + web)
+          // 1. Combinar pedidos pendientes
           const pendientesMesero = (pedidosPendientes || []).filter(
             (p: any) => p.pagado !== 1 && p.pagado !== true && p.estado !== 'cancelado'
           ).map((p: any) => ({
@@ -191,7 +196,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             };
           });
 
-          // Eliminar duplicados
           const ventasUnicas = ventasConNombre.filter(
             (venta, index, self) =>
               index === self.findIndex(v => v.id_unico === venta.id_unico)
@@ -217,28 +221,21 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ============================================
-  // RECARGAR FORZANDO (limpia caché y vuelve a pedir al backend)
-  // ============================================
   recargar(): void {
-    console.log('Recargando datos (forzando caché)...');
+    console.log('Recargando datos (forzando cache)...');
 
-    // Limpiar cachés de todos los servicios
     this.pedidoService.limpiarCachePedidos?.();
     this.pedidoClienteService.limpiarCachePedidos?.();
     this.ventaService.limpiarCacheVentas?.();
 
-    // Resetear flags y forzar recarga
     this.yaCargado.set(false);
     this.cargando.set(false);
 
-    // Llamar con forceRefresh = true
     this.cargarDatos(true);
   }
 
-  // Alias para el botón "Actualizar" del HTML
   recargarDatos(): void {
-    console.log('Botón Actualizar presionado');
+    console.log('Boton Actualizar presionado');
     this.recargar();
   }
 
@@ -287,16 +284,58 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
+  // MODAL DE DETALLE (NUEVO)
+  // ============================================
+  verDetalle(pedido: any): void {
+    if (!pedido) return;
+
+    // Normalizar items
+    let items = pedido.items || [];
+    if (typeof items === 'string') {
+      try {
+        items = JSON.parse(items);
+      } catch (e) {
+        items = [];
+      }
+    }
+    if (!Array.isArray(items)) items = [];
+
+    // Guardar copia del pedido con los items parseados
+    const pedidoCopia = { ...pedido, items };
+
+    this.pedidoEnDetalle.set(pedidoCopia);
+    this.itemsDetalle.set(items);
+    this.origenDetalle.set(pedido.origen || 'venta');
+    this.mostrarModalDetalle.set(true);
+  }
+
+  cerrarModalDetalle(): void {
+    this.mostrarModalDetalle.set(false);
+    this.pedidoEnDetalle.set(null);
+    this.itemsDetalle.set([]);
+    this.origenDetalle.set('');
+  }
+
+  esDetallePedidoWeb(): boolean {
+    return this.origenDetalle() === 'pedido_web';
+  }
+
+  esDetallePagado(): boolean {
+    const pedido = this.pedidoEnDetalle();
+    return pedido && (pedido.pagado === 1 || pedido.pagado === true);
+  }
+
+  // ============================================
   // MODAL DE PAGO
   // ============================================
   abrirModalPago(pedido: any): void {
     if (!pedido || !pedido.id) {
-      this.mostrarAviso('Pedido inválido. Intente nuevamente.', 'Error', 'error');
+      this.mostrarAviso('Pedido invalido. Intente nuevamente.', 'Error', 'error');
       return;
     }
 
     if (this.estaPagado(pedido)) {
-      this.mostrarAviso('Este pedido ya está pagado.', 'Pedido ya pagado', 'info');
+      this.mostrarAviso('Este pedido ya esta pagado.', 'Pedido ya pagado', 'info');
       this.recargar();
       return;
     }
@@ -328,9 +367,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.resultadoPago.set(null);
   }
 
-  // ============================================
-  // CONFIRMAR PAGO (con recarga inmediata)
-  // ============================================
   confirmarPago(): void {
     const pedido = this.pedidoEnPago();
     if (!pedido) return;
@@ -339,7 +375,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
 
     const metodo = this.metodoSeleccionado();
     if (!metodo) {
-      this.mostrarAviso('Seleccione un método de pago.', 'Método requerido', 'warning');
+      this.mostrarAviso('Seleccione un metodo de pago.', 'Metodo requerido', 'warning');
       return;
     }
 
@@ -347,7 +383,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
     this.mensajePago.set('Procesando pago...');
     this.tipoPago.set('procesando');
 
-    // Detección de origen más robusta
     const esPedidoWeb =
       pedido.origen === 'pedido_web' ||
       String(pedido.id_unico || '').startsWith('PC-') ||
@@ -374,7 +409,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             this.pagoCompletado.set(true);
             this.mostrarMensajeExito.set(true);
             this.mostrarResumen.set(true);
-            this.mensajePago.set('¡Pago completado con éxito!');
+            this.mensajePago.set('Pago completado con exito.');
             this.tipoPago.set('exito');
             this.resultadoPago.set({
               pedidoId: pedido.id,
@@ -384,11 +419,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
               cliente: pedido.cliente_nombre || pedido.cliente_nombre_real || 'Cliente'
             });
 
-            // RECARGA INMEDIATA (mueve el pedido de "Pendientes" a "Ventas")
-            console.log('Recargando después del pago exitoso...');
+            console.log('Recargando despues del pago exitoso...');
             this.recargar();
 
-            // Cerrar el modal después de 3 segundos
             setTimeout(() => {
               this.cerrarModalPago();
             }, 3000);
@@ -411,9 +444,9 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           let titulo = 'Error';
 
           if (err?.status === 0) {
-            mensaje = 'No se pudo conectar con el servidor. Verifique que el backend esté activo.';
+            mensaje = 'No se pudo conectar con el servidor. Verifique que el backend este activo.';
           } else if (err?.status === 401) {
-            mensaje = 'Sesión expirada. Vuelva a iniciar sesión.';
+            mensaje = 'Sesion expirada. Vuelva a iniciar sesion.';
           } else if (err?.status === 403) {
             mensaje = 'No tiene permisos para procesar pagos.';
           } else if (err?.status === 404) {
@@ -426,7 +459,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
             mensaje = err.error.error || err.error.detalle || err.error.message || mensaje;
           }
 
-          // Caso especial: pedido ya pagado
           if (err.status === 400 && String(mensaje).toLowerCase().includes('ya')) {
             this.mensajePago.set('Este pedido ya estaba pagado.');
             this.tipoPago.set('info');
@@ -443,9 +475,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ============================================
-  // RECHAZAR PAGO (opcional)
-  // ============================================
   rechazarPago(): void {
     const pedido = this.pedidoEnPago();
     if (!pedido) return;
@@ -470,7 +499,6 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
           this.mensajePago.set('Pago rechazado');
           this.tipoPago.set('info');
 
-          // RECARGA INMEDIATA
           this.recargar();
 
           setTimeout(() => {
@@ -603,7 +631,7 @@ export class VentasAdminComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // NAVEGACIÓN
+  // NAVEGACION
   // ============================================
   irDashboard(): void {
     this.router.navigate(['/admin/dashboard-admin']);

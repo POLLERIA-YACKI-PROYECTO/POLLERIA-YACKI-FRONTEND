@@ -1109,7 +1109,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   // ==========================================
-  // EXPORTAR EXCEL (AHORA SI ESCRIBE LOS DATOS)
+  // EXPORTAR EXCEL
   // ==========================================
   async exportarExcel(): Promise<void> {
     const datos = this.datosReporte();
@@ -1122,7 +1122,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
     try {
       const workbook = new ExcelJS.Workbook();
-      workbook.creator = 'Polleria Yacky';
+      workbook.creator = 'Polleria Dona Yacki';
       workbook.created = new Date();
 
       const nombreHoja = this.nombreReporte().replace(/[\\/*?:[\]]/g, '').substring(0, 31) || 'Reporte';
@@ -1130,9 +1130,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
 
       const columnas = this.columnasReporte();
 
-      // ================================
-      // TITULO Y PERIODO
-      // ================================
       worksheet.mergeCells(1, 1, 1, Math.max(columnas.length, 2));
       const celdaTitulo = worksheet.getCell(1, 1);
       celdaTitulo.value = this.nombreReporte();
@@ -1147,9 +1144,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
       celdaPeriodo.alignment = { horizontal: 'center' };
       worksheet.getRow(2).height = 20;
 
-      // ================================
-      // CABECERA
-      // ================================
       const filaCabecera = worksheet.getRow(4);
       columnas.forEach((col, i) => {
         const celda = filaCabecera.getCell(i + 1);
@@ -1170,9 +1164,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
       });
       filaCabecera.height = 24;
 
-      // ================================
-      // FILAS DE DATOS
-      // ================================
       datos.forEach((fila, idx) => {
         const numeroFila = 5 + idx;
         const filaExcel = worksheet.getRow(numeroFila);
@@ -1181,7 +1172,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
           const celda = filaExcel.getCell(i + 1);
           let valor: any = fila[col.clave];
 
-          // Convertir segun el tipo
           if (col.tipo === 'moneda' || col.tipo === 'numero') {
             valor = this.numeroSeguro(valor);
             celda.numFmt = col.tipo === 'moneda' ? '"S/ "#,##0.00' : '#,##0';
@@ -1203,7 +1193,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
             right: { style: 'thin', color: { argb: 'FFE8E0D6' } }
           };
 
-          // Pintar filas alternas
           if (idx % 2 === 1) {
             celda.fill = {
               type: 'pattern',
@@ -1216,9 +1205,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
         filaExcel.height = 20;
       });
 
-      // ================================
-      // FILA DE TOTALES
-      // ================================
       const numeroFilaTotal = 5 + datos.length;
       const filaTotal = worksheet.getRow(numeroFilaTotal);
 
@@ -1255,9 +1241,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
       });
       filaTotal.height = 24;
 
-      // ================================
-      // ANCHO DE COLUMNAS
-      // ================================
       columnas.forEach((col, i) => {
         const letra = worksheet.getColumn(i + 1);
         let ancho = 15;
@@ -1268,9 +1251,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
         letra.width = ancho;
       });
 
-      // ================================
-      // GUARDAR
-      // ================================
       const buffer = await workbook.xlsx.writeBuffer();
       const archivo = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -1287,7 +1267,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   // ==========================================
-  // EXPORTAR PDF (AHORA SI GENERA CONTENIDO)
+  // EXPORTAR PDF
   // ==========================================
   exportarPDF(): void {
     const datos = this.datosReporte();
@@ -1301,7 +1281,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
     const periodo = `${this.formatearFechaSoloDia(this.fechaInicio())} al ${this.formatearFechaSoloDia(this.fechaFin())}`;
     const resumen = this.resumenReporte();
 
-    // Construir filas HTML
     const filasHTML = datos.map((fila, idx) => {
       const celdas = columnas.map(col => {
         let valor: any = fila[col.clave];
@@ -1328,7 +1307,6 @@ export class ReportesComponent implements OnInit, OnDestroy {
       return `<tr class="${idx % 2 === 1 ? 'alt' : ''}">${celdas}</tr>`;
     }).join('');
 
-    // Fila de totales
     const totalesHTML = columnas.map((col, i) => {
       const valorTotal = this.obtenerValorTotalColumna(col, i);
       let contenido = '';
@@ -1347,12 +1325,10 @@ export class ReportesComponent implements OnInit, OnDestroy {
       return `<td class="${clase}">${contenido}</td>`;
     }).join('');
 
-    // Encabezados
     const encabezadosHTML = columnas
       .map(col => `<th>${this.escaparHTML(col.titulo)}</th>`)
       .join('');
 
-    // Bloques de resumen
     const bloquesResumen: string[] = [];
     bloquesResumen.push(`<div class="resumen-item"><span class="label">Total Ventas</span><span class="valor">${resumen.totalVentas || 0}</span></div>`);
     bloquesResumen.push(`<div class="resumen-item"><span class="label">Total Recaudado</span><span class="valor">S/ ${this.numeroSeguro(resumen.totalRecaudado).toFixed(2)}</span></div>`);
